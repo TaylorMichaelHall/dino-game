@@ -4,22 +4,41 @@ export class PowerupManager {
     constructor(game) {
         this.game = game;
         this.powerups = [];
-        this.nextSpawnScore = this.calculateNextSpawn(0);
+        this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
+        this.nextPosterSpawn = this.calculateNextPosterSpawn(0);
         this.radius = 15;
+
+        this.posterImage = this.loadImage('/sprites/poster.png');
     }
 
-    calculateNextSpawn(currentScore) {
+    loadImage(src) {
+        const img = new Image();
+        img.src = src;
+        return img;
+    }
+
+    calculateNextBoneSpawn(currentScore) {
         return currentScore + Math.floor(Math.random() * (CONFIG.BONE_SPAWN_MAX - CONFIG.BONE_SPAWN_MIN + 1)) + CONFIG.BONE_SPAWN_MIN;
     }
 
+    calculateNextPosterSpawn(currentScore) {
+        // Appears once per 50 points (randomly within that block)
+        return currentScore + Math.floor(Math.random() * 50) + 1;
+    }
+
     checkSpawn(currentScore) {
-        if (currentScore >= this.nextSpawnScore) {
-            this.spawn();
-            this.nextSpawnScore = this.calculateNextSpawn(currentScore);
+        if (currentScore >= this.nextBoneSpawn) {
+            this.spawn('BONE');
+            this.nextBoneSpawn = this.calculateNextBoneSpawn(currentScore);
+        }
+
+        if (currentScore >= this.nextPosterSpawn) {
+            this.spawn('POSTER');
+            this.nextPosterSpawn += CONFIG.POSTER_THRESHOLD; // Fixed block increment
         }
     }
 
-    spawn() {
+    spawn(type) {
         // Spawn in the middle-ish area vertically
         const padding = 100;
         const y = Math.random() * (this.game.height - padding * 2) + padding;
@@ -27,6 +46,7 @@ export class PowerupManager {
         this.powerups.push({
             x: this.game.width + 50,
             y: y,
+            type: type,
             collected: false
         });
     }
@@ -37,12 +57,13 @@ export class PowerupManager {
         });
 
         // Cleanup
-        this.powerups = this.powerups.filter(p => !p.collected && p.x > -50);
+        this.powerups = this.powerups.filter(p => !p.collected && p.x > -100);
     }
 
     draw(ctx) {
         this.powerups.forEach(p => {
-            this.drawBone(ctx, p.x, p.y);
+            if (p.type === 'BONE') this.drawBone(ctx, p.x, p.y);
+            else if (p.type === 'POSTER') this.drawPoster(ctx, p.x, p.y);
         });
     }
 
@@ -71,22 +92,34 @@ export class PowerupManager {
         ctx.restore();
     }
 
+    drawPoster(ctx, x, y) {
+        if (this.posterImage.complete) {
+            const s = 40;
+            ctx.drawImage(this.posterImage, x - s / 2, y - s / 2, s, s);
+        } else {
+            ctx.fillStyle = '#f0f';
+            ctx.fillRect(x - 20, y - 20, 40, 40);
+        }
+    }
+
     checkCollision(dino) {
         const dx_center = dino.x + dino.width / 2;
         const dy_center = dino.y + dino.height / 2;
 
         for (let p of this.powerups) {
             const dist = Math.sqrt((dx_center - p.x) ** 2 + (dy_center - p.y) ** 2);
-            if (dist < dino.radius + this.radius) {
+            const r = p.type === 'POSTER' ? 20 : 15;
+            if (dist < dino.radius + r) {
                 p.collected = true;
-                return true;
+                return p.type;
             }
         }
-        return false;
+        return null;
     }
 
     reset() {
         this.powerups = [];
-        this.nextSpawnScore = this.calculateNextSpawn(0);
+        this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
+        this.nextPosterSpawn = this.calculateNextPosterSpawn(0);
     }
 }

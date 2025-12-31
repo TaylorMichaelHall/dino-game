@@ -138,10 +138,40 @@ export class AudioManager {
             osc.stop(this.ctx.currentTime + delay + 0.1);
         };
 
-        playNote(523.25, 0);   // C5
-        playNote(659.25, 0.05); // E5
-        playNote(783.99, 0.1);  // G5
-        playNote(1046.50, 0.15); // C6
+        playNote(523.25, 0);
+        playNote(659.25, 0.05);
+        playNote(783.99, 0.1);
+        playNote(1046.50, 0.15);
+    }
+
+    playTransform() {
+        this.resumeContext();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(100, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.5);
+        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.5);
+    }
+
+    playExplosion() {
+        this.resumeContext();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(80, this.ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(10, this.ctx.currentTime + 0.3);
+        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.3);
     }
 
     /**

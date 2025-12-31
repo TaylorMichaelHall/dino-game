@@ -1,28 +1,26 @@
 # Ian's Flappy Dino
 
-A modern, high-performance "Flappy Bird" clone featuring evolving dinosaurs, DNA strand obstacles, and dynamic difficulty scaling.
+A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand obstacles, and powerful transformations. Built with Vanilla JavaScript and Canvas API.
 
 ## 🦖 Features
 
-- **Evolution System**: Play as a Raptor, Pterosaur, and T-Rex. Evolution occurs every 10 points.
-- **Dynamic Difficulty**: Horizontal speed increases with every evolution.
-- **Visuals**: High-fidelity procedural sprites drawn via Canvas API.
-- **Procedural Audio**: 8-bit style synthesized sound effects (Jump, Hit, Point, Upgrade, Powerup) using the Web Audio API.
-- **Dino Bone Powerup**: Randomly appearing bone that grants +5 points and a temporary 50% speed boost.
-- **Themes**: Background gradients cycle every 30 points.
-- **Health System**: 3 hearts with invulnerability frames (1s) on damage. Hearts refill on evolution.
-- **Persistence**: High score is saved locally via `localStorage`.
+- **Evolution System**: Raptor → Quetzalcoatlus → T-Rex → Spinosaurus. Evolve every 10 points!
+- **Visuals**: High-quality WebP/PNG sprites for all evolution stages.
+- **Powerups**:
+    - 🦴 **Dino Bone**: (+5 points, 1.5x Speed Boost for 5s). Spawns every 5-15 points.
+    - 🧬 **Poster (D-Rex)**: Transform into the invulnerable **D-Rex** for 30 seconds! In this mode, you smash through DNA strands instead of taking damage. Spawns every 50 points.
+- **Dynamic Difficulty**: Game speed increases with each evolution level.
+- **Procedural Audio**: 8-bit style sound effects (Jump, Hit, Point, Upgrade, Powerup, Explosion) synthesized via Web Audio API.
+- **Themes**: Atmospheric background gradients cycle every 30 points.
+- **Health System**: 3 hearts with 1s invulnerability frames. Hearts refill upon evolution.
+- **Persistence**: Local storage tracks your all-time high score.
+- **Modern UI**: Polished start screen, game over screen, and dynamic message overlays.
 
 ## 🚀 Getting Started
 
-### Prerequisites
-
-- [Node.js](https://nodejs.org/) (v18 or higher recommended)
-- npm (comes with Node.js)
-
 ### Installation
 
-1. Clone the repository or extract the project files.
+1. Clone or download the project.
 2. Open a terminal in the project root.
 3. Install dependencies:
    ```bash
@@ -31,39 +29,35 @@ A modern, high-performance "Flappy Bird" clone featuring evolving dinosaurs, DNA
 
 ### Running Locally
 
-To start the development server with hot-reloading:
 ```bash
 npm run dev
 ```
-Then open [http://localhost:5173](http://localhost:5173) in your browser.
+Open [http://localhost:5173](http://localhost:5173) to play.
 
 ### Building for Production
 
-To create an optimized production build in the `dist/` folder:
 ```bash
 npm run build
 ```
 
 ## 🛠 Maintenance & Tuning
 
-The project is designed for easy maintenance. Most gameplay settings can be tweaked in a single file:
+All gameplay logic is centralized in `src/Constants.js`. You can easily adjust:
+- **Physics**: Gravity, Jump strength.
+- **Difficulty**: Base speed and speed increase per evolution.
+- **Spawning**: Obstacle gap size and powerup frequency.
+- **Powerup Effects**: Bonus points, speed multipliers, and transformation durations.
 
-### `src/Constants.js`
+## 📁 Architecture
 
-Open this file to adjust:
-- **Physics**: Gravity, jump strength, and max fall speed.
-- **Difficulty**: Base speed and speed increment per evolution.
-- **Gameplay**: Evolution thresholds, max hearts, and scoring logic.
-- **Colors**: Dino colors, DNA obstacle colors, and theme class names.
-
-## 📁 Code Structure
-
-- `index.html`: Main UI layout and game container.
-- `src/main.js`: Bootstraps the game logic.
-- `src/Game.js`: The "brain" of the game; manages state, score, and the main loop.
-- `src/Dino.js`: Handles dinosaur physics, state (health/evo), and rendering.
-- `src/ObstacleManager.js`: Manages spawning and animation of the DNA strands.
-- `src/style.css`: Project styling and theme definitions.
+- `src/main.js`: Entry point.
+- `src/Game.js`: Main loop, state management, and entity coordination.
+- `src/Dino.js`: Physics, evolution logic, and sprite rendering.
+- `src/ObstacleManager.js`: DNA strand spawning and movement.
+- `src/PowerupManager.js`: Bone and Poster powerup lifecycle.
+- `src/AudioManager.js`: On-the-fly sound effect synthesis.
+- `src/Constants.js`: Centralized game configuration.
+- `src/style.css`: UI layout and background themes.
 
 ---
-Created for Ian. Enjoy the evolution!
+Enjoy the hunt, Ian!

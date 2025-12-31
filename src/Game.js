@@ -33,6 +33,7 @@ export class Game {
         this.lastTime = 0;
         this.time = 0; // Cumulative game time
         this.speedBoostTimer = 0;
+        this.dRexTimer = 0;
 
         this.initUI();
         this.bindEvents();
@@ -114,6 +115,7 @@ export class Game {
         this.score = 0;
         this.hearts = CONFIG.MAX_HEARTS;
         this.speedBoostTimer = 0;
+        this.dRexTimer = 0;
         this.dino.reset();
         this.obstacles.reset();
         this.powerups.reset();
@@ -151,39 +153,74 @@ export class Game {
     }
 
     update(deltaTime) {
-        // Boost Logic
-        if (this.speedBoostTimer > 0) {
-            this.speedBoostTimer -= deltaTime;
-            if (this.speedBoostTimer <= 0) {
-                this.showMessage('Speed Normal');
-            }
-        }
+        this.updateTimers(deltaTime);
 
-        const currentSpeedMultiplier = (this.speedBoostTimer > 0)
-            ? CONFIG.BONE_SPEED_BOOST
-            : 1;
+        const speedMultiplier = this.speedBoostTimer > 0 ? CONFIG.BONE_SPEED_BOOST : 1;
 
         this.dino.update(deltaTime);
-        this.obstacles.update(deltaTime, currentSpeedMultiplier);
-        this.powerups.update(deltaTime, this.obstacles.speed * currentSpeedMultiplier);
+        this.obstacles.update(deltaTime, speedMultiplier);
+        this.powerups.update(deltaTime, this.obstacles.speed * speedMultiplier);
 
-        // Powerup collisions
-        if (this.powerups.checkCollision(this.dino)) {
-            this.collectBone();
+        this.handlePowerupCollisions();
+        this.handleObstacleCollisions();
+        this.handleScoring();
+    }
+
+    updateTimers(deltaTime) {
+        if (this.speedBoostTimer > 0) {
+            this.speedBoostTimer -= deltaTime;
+            if (this.speedBoostTimer <= 0) this.showMessage('Speed Normal');
         }
 
-        // Score tracking
+        if (this.dRexTimer > 0) {
+            this.dRexTimer -= deltaTime;
+            if (this.dRexTimer <= 0) {
+                this.dino.setDRex(false);
+                this.showMessage('D-Rex Power Depleted');
+            }
+        }
+    }
+
+    handlePowerupCollisions() {
+        const type = this.powerups.checkCollision(this.dino);
+        if (type === 'BONE') this.collectBone();
+        else if (type === 'POSTER') this.transformToDRex();
+    }
+
+    handleObstacleCollisions() {
+        if (this.obstacles.checkCollision(this.dino)) {
+            if (this.dino.isDRex) {
+                this.handleDrexSmash();
+            } else if (!this.dino.invulnerable) {
+                this.takeDamage();
+            }
+        }
+    }
+
+    handleDrexSmash() {
+        const dx = this.dino.x + this.dino.width / 2;
+        const dy = this.dino.y + this.dino.height / 2;
+        const dr = this.dino.radius * 0.8;
+
+        this.obstacles.obstacles = this.obstacles.obstacles.filter(obs => {
+            const hitTop = (dx + dr > obs.x && dx - dr < obs.x + this.obstacles.obstacleWidth && dy - dr < obs.topHeight);
+            const hitBottom = (dx + dr > obs.x && dx - dr < obs.x + this.obstacles.obstacleWidth && dy + dr > obs.topHeight + this.obstacles.gapSize);
+
+            if (hitTop || hitBottom) {
+                this.audio.playExplosion();
+                return false;
+            }
+            return true;
+        });
+    }
+
+    handleScoring() {
         this.obstacles.obstacles.forEach(obs => {
             if (!obs.passed && obs.x + this.obstacles.obstacleWidth < this.dino.x) {
                 obs.passed = true;
                 this.incrementScore();
             }
         });
-
-        // Collision detection
-        if (!this.dino.invulnerable && this.obstacles.checkCollision(this.dino)) {
-            this.takeDamage();
-        }
     }
 
     draw() {
@@ -199,6 +236,13 @@ export class Game {
         this.speedBoostTimer = CONFIG.BONE_BOOST_DURATION;
         this.incrementScore(CONFIG.BONE_BONUS);
         this.showMessage('🦴 MEGA SPEED 🦴');
+    }
+
+    transformToDRex() {
+        this.audio.playTransform();
+        this.dRexTimer = CONFIG.DREX_DURATION;
+        this.dino.setDRex(true);
+        this.showMessage('🧬 ULTIMATE D-REX ACTIVATED 🧬');
     }
 
     incrementScore(amount = 1) {

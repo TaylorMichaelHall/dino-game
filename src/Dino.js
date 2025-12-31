@@ -1,5 +1,9 @@
 import { CONFIG } from './Constants.js';
 
+/**
+ * Dino Class
+ * Handles player physics, evolution state, and sprite rendering.
+ */
 export class Dino {
     constructor(game) {
         this.game = game;
@@ -9,36 +13,48 @@ export class Dino {
         this.y = this.game.height / 2;
         this.velocity = 0;
 
-        // Tuned for "Floaty" but responsive feel using deltaTime
         this.gravity = CONFIG.GRAVITY;
         this.jumpStrength = CONFIG.JUMP_STRENGTH;
         this.maxVelocity = CONFIG.MAX_FALL_SPEED;
 
-        this.radius = 20; // For circular collision approximation
+        this.radius = 20;
 
-        this.types = ['Raptor', 'Pterosaur', 'T-Rex'];
-        this.colors = CONFIG.DINO_COLORS; // Green, Orange, Red, Black
-
-        this.level = 0; // 0=Raptor, 1=Pterosaur, 2=T-Rex
+        this.types = ['Raptor', 'Quetzalcoatlus', 'T-Rex', 'Spinosaurus'];
+        this.level = 0;
         this.colorIndex = 0;
 
         this.invulnerable = false;
         this.invulnerableTimer = 0;
-        this.flashSpeed = CONFIG.FLASH_SPEED; // seconds
+        this.flashSpeed = CONFIG.FLASH_SPEED;
         this.timeSinceLastFlash = 0;
         this.visible = true;
+        this.isDRex = false;
+
+        this.initSprites();
+    }
+
+    initSprites() {
+        this.sprites = {
+            raptor: this.loadImage('/sprites/raptor.webp'),
+            quetzal: this.loadImage('/sprites/quetzalcoatlus.webp'),
+            trex: this.loadImage('/sprites/t-rex.png'),
+            spino: this.loadImage('/sprites/spinosaurus.png'),
+            drex: this.loadImage('/sprites/drex.webp')
+        };
+    }
+
+    loadImage(src) {
+        const img = new Image();
+        img.src = src;
+        return img;
     }
 
     update(deltaTime) {
-        // Physics (Pixels per second)
         this.velocity += this.gravity * deltaTime;
-
-        // Cap falling speed for smoother feel
         if (this.velocity > this.maxVelocity) this.velocity = this.maxVelocity;
-
         this.y += this.velocity * deltaTime;
 
-        // Ground/Ceiling collision
+        // Boundary collision
         if (this.y + (this.height * 0.8) > this.game.height) {
             this.y = this.game.height - (this.height * 0.8);
             this.velocity = 0;
@@ -49,7 +65,7 @@ export class Dino {
         }
 
         // Invulnerability Logic
-        if (this.invulnerable) {
+        if (this.invulnerable && !this.isDRex) {
             this.invulnerableTimer -= deltaTime;
             this.timeSinceLastFlash += deltaTime;
             if (this.timeSinceLastFlash >= this.flashSpeed) {
@@ -69,39 +85,22 @@ export class Dino {
         ctx.save();
         ctx.translate(this.x + this.width / 2, this.y + this.height / 2);
 
-        // Rotate based on velocity (scaled for pixels/sec)
         const rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.0015)));
         ctx.rotate(rotation);
 
-        const color = this.getCurrentColor();
-        ctx.fillStyle = color;
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-
-        const type = this.types[this.level];
-
-        // Scale down slightly to fit the 40x40 box better with complex paths
         ctx.scale(0.8, 0.8);
 
-        if (type === 'Raptor') {
-            this.drawRaptor(ctx);
-        } else if (type === 'Pterosaur') {
-            this.drawPterosaur(ctx);
-        } else if (type === 'T-Rex') {
-            this.drawTRex(ctx);
+        if (this.isDRex) {
+            this.drawDRex(ctx);
+        } else {
+            const type = this.types[this.level];
+            if (type === 'Raptor') this.drawRaptor(ctx);
+            else if (type === 'Quetzalcoatlus') this.drawQuetzalcoatlus(ctx);
+            else if (type === 'T-Rex') this.drawTRex(ctx);
+            else if (type === 'Spinosaurus') this.drawSpinosaurus(ctx);
         }
 
         ctx.restore();
-    }
-
-    getCurrentColor() {
-        return this.colors[this.colorIndex % this.colors.length];
-    }
-
-    getNextColor() {
-        // Look ahead logic for cycling
-        let nextIndex = this.colorIndex + 1;
-        return this.colors[nextIndex % this.colors.length];
     }
 
     jump() {
@@ -116,13 +115,21 @@ export class Dino {
         }
     }
 
+    setDRex(active) {
+        this.isDRex = active;
+        if (active) {
+            this.visible = true;
+            this.invulnerable = false;
+        }
+    }
+
     getDinoName() {
         return this.types[this.level];
     }
 
     takeDamage() {
         this.invulnerable = true;
-        this.invulnerableTimer = CONFIG.INVULNERABLE_DURATION; // 1 second
+        this.invulnerableTimer = CONFIG.INVULNERABLE_DURATION;
     }
 
     reset() {
@@ -132,147 +139,52 @@ export class Dino {
         this.colorIndex = 0;
         this.invulnerable = false;
         this.visible = true;
+        this.isDRex = false;
     }
-
-    // --- High Fidelity Shapes ---
 
     drawRaptor(ctx) {
-        // High-Fidelity Raptor
-        ctx.beginPath();
-        // Tail (S-curve)
-        ctx.moveTo(-20, 0);
-        ctx.quadraticCurveTo(-35, -15, -50, -5);
-        ctx.quadraticCurveTo(-35, 5, -20, 10);
-
-        // Body (Lean)
-        ctx.lineTo(-5, 15);
-        ctx.quadraticCurveTo(5, 18, 15, 10); // Chest
-
-        // Neck & Head
-        ctx.lineTo(15, -5); // Neck up
-        ctx.quadraticCurveTo(18, -15, 25, -18); // Head top
-        ctx.lineTo(35, -15); // Snout tip
-        ctx.lineTo(35, -8); // Jaw front
-        ctx.lineTo(25, -5); // Under jaw
-        ctx.quadraticCurveTo(15, -5, 10, 5); // Throat
-
-        // Back
-        ctx.lineTo(-10, 0);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Eye
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(25, -12, 2.5, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Arm (Claw)
-        ctx.strokeStyle = '#fff';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(10, 5);
-        ctx.lineTo(18, 3);
-        ctx.lineTo(22, 6);
-        ctx.stroke();
-
-        // Strong Leg (Digitigrade)
-        ctx.beginPath();
-        ctx.moveTo(-5, 10);
-        ctx.lineTo(-10, 25); // Thigh
-        ctx.lineTo(0, 32);  // Toe
-        ctx.stroke();
+        if (this.sprites.raptor.complete) {
+            const s = 80;
+            ctx.drawImage(this.sprites.raptor, -s / 2, -s / 2, s, s);
+        } else {
+            ctx.fillRect(-20, -20, 40, 40);
+        }
     }
 
-    drawPterosaur(ctx) {
-        // High-Fidelity Pterosaur
-        // Body (Small/Aerodynamic)
-        ctx.beginPath();
-        ctx.moveTo(-10, 0);
-        ctx.quadraticCurveTo(0, 10, 15, 0);
-        ctx.lineTo(10, -5);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Head & Crest
-        ctx.beginPath();
-        ctx.moveTo(10, -3);
-        ctx.lineTo(15, -25); // Crest Tip
-        ctx.lineTo(15, -5); // Back of head
-        ctx.lineTo(35, -8); // Beak Tip
-        ctx.lineTo(15, 2);  // Jaw
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Wings (Large & Dynamic)
-        ctx.beginPath();
-        ctx.moveTo(0, 0);
-        ctx.bezierCurveTo(10, -40, 40, -50, 55, -45); // Top of wing
-        ctx.quadraticCurveTo(30, -10, -5, 5); // Membrane bottom
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-
-        // Eye
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(18, -4, 2, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Feet (Tucked)
-        ctx.beginPath();
-        ctx.moveTo(-5, 5);
-        ctx.lineTo(-12, 12);
-        ctx.stroke();
+    drawQuetzalcoatlus(ctx) {
+        if (this.sprites.quetzal.complete) {
+            const s = 100;
+            ctx.drawImage(this.sprites.quetzal, -s / 2, -s / 2, s, s);
+        } else {
+            ctx.fillRect(-25, -25, 50, 50);
+        }
     }
 
     drawTRex(ctx) {
-        // Massive Head and Body
-        ctx.beginPath();
+        if (this.sprites.trex.complete) {
+            const s = 120;
+            ctx.drawImage(this.sprites.trex, -s / 2, -s / 2, s, s);
+        } else {
+            ctx.fillRect(-25, -25, 50, 50);
+        }
+    }
 
-        // Tail
-        ctx.moveTo(-20, 15);
-        ctx.quadraticCurveTo(-45, 30, -60, 10); // Extends further back and curves
-        ctx.quadraticCurveTo(-45, 0, -20, -5); // Back
+    drawSpinosaurus(ctx) {
+        if (this.sprites.spino.complete) {
+            const s = 140;
+            ctx.drawImage(this.sprites.spino, -s / 2, -s / 2, s, s);
+        } else {
+            ctx.fillRect(-30, -30, 60, 60);
+        }
+    }
 
-        // Back hump
-        ctx.quadraticCurveTo(-5, -15, 10, -20);
-
-        // Head (Boxy)
-        ctx.lineTo(15, -30); // Neck up
-        ctx.lineTo(35, -30); // Snout
-        ctx.lineTo(35, -15); // Jaw front
-        ctx.lineTo(20, -15); // Jaw back
-        ctx.lineTo(15, -10); // Throat
-
-        // Belly
-        ctx.quadraticCurveTo(10, 15, 0, 20);
-        ctx.lineTo(-20, 15);
-
-        ctx.fill();
-        ctx.stroke();
-
-        // Eye
-        ctx.fillStyle = '#fff';
-        ctx.beginPath();
-        ctx.arc(25, -22, 3, 0, Math.PI * 2);
-        ctx.fill();
-
-        // Tiny Arm
-        ctx.strokeStyle = '#fff';
-        ctx.beginPath();
-        ctx.moveTo(10, 5);
-        ctx.lineTo(18, 10);
-        ctx.stroke();
-
-        // Big Leg
-        ctx.beginPath();
-        ctx.moveTo(-5, 15);
-        ctx.lineTo(0, 30);
-        ctx.lineTo(10, 30);
-        ctx.stroke();
+    drawDRex(ctx) {
+        if (this.sprites.drex.complete) {
+            const s = 160;
+            ctx.drawImage(this.sprites.drex, -s / 2, -s / 2, s, s);
+        } else {
+            ctx.fillStyle = '#0ff';
+            ctx.fillRect(-40, -40, 80, 80);
+        }
     }
 }
