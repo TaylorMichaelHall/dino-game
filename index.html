@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ian's Flappy Dino</title>
+</head>
+
+<body>
+  <div id="game-container">
+    <canvas id="gameCanvas"></canvas>
+    <div id="ui-layer">
+      <div id="start-screen" class="screen">
+        <h1>Ian's Flappy Dino</h1>
+        <p>Press Space, Click, or Tap to Start</p>
+        <p class="small">Avoid the DNA strands!</p>
+        <p class="high-score-start">High Score: <span id="start-high-score">0</span></p>
+        <button id="reset-high-score-btn" class="secondary-btn">Reset High Score</button>
+      </div>
+      <div id="game-over-screen" class="hidden screen">
+        <h1>Extinct!</h1>
+        <p>Score: <span id="final-score">0</span></p>
+        <p>High Score: <span id="high-score">0</span></p>
+        <button id="restart-btn">Try Again</button>
+      </div>
+      <div id="hud" class="hidden">
+        <div class="score-container">Score: <span id="score">0</span></div>
+        <div class="hearts-container" id="hearts">❤️❤️❤️</div>
+      </div>
+      <div id="message-overlay" class="hidden">
+        <h2 id="message-text"></h2>
+      </div>
+    </div>
+  </div>
+  <script type="module" src="/src/main.js"></script>
+</body>
+
+</html>
