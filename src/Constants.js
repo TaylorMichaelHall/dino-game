@@ -19,6 +19,7 @@ export const CONFIG = {
     GAP_SIZE: 150,
     OBSTACLE_WIDTH: 60,
     SPAWN_INTERVAL: 2000,
+    INITIAL_SPAWN_DELAY: -4500,
 
     // Powerups
     BONE_BONUS: 50,

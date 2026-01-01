@@ -4,7 +4,7 @@ export class ObstacleManager {
     constructor(game) {
         this.game = game;
         this.obstacles = [];
-        this.spawnTimer = 0;
+        this.spawnTimer = CONFIG.INITIAL_SPAWN_DELAY;
         this.spawnInterval = CONFIG.SPAWN_INTERVAL; // ms
         this.gapSize = CONFIG.GAP_SIZE;
         this.obstacleWidth = CONFIG.OBSTACLE_WIDTH;
@@ -154,7 +154,7 @@ export class ObstacleManager {
 
     reset() {
         this.obstacles = [];
-        this.spawnTimer = -2000; // Delay first spawn to allow GO IAN message
+        this.spawnTimer = CONFIG.INITIAL_SPAWN_DELAY;
         this.colorIndex = 0;
         this.speed = CONFIG.BASE_SPEED;
     }
