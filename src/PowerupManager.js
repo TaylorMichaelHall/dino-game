@@ -9,7 +9,6 @@ export class PowerupManager {
         this.radius = 15;
 
         const basePath = import.meta.env.BASE_URL || '/';
-        this.diamondImage = this.loadImage(`${basePath}sprites/diamond.png`);
     }
 
     loadImage(src) {
@@ -81,6 +80,8 @@ export class PowerupManager {
     }
 
     draw(ctx) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
         this.powerups.forEach(p => {
             if (p.type === 'BONE') this.drawBone(ctx, p.x, p.y);
             else if (p.type === 'DIAMOND') this.drawDiamond(ctx, p.x, p.y);
@@ -88,38 +89,13 @@ export class PowerupManager {
     }
 
     drawBone(ctx, x, y) {
-        ctx.save();
-        ctx.translate(x, y);
-        ctx.rotate(Math.PI / 4);
-
-        ctx.fillStyle = '#fff';
-        ctx.strokeStyle = '#ccc';
-        ctx.lineWidth = 1;
-
-        // Bone Body
-        ctx.fillRect(-10, -3, 20, 6);
-
-        // Bone Ends
-        const endSize = 5;
-        ctx.beginPath();
-        ctx.arc(-10, -3, endSize, 0, Math.PI * 2);
-        ctx.arc(-10, 3, endSize, 0, Math.PI * 2);
-        ctx.arc(10, -3, endSize, 0, Math.PI * 2);
-        ctx.arc(10, 3, endSize, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.stroke();
-
-        ctx.restore();
+        ctx.font = '30px serif';
+        ctx.fillText('🦴', x, y);
     }
 
     drawDiamond(ctx, x, y) {
-        if (this.diamondImage.complete && this.diamondImage.naturalWidth > 0) {
-            const s = 40;
-            ctx.drawImage(this.diamondImage, x - s / 2, y - s / 2, s, s);
-        } else {
-            ctx.fillStyle = '#f0f';
-            ctx.fillRect(x - 20, y - 20, 40, 40);
-        }
+        ctx.font = '40px serif';
+        ctx.fillText('💎', x, y);
     }
 
     checkCollision(dino) {

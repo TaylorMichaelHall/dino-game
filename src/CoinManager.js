@@ -6,7 +6,6 @@ export class CoinManager {
         this.coins = [];
         this.coinRadius = 12;
         const basePath = import.meta.env.BASE_URL || '/';
-        this.coinImage = this.loadImage(`${basePath}sprites/coin.png`);
 
         // Letter patterns (7-row grids for more detail/size)
         this.letters = {
@@ -168,19 +167,29 @@ export class CoinManager {
     }
 
     draw(ctx) {
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.font = '24px serif';
         this.coins.forEach(coin => {
-            if (this.coinImage.complete && this.coinImage.naturalWidth > 0) {
-                const s = 24;
-                ctx.drawImage(this.coinImage, coin.x - s / 2, coin.y - s / 2, s, s);
-            } else {
-                ctx.fillStyle = '#ffd700';
-                ctx.beginPath();
-                ctx.arc(coin.x, coin.y, this.coinRadius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.strokeStyle = '#daa520';
-                ctx.lineWidth = 2;
-                ctx.stroke();
+            ctx.fillText('🪙', coin.x, coin.y);
+        });
+    }
+
+    removeOverlappingWithObstacle(obs) {
+        const padding = 15;
+        this.coins = this.coins.filter(coin => {
+            // Check if coin is horizontally within obstacle bounds
+            if (
+                coin.x + this.coinRadius > obs.x - padding &&
+                coin.x - this.coinRadius < obs.x + this.game.obstacles.obstacleWidth + padding
+            ) {
+                // Check if coin is vertically hitting the top or bottom pipe
+                if (coin.y - this.coinRadius < obs.topHeight + padding ||
+                    coin.y + this.coinRadius > obs.topHeight + this.game.obstacles.gapSize - padding) {
+                    return false; // Remove this coin
+                }
             }
+            return true;
         });
     }
 

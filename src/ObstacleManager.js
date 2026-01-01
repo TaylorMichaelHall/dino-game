@@ -35,12 +35,17 @@ export class ObstacleManager {
         const maxHeight = this.game.height - this.gapSize - minHeight;
         const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
 
-        this.obstacles.push({
+        const newObs = {
             x: this.game.width,
             topHeight: topHeight,
             passed: false,
             color: this.colors[this.colorIndex % this.colors.length]
-        });
+        };
+
+        this.obstacles.push(newObs);
+
+        // Remove coins that would overlap with this new obstacle
+        this.game.coins.removeOverlappingWithObstacle(newObs);
     }
 
     draw(ctx) {
