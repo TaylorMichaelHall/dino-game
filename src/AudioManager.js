@@ -1,3 +1,5 @@
+import { scheduleJurassicLoop, JURASSIC_LOOP_DURATION } from './musicLoop.js';
+
 /**
  * AudioManager
  * Generates procedural sound effects using the Web Audio API.
@@ -6,6 +8,24 @@
 export class AudioManager {
     constructor() {
         this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+
+        // Background music chain (filter -> gain -> destination)
+        this.musicFilter = this.ctx.createBiquadFilter();
+        this.musicFilter.type = 'lowpass';
+        this.musicFilter.frequency.setValueAtTime(1800, this.ctx.currentTime);
+
+        this.musicGain = this.ctx.createGain();
+        this.musicGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
+
+        this.musicFilter.connect(this.musicGain);
+        this.musicGain.connect(this.ctx.destination);
+
+        this.musicLoopId = null;
+        this.musicPlaying = false;
+        this.musicMuted = true;
+        this.musicVolume = 0.1; // keep loop audible under punchier SFX
+        this.musicLoopDuration = JURASSIC_LOOP_DURATION;
+        this.sfxMuted = false;
     }
 
     // --- Sound Synthesis ---
@@ -14,6 +34,7 @@ export class AudioManager {
      * Short upward sine wave for jumping
      */
     playJump() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -36,6 +57,7 @@ export class AudioManager {
      * Low thud/crunch for taking damage
      */
     playHit() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -58,6 +80,7 @@ export class AudioManager {
      * High pitched "ding" for scoring
      */
     playPoint() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -80,6 +103,7 @@ export class AudioManager {
      * Rising arpeggio for evolution
      */
     playUpgrade() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const playNote = (freq, delay) => {
             const osc = this.ctx.createOscillator();
@@ -103,6 +127,7 @@ export class AudioManager {
      * Long downward slide for game over
      */
     playGameOver() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -125,6 +150,7 @@ export class AudioManager {
      * Bright "Power Up" sequence
      */
     playPowerup() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const playNote = (freq, delay) => {
             const osc = this.ctx.createOscillator();
@@ -145,6 +171,7 @@ export class AudioManager {
     }
 
     playTransform() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -160,6 +187,7 @@ export class AudioManager {
     }
 
     playExplosion() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -178,6 +206,7 @@ export class AudioManager {
      * Fun, rewarding sound for smashing DNA as Super T-Rex
      */
     playSuperSmash() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const playTone = (freq, type, duration, delay) => {
             const osc = this.ctx.createOscillator();
@@ -205,6 +234,7 @@ export class AudioManager {
      * Bright, high-pitched chime for collecting coins
      */
     playCoin() {
+        if (this.sfxMuted) return;
         this.resumeContext();
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
@@ -221,6 +251,86 @@ export class AudioManager {
 
         osc.start();
         osc.stop(this.ctx.currentTime + 0.15);
+    }
+
+    setSfxMuted(muted) {
+        this.sfxMuted = muted;
+    }
+
+    /**
+     * --- Background Music Loop ---
+     * Light chiptune-inspired bed that runs underneath gameplay.
+     */
+    startMusic() {
+        this.resumeContext();
+        if (this.musicPlaying) {
+            this.setMusicMuted(false);
+            return;
+        }
+
+        this.musicPlaying = true;
+        this.setMusicMuted(false);
+        this.scheduleMusicLoop();
+    }
+
+    stopMusic() {
+        if (this.musicLoopId) {
+            clearTimeout(this.musicLoopId);
+            this.musicLoopId = null;
+        }
+        this.musicPlaying = false;
+        this.setMusicMuted(true);
+    }
+
+    setMusicMuted(muted) {
+        this.musicMuted = muted;
+        const now = this.ctx.currentTime;
+        const target = muted ? 0.0001 : this.musicVolume;
+        const rampTime = muted ? 0.2 : 0.5;
+
+        this.musicGain.gain.cancelScheduledValues(now);
+        this.musicGain.gain.setValueAtTime(this.musicGain.gain.value || 0.0001, now);
+        this.musicGain.gain.linearRampToValueAtTime(target, now + rampTime);
+
+        if (!muted && this.musicPlaying && !this.musicLoopId) {
+            this.scheduleMusicLoop();
+        }
+    }
+
+    scheduleMusicLoop() {
+        if (!this.musicPlaying) return;
+
+        scheduleJurassicLoop(this);
+        this.musicLoopId = setTimeout(() => this.scheduleMusicLoop(), this.musicLoopDuration * 1000);
+    }
+
+    playMusicNote(freq, startTime, duration, type, volume, vibratoHz = 0) {
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, startTime);
+
+        if (vibratoHz > 0) {
+            const vibrato = this.ctx.createOscillator();
+            const vibratoGain = this.ctx.createGain();
+            vibrato.frequency.setValueAtTime(vibratoHz, startTime);
+            vibratoGain.gain.setValueAtTime(freq * 0.02, startTime);
+            vibrato.connect(vibratoGain);
+            vibratoGain.connect(osc.frequency);
+            vibrato.start(startTime);
+            vibrato.stop(startTime + duration);
+        }
+
+        gain.gain.setValueAtTime(0.0001, startTime);
+        gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+
+        osc.connect(gain);
+        gain.connect(this.musicFilter);
+
+        osc.start(startTime);
+        osc.stop(startTime + duration + 0.1);
     }
 
     /**

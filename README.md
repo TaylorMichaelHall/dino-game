@@ -10,7 +10,8 @@ A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand 
     - 🦴 **Dino Bone**: (+5 points, 1.5x Speed Boost for 5s). Spawns every 5-15 points.
     - 💎 **Diamond (Super T-Rex)**: Transform into the invulnerable **Super T-Rex** for 30 seconds! In this mode, you smash through DNA strands instead of taking damage. Spawns every 50 points.
 - **Dynamic Difficulty**: Game speed increases with each evolution level.
-- **Procedural Audio**: 8-bit style sound effects (Jump, Hit, Point, Upgrade, Powerup, Explosion) synthesized via Web Audio API.
+- **Procedural Audio**: 8-bit style sound effects (Jump, Hit, Point, Upgrade, Powerup, Explosion) and a looping chiptune soundtrack synthesized via the Web Audio API.
+- **Audio Toggles**: Music/SFX buttons below the controls let you instantly mute or enable the soundtrack and effects.
 - **Themes**: Atmospheric background gradients cycle every 30 points.
 - **Health System**: 3 hearts with 1s invulnerability frames. Hearts refill upon evolution.
 - **Hit Flash**: Intense visual feedback (screen/border flash) when taking damage or smashing DNA.
@@ -23,6 +24,7 @@ A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand 
 - **Space / Click / Tap**: Jump
 - **P**: Pause / Resume
 - **R**: Restart (on Game Over screen)
+- **Footer buttons**: Toggle Music or SFX anytime without refreshing.
 
 ## 🚀 Getting Started
 
@@ -65,6 +67,7 @@ All gameplay logic is centralized in `src/Constants.js`. You can easily adjust:
 - `src/CoinManager.js`: Custom coin patterns and message spawning ("GO IAN").
 - `src/PowerupManager.js`: Bone and Diamond powerup lifecycle.
 - `src/AudioManager.js`: On-the-fly sound effect synthesis.
+- `src/musicLoop.js`: Defines the procedural Jurassic background soundtrack.
 - `src/Constants.js`: Centralized game configuration.
 - `src/style.css`: UI layout and background themes.
 

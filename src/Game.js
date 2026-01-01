@@ -29,6 +29,9 @@ export class Game {
         this.coins = new CoinManager(this);
         this.titleAnimation = new TitleManager(this);
 
+        this.musicEnabled = true;
+        this.sfxEnabled = true;
+
         this.score = 0;
         this.highScore = parseInt(localStorage.getItem('flappyDinoHighScore') || 0);
         this.hearts = CONFIG.MAX_HEARTS;
@@ -42,6 +45,7 @@ export class Game {
 
         this.initUI();
         this.bindEvents();
+        this.updateAudioButtons();
 
         // Update High Score Display
         this.ui.container.classList.add(CONFIG.THEMES[0]);
@@ -70,6 +74,8 @@ export class Game {
         this.ui.resumeBtn = document.getElementById('resume-btn');
         this.ui.powerupTimer = document.getElementById('powerup-timer');
         this.ui.timerSeconds = document.getElementById('timer-seconds');
+        this.ui.musicToggle = document.getElementById('music-toggle');
+        this.ui.sfxToggle = document.getElementById('sfx-toggle');
     }
 
     bindEvents() {
@@ -111,6 +117,33 @@ export class Game {
             e.stopPropagation();
             if (this.state === 'PAUSED') this.togglePause();
         });
+
+        if (this.ui.musicToggle) {
+            this.ui.musicToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.musicEnabled = !this.musicEnabled;
+                if (!this.musicEnabled) {
+                    this.audio.stopMusic();
+                } else if (this.state === 'PLAYING') {
+                    this.audio.startMusic();
+                } else if (this.state === 'PAUSED') {
+                    this.audio.startMusic();
+                    this.audio.setMusicMuted(true);
+                }
+                this.updateAudioButtons();
+            });
+        }
+
+        if (this.ui.sfxToggle) {
+            this.ui.sfxToggle.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.sfxEnabled = !this.sfxEnabled;
+                this.audio.setSfxMuted(!this.sfxEnabled);
+                this.updateAudioButtons();
+            });
+        }
     }
 
     handleInput() {
@@ -130,6 +163,9 @@ export class Game {
         this.dino.jump();
         this.audio.playJump();
         this.coins.spawnStartMessage();
+        if (this.musicEnabled) {
+            this.audio.startMusic();
+        }
     }
 
     resetGame() {
@@ -143,6 +179,7 @@ export class Game {
         this.coins.reset();
         this.state = 'START';
         this.ui.pause.classList.add('hidden');
+        this.audio.stopMusic();
 
         // Reset themes
         CONFIG.THEMES.forEach(theme => this.ui.container.classList.remove(theme));
@@ -164,9 +201,15 @@ export class Game {
         if (this.state === 'PLAYING') {
             this.state = 'PAUSED';
             this.ui.pause.classList.remove('hidden');
+            if (this.musicEnabled && this.audio.musicPlaying) {
+                this.audio.setMusicMuted(true);
+            }
         } else if (this.state === 'PAUSED') {
             this.state = 'PLAYING';
             this.ui.pause.classList.add('hidden');
+            if (this.musicEnabled && this.audio.musicPlaying) {
+                this.audio.setMusicMuted(false);
+            }
         }
     }
 
@@ -383,6 +426,17 @@ export class Game {
         this.ui.finalScore.innerText = this.score;
     }
 
+    updateAudioButtons() {
+        if (this.ui.musicToggle) {
+            this.ui.musicToggle.innerText = `Music: ${this.musicEnabled ? 'On' : 'Off'}`;
+            this.ui.musicToggle.classList.toggle('off', !this.musicEnabled);
+        }
+        if (this.ui.sfxToggle) {
+            this.ui.sfxToggle.innerText = `SFX: ${this.sfxEnabled ? 'On' : 'Off'}`;
+            this.ui.sfxToggle.classList.toggle('off', !this.sfxEnabled);
+        }
+    }
+
     showMessage(text) {
         this.ui.overlayText.innerText = text;
 
@@ -396,6 +450,7 @@ export class Game {
     gameOver() {
         this.state = 'GAME_OVER';
         this.audio.playGameOver();
+        this.audio.stopMusic();
         if (this.score > this.highScore) {
             this.highScore = this.score;
             localStorage.setItem('flappyDinoHighScore', this.highScore);
