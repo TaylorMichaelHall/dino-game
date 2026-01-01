@@ -68,6 +68,8 @@ export class Game {
             pause: document.getElementById('pause-screen')
         };
         this.ui.resumeBtn = document.getElementById('resume-btn');
+        this.ui.powerupTimer = document.getElementById('powerup-timer');
+        this.ui.timerSeconds = document.getElementById('timer-seconds');
     }
 
     bindEvents() {
@@ -217,9 +219,13 @@ export class Game {
 
         if (this.superTRexTimer > 0) {
             this.superTRexTimer -= deltaTime;
+            this.ui.powerupTimer.classList.remove('hidden');
+            this.ui.timerSeconds.innerText = Math.ceil(this.superTRexTimer);
+
             if (this.superTRexTimer <= 0) {
                 this.dino.setSuperTRex(false);
                 this.showMessage('Super T-Rex Power Depleted');
+                this.ui.powerupTimer.classList.add('hidden');
             }
         }
     }
