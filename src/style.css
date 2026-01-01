@@ -126,10 +126,50 @@ canvas {
 h1 {
   font-size: 3rem;
   font-weight: 900;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  margin-bottom: 1rem;
   text-align: center;
   color: #fff;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  margin-bottom: 1rem;
+
+  /* Lightning Glow Effect */
+  text-shadow:
+    0 0 5px #fff,
+    0 0 10px #fff,
+    0 0 20px var(--color-accent),
+    0 0 30px var(--color-accent),
+    0 0 40px var(--color-accent);
+  animation: lightning-flicker 2s infinite;
+}
+
+@keyframes lightning-flicker {
+
+  0%,
+  19.999%,
+  22%,
+  62.999%,
+  64%,
+  64.999%,
+  70%,
+  100% {
+    opacity: 1;
+    text-shadow:
+      0 0 5px #fff,
+      0 0 10px #fff,
+      0 0 20px var(--color-accent),
+      0 0 30px var(--color-accent),
+      0 0 40px var(--color-accent);
+  }
+
+  20%,
+  21.999%,
+  63%,
+  63.999%,
+  65%,
+  69.999% {
+    opacity: 0.4;
+    text-shadow: none;
+  }
 }
 
 p {

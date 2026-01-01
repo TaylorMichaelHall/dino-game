@@ -1,4 +1,4 @@
-# Ian's Flappy Dino
+# Ian's Jurassic Escape
 
 A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand obstacles, and powerful transformations. Built with Vanilla JavaScript and Canvas API.
 
@@ -13,8 +13,16 @@ A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand 
 - **Procedural Audio**: 8-bit style sound effects (Jump, Hit, Point, Upgrade, Powerup, Explosion) synthesized via Web Audio API.
 - **Themes**: Atmospheric background gradients cycle every 30 points.
 - **Health System**: 3 hearts with 1s invulnerability frames. Hearts refill upon evolution.
+- **Hit Flash**: Intense visual feedback (screen/border flash) when taking damage or smashing DNA.
 - **Persistence**: Local storage tracks your all-time high score.
-- **Modern UI**: Polished start screen, game over screen, and dynamic message overlays.
+- **Modern UI**: Polished screens for Start, Pause, and Game Over, with smooth CSS animations.
+- **Personalized Intro**: A custom "GO IAN" coin message welcomes you at the start of every run.
+
+## ⌨️ Controls
+
+- **Space / Click / Tap**: Jump
+- **P**: Pause / Resume
+- **R**: Restart (on Game Over screen)
 
 ## 🚀 Getting Started
 
@@ -54,6 +62,7 @@ All gameplay logic is centralized in `src/Constants.js`. You can easily adjust:
 - `src/Game.js`: Main loop, state management, and entity coordination.
 - `src/Dino.js`: Physics, evolution logic, and sprite rendering.
 - `src/ObstacleManager.js`: DNA strand spawning and movement.
+- `src/CoinManager.js`: Custom coin patterns and message spawning ("GO IAN").
 - `src/PowerupManager.js`: Bone and Diamond powerup lifecycle.
 - `src/AudioManager.js`: On-the-fly sound effect synthesis.
 - `src/Constants.js`: Centralized game configuration.

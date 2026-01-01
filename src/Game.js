@@ -3,6 +3,7 @@ import { ObstacleManager } from './ObstacleManager.js';
 import { PowerupManager } from './PowerupManager.js';
 import { CoinManager } from './CoinManager.js';
 import { AudioManager } from './AudioManager.js';
+import { TitleManager } from './TitleManager.js';
 import { CONFIG } from './Constants.js';
 
 /**
@@ -26,6 +27,7 @@ export class Game {
         this.obstacles = new ObstacleManager(this);
         this.powerups = new PowerupManager(this);
         this.coins = new CoinManager(this);
+        this.titleAnimation = new TitleManager(this);
 
         this.score = 0;
         this.highScore = parseInt(localStorage.getItem('flappyDinoHighScore') || 0);
@@ -76,10 +78,13 @@ export class Game {
         });
 
         // Mouse/Touch (bind to window to catch clicks on the UI overlay)
-        window.addEventListener('mousedown', () => this.handleInput());
+        window.addEventListener('mousedown', (e) => {
+            if (e.target.closest('button')) return;
+            this.handleInput();
+        });
         window.addEventListener('touchstart', (e) => {
             // Only prevent default if we're in the game area to avoid breaking other UI
-            if (e.target.closest('#game-container')) {
+            if (e.target.closest('#game-container') && !e.target.closest('button')) {
                 this.handleInput();
                 if (this.state === 'PLAYING') e.preventDefault();
             }
@@ -177,6 +182,8 @@ export class Game {
 
         if (this.state === 'PLAYING') {
             this.update(deltaTime);
+        } else if (this.state === 'START') {
+            this.titleAnimation.update(deltaTime);
         }
 
         this.draw();
@@ -283,6 +290,9 @@ export class Game {
 
     draw() {
         // Draw Background (can add parallax here later)
+        if (this.state === 'START') {
+            this.titleAnimation.draw(this.ctx);
+        }
 
         this.obstacles.draw(this.ctx);
         this.powerups.draw(this.ctx);
