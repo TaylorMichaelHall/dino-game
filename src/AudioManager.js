@@ -47,6 +47,22 @@ export class AudioManager {
     // --- Sound Synthesis ---
 
     /**
+     * Helper to clean up audio nodes after they finish playing
+     */
+    setupCleanup(osc, gain, stopTime) {
+        osc.onended = () => {
+            try {
+                osc.disconnect();
+                gain.disconnect();
+            } catch (e) {
+                // Already disconnected
+            }
+        };
+        osc.start(this.ctx.currentTime);
+        osc.stop(stopTime);
+    }
+
+    /**
      * Short upward sine wave for jumping
      */
     playJump() {
@@ -65,8 +81,7 @@ export class AudioManager {
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
+        this.setupCleanup(osc, gain, this.ctx.currentTime + 0.1);
     }
 
     /**
@@ -88,8 +103,7 @@ export class AudioManager {
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.2);
+        this.setupCleanup(osc, gain, this.ctx.currentTime + 0.2);
     }
 
     /**
@@ -111,8 +125,7 @@ export class AudioManager {
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.1);
+        this.setupCleanup(osc, gain, this.ctx.currentTime + 0.1);
     }
 
     /**
@@ -129,6 +142,13 @@ export class AudioManager {
             gain.gain.exponentialRampToValueAtTime(0.01 * this.sfxVolumeScale, this.ctx.currentTime + delay + 0.2);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
+
+            osc.onended = () => {
+                try {
+                    osc.disconnect();
+                    gain.disconnect();
+                } catch (e) { }
+            };
             osc.start(this.ctx.currentTime + delay);
             osc.stop(this.ctx.currentTime + delay + 0.2);
         };
@@ -158,8 +178,7 @@ export class AudioManager {
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.5);
+        this.setupCleanup(osc, gain, this.ctx.currentTime + 0.5);
     }
 
     /**
@@ -176,6 +195,13 @@ export class AudioManager {
             gain.gain.exponentialRampToValueAtTime(0.01 * this.sfxVolumeScale, this.ctx.currentTime + delay + 0.1);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
+
+            osc.onended = () => {
+                try {
+                    osc.disconnect();
+                    gain.disconnect();
+                } catch (e) { }
+            };
             osc.start(this.ctx.currentTime + delay);
             osc.stop(this.ctx.currentTime + delay + 0.1);
         };
@@ -198,8 +224,8 @@ export class AudioManager {
         gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.5);
+
+        this.setupCleanup(osc, gain, this.ctx.currentTime + 0.5);
     }
 
     playExplosion() {
@@ -214,8 +240,8 @@ export class AudioManager {
         gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.3);
+
+        this.setupCleanup(osc, gain, this.ctx.currentTime + 0.3);
     }
 
     /**
@@ -236,6 +262,13 @@ export class AudioManager {
 
             osc.connect(gain);
             gain.connect(this.ctx.destination);
+
+            osc.onended = () => {
+                try {
+                    osc.disconnect();
+                    gain.disconnect();
+                } catch (e) { }
+            };
             osc.start(this.ctx.currentTime + delay);
             osc.stop(this.ctx.currentTime + delay + duration);
         };
@@ -265,8 +298,7 @@ export class AudioManager {
         osc.connect(gain);
         gain.connect(this.ctx.destination);
 
-        osc.start();
-        osc.stop(this.ctx.currentTime + 0.15);
+        this.setupCleanup(osc, gain, this.ctx.currentTime + 0.15);
     }
 
     /**
@@ -294,6 +326,14 @@ export class AudioManager {
         oscB.connect(gain);
 
         gain.connect(this.ctx.destination);
+
+        oscA.onended = () => {
+            try {
+                oscA.disconnect();
+                oscB.disconnect();
+                gain.disconnect();
+            } catch (e) { }
+        };
 
         oscA.start(now);
         oscB.start(now);
@@ -378,15 +418,17 @@ export class AudioManager {
         osc.type = type;
         osc.frequency.setValueAtTime(freq, startTime);
 
+        let vibrato = null;
+        let vibratoGain = null;
         if (vibratoHz > 0) {
-            const vibrato = this.ctx.createOscillator();
-            const vibratoGain = this.ctx.createGain();
+            vibrato = this.ctx.createOscillator();
+            vibratoGain = this.ctx.createGain();
             vibrato.frequency.setValueAtTime(vibratoHz, startTime);
             vibratoGain.gain.setValueAtTime(freq * 0.02, startTime);
             vibrato.connect(vibratoGain);
             vibratoGain.connect(osc.frequency);
             vibrato.start(startTime);
-            vibrato.stop(startTime + duration);
+            vibrato.stop(startTime + duration + release);
         }
 
         gain.gain.setValueAtTime(0.0001, startTime);
@@ -396,11 +438,18 @@ export class AudioManager {
         osc.connect(gain);
         gain.connect(this.musicFilter);
 
-        const node = { osc, gain };
+        const node = { osc, gain, vibrato, vibratoGain };
         this.activeMusicNodes.add(node);
         osc.onended = () => {
             this.activeMusicNodes.delete(node);
-            try { gain.disconnect(); } catch (e) { /* noop */ }
+            try {
+                osc.disconnect();
+                gain.disconnect();
+                if (vibrato) {
+                    vibrato.disconnect();
+                    vibratoGain.disconnect();
+                }
+            } catch (e) { /* noop */ }
         };
 
         osc.start(startTime);
@@ -412,9 +461,14 @@ export class AudioManager {
             try {
                 node.osc.onended = null;
                 node.osc.stop();
+                node.osc.disconnect();
+                node.gain.disconnect();
+                if (node.vibrato) {
+                    node.vibrato.stop();
+                    node.vibrato.disconnect();
+                    node.vibratoGain.disconnect();
+                }
             } catch (e) { /* node already stopped */ }
-            try { node.osc.disconnect(); } catch (e) { /* noop */ }
-            try { node.gain.disconnect(); } catch (e) { /* noop */ }
         });
         this.activeMusicNodes.clear();
     }
@@ -428,3 +482,4 @@ export class AudioManager {
         }
     }
 }
+
