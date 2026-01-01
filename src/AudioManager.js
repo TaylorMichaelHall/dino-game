@@ -26,6 +26,7 @@ export class AudioManager {
         this.musicVolume = 0.1; // keep loop audible under punchier SFX
         this.musicLoopDuration = JURASSIC_LOOP_DURATION;
         this.sfxMuted = false;
+        this.activeMusicNodes = new Set();
     }
 
     // --- Sound Synthesis ---
@@ -312,6 +313,7 @@ export class AudioManager {
         }
         this.musicPlaying = false;
         this.setMusicMuted(true);
+        this.stopActiveMusicNodes();
     }
 
     setMusicMuted(muted) {
@@ -361,8 +363,27 @@ export class AudioManager {
         osc.connect(gain);
         gain.connect(this.musicFilter);
 
+        const node = { osc, gain };
+        this.activeMusicNodes.add(node);
+        osc.onended = () => {
+            this.activeMusicNodes.delete(node);
+            try { gain.disconnect(); } catch (e) { /* noop */ }
+        };
+
         osc.start(startTime);
         osc.stop(startTime + duration + 0.1);
+    }
+
+    stopActiveMusicNodes() {
+        this.activeMusicNodes.forEach(node => {
+            try {
+                node.osc.onended = null;
+                node.osc.stop();
+            } catch (e) { /* node already stopped */ }
+            try { node.osc.disconnect(); } catch (e) { /* noop */ }
+            try { node.gain.disconnect(); } catch (e) { /* noop */ }
+        });
+        this.activeMusicNodes.clear();
     }
 
     /**
