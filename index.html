@@ -9,32 +9,41 @@
 </head>
 
 <body>
-  <div id="game-container">
-    <canvas id="gameCanvas"></canvas>
-    <div id="ui-layer">
-      <div id="start-screen" class="screen">
-        <h1>Ian's Flappy Dino</h1>
-        <p>Press Space, Click, or Tap to Start</p>
-        <p class="small">Avoid the DNA strands!</p>
-        <p class="high-score-start">High Score: <span id="start-high-score">0</span></p>
-        <button id="reset-high-score-btn" class="secondary-btn">Reset High Score</button>
-      </div>
-      <div id="game-over-screen" class="hidden screen">
-        <h1>Extinct!</h1>
-        <p>Score: <span id="final-score">0</span></p>
-        <p>High Score: <span id="high-score">0</span></p>
-        <button id="restart-btn">Try Again</button>
-      </div>
-      <div id="hud" class="hidden">
-        <div class="score-container">Score: <span id="score">0</span>
-          <div class="sub-score">High Score: <span id="gameplay-high-score">0</span></div>
+  <div id="game-wrapper">
+    <div id="game-container">
+      <canvas id="gameCanvas"></canvas>
+      <div id="ui-layer">
+        <div id="start-screen" class="screen">
+          <h1>Ian's Flappy Dino</h1>
+          <p>Press Space, Click, or Tap to Start</p>
+          <p class="small">Avoid the DNA strands!</p>
+          <p class="high-score-start">High Score: <span id="start-high-score">0</span></p>
+          <button id="reset-high-score-btn" class="secondary-btn">Reset High Score</button>
         </div>
-        <div class="hearts-container" id="hearts">❤️❤️❤️</div>
-      </div>
-      <div id="message-overlay" class="hidden">
-        <h2 id="message-text"></h2>
+        <div id="game-over-screen" class="hidden screen">
+          <h1>Extinct!</h1>
+          <p>Score: <span id="final-score">0</span></p>
+          <p>High Score: <span id="high-score">0</span></p>
+          <button id="restart-btn">Try Again</button>
+        </div>
+        <div id="hud" class="hidden">
+          <div class="score-container">Score: <span id="score">0</span>
+            <div class="sub-score">High Score: <span id="gameplay-high-score">0</span></div>
+          </div>
+          <div class="hearts-container" id="hearts">❤️❤️❤️</div>
+        </div>
+        <div id="message-overlay" class="hidden">
+          <h2 id="message-text"></h2>
+        </div>
       </div>
     </div>
+    <footer id="game-footer">
+      <div class="instructions">
+        <span class="key">Space / Click / Tap</span>: Jump |
+        <span class="key">R</span>: Restart |
+        <span class="key">Diamonds</span>: Super T-Rex
+      </div>
+    </footer>
   </div>
   <script type="module" src="/src/main.js"></script>
 </body>

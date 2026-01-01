@@ -64,9 +64,9 @@ export class Game {
     }
 
     bindEvents() {
-        // Keyboard
         window.addEventListener('keydown', e => {
             if (e.code === 'Space') this.handleInput();
+            if (e.key.toLowerCase() === 'r') this.resetGame();
         });
 
         // Mouse/Touch (bind to window to catch clicks on the UI overlay)
