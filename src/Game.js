@@ -33,7 +33,7 @@ export class Game {
         this.sfxEnabled = true;
 
         this.score = 0;
-        this.highScore = parseInt(localStorage.getItem('flappyDinoHighScore') || 0);
+        this.highScore = parseInt(localStorage.getItem('jurassicEscapeHighScore') || 0);
         this.hearts = CONFIG.MAX_HEARTS;
 
         this.state = 'START'; // START, PLAYING, GAME_OVER
@@ -66,6 +66,7 @@ export class Game {
             highScore: document.getElementById('high-score'),
             startHighScore: document.getElementById('start-high-score'),
             gameplayHighScore: document.getElementById('gameplay-high-score'),
+            highScoreBadge: document.getElementById('high-score-new-tag'),
             hearts: document.getElementById('hearts'),
             overlay: document.getElementById('message-overlay'),
             overlayText: document.getElementById('message-text'),
@@ -76,6 +77,7 @@ export class Game {
         this.ui.timerSeconds = document.getElementById('timer-seconds');
         this.ui.musicToggle = document.getElementById('music-toggle');
         this.ui.sfxToggle = document.getElementById('sfx-toggle');
+        this.ui.pauseBtn = document.getElementById('pause-btn');
     }
 
     bindEvents() {
@@ -108,7 +110,7 @@ export class Game {
             e.stopPropagation(); // Don't start game on click
             if (confirm("Reset High Score?")) {
                 this.highScore = 0;
-                localStorage.removeItem('flappyDinoHighScore');
+                localStorage.removeItem('jurassicEscapeHighScore');
                 this.updateUI();
             }
         });
@@ -142,6 +144,16 @@ export class Game {
                 this.sfxEnabled = !this.sfxEnabled;
                 this.audio.setSfxMuted(!this.sfxEnabled);
                 this.updateAudioButtons();
+            });
+        }
+
+        if (this.ui.pauseBtn) {
+            this.ui.pauseBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (this.state === 'PLAYING') {
+                    this.togglePause();
+                }
             });
         }
     }
@@ -257,7 +269,7 @@ export class Game {
     updateTimers(deltaTime) {
         if (this.speedBoostTimer > 0) {
             this.speedBoostTimer -= deltaTime;
-            if (this.speedBoostTimer <= 0) this.showMessage('Speed Normal');
+            if (this.speedBoostTimer <= 0) this.showMessage('Normal Speed');
         }
 
         if (this.superTRexTimer > 0) {
@@ -333,6 +345,7 @@ export class Game {
             if (!obs.passed && obs.x + this.obstacles.obstacleWidth < this.dino.x) {
                 obs.passed = true;
                 this.incrementScore(10);
+                this.audio.playGatePass();
             }
         });
     }
@@ -420,10 +433,18 @@ export class Game {
     updateUI() {
         this.ui.hearts.innerText = '❤️'.repeat(this.hearts);
         this.ui.score.innerText = this.score;
-        this.ui.gameplayHighScore.innerText = this.highScore;
+
+        const isNewHigh = this.score > this.highScore;
+        const displayedHighScore = isNewHigh ? this.score : this.highScore;
+
+        this.ui.gameplayHighScore.innerText = displayedHighScore;
         this.ui.highScore.innerText = this.highScore;
         this.ui.startHighScore.innerText = this.highScore;
         this.ui.finalScore.innerText = this.score;
+
+        if (this.ui.highScoreBadge) {
+            this.ui.highScoreBadge.classList.toggle('hidden', !isNewHigh || this.score === 0);
+        }
     }
 
     updateAudioButtons() {
@@ -453,7 +474,7 @@ export class Game {
         this.audio.stopMusic();
         if (this.score > this.highScore) {
             this.highScore = this.score;
-            localStorage.setItem('flappyDinoHighScore', this.highScore);
+            localStorage.setItem('jurassicEscapeHighScore', this.highScore);
         }
         this.updateUI();
         this.ui.hud.classList.add('hidden');

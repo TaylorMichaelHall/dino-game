@@ -35,10 +35,61 @@ body {
   padding: 20px;
 }
 
+#scoreboard {
+  width: 100%;
+  max-width: 800px;
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  padding: 12px 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.score-card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 1.1rem;
+}
+
+.score-value {
+  font-size: 2rem;
+  font-weight: 900;
+  text-shadow: 0 0 6px rgba(255, 255, 255, 0.4);
+}
+
+.high-score-value {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.badge {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #fff7c0, #ffd700);
+  color: #8b4100;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  box-shadow:
+    0 0 6px rgba(255, 215, 0, 0.7),
+    0 0 14px rgba(255, 215, 0, 0.6),
+    0 0 24px rgba(255, 215, 0, 0.5);
+}
+
 #game-container {
   position: relative;
   width: 100%;
-  height: 100%;
+  aspect-ratio: 4 / 3;
   max-width: 800px;
   max-height: 600px;
   background: linear-gradient(180deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
@@ -177,16 +228,16 @@ h1 {
   top: 70px;
   right: 20px;
   background: rgba(0, 0, 0, 0.6);
-  padding: 8px 15px;
-  border-radius: 20px;
+  padding: 6px 12px;
+  border-radius: 16px;
   border: 2px solid var(--color-accent);
   color: #fff;
   font-family: 'Orbitron', sans-serif;
-  font-weight: bold;
-  font-size: 1.1rem;
+  font-weight: 600;
+  font-size: 0.95rem;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   box-shadow: 0 0 15px var(--color-accent);
   z-index: 10;
   transition: opacity 0.3s ease;
@@ -197,19 +248,15 @@ h1 {
 }
 
 .timer-label {
-  font-size: 0.8rem;
+  font-size: 0.7rem;
   color: var(--color-accent);
-  letter-spacing: 1px;
+  letter-spacing: 0.6px;
 }
 
 #timer-seconds {
-  font-size: 1.4rem;
+  font-size: 1.1rem;
   min-width: 1.5em;
   text-align: center;
-}
-
-#hearts {
-  font-size: 1.5rem;
 }
 
 p {
@@ -220,6 +267,13 @@ p {
 .small {
   font-size: 1rem;
   opacity: 0.8;
+}
+
+.start-tip {
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  opacity: 0.85;
 }
 
 button {
@@ -268,14 +322,41 @@ button:active {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 2rem;
+  font-size: clamp(1.1rem, 2vw, 1.6rem);
   font-weight: bold;
-  pointer-events: none;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  gap: 10px;
+}
+
+.hearts-container {
+  pointer-events: none;
 }
 
 #hearts {
+  font-size: clamp(1rem, 2vw, 1.3rem);
   letter-spacing: 5px;
+}
+
+.footer-pause-btn {
+  margin-top: 4px;
+  align-self: center;
+  font-size: 0.95rem;
+  padding: 0.5rem 1.6rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  pointer-events: auto;
+  box-shadow: none;
+}
+
+.footer-pause-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.footer-pause-btn:active {
+  transform: scale(0.96);
 }
 
 #message-overlay {
@@ -335,6 +416,20 @@ button:active {
   gap: 10px;
 }
 
+.instructions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 22px;
+  justify-content: center;
+  line-height: 1.4;
+}
+
+.instruction {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .instructions .key {
   background: rgba(255, 255, 255, 0.2);
   padding: 2px 6px;
@@ -342,6 +437,11 @@ button:active {
   color: #fff;
   font-weight: bold;
   border-bottom: 2px solid rgba(255, 255, 255, 0.3);
+}
+
+.instruction .desc {
+  font-size: 0.9rem;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 #audio-controls {
@@ -364,4 +464,134 @@ button:active {
   background: rgba(255, 255, 255, 0.15);
   color: rgba(255, 255, 255, 0.8);
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@media (max-width: 768px) {
+  h1 {
+    font-size: 2.4rem;
+    letter-spacing: 1px;
+  }
+
+  p {
+    font-size: 1.2rem;
+  }
+
+  button {
+    font-size: 1.2rem;
+    padding: 0.8rem 1.5rem;
+  }
+
+  #scoreboard {
+    flex-direction: column;
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .score-card {
+    font-size: 0.95rem;
+  }
+
+  .score-value {
+    font-size: 1.6rem;
+  }
+
+  #hud {
+    font-size: 1.3rem;
+  }
+
+  #hearts {
+    font-size: 1rem;
+  }
+
+  #powerup-timer {
+    top: 90px;
+  }
+
+  #message-text {
+    font-size: 3rem;
+  }
+
+  .instructions {
+    gap: 8px 16px;
+  }
+}
+
+@media (max-width: 560px) {
+  #game-wrapper {
+    padding: 10px 8px 20px;
+    gap: 12px;
+  }
+
+  #scoreboard {
+    padding: 8px 10px;
+  }
+
+  .score-value {
+    font-size: 1.4rem;
+  }
+
+  .screen {
+    padding: 20px;
+  }
+
+  h1 {
+    font-size: 1.8rem;
+  }
+
+  p {
+    font-size: 1rem;
+  }
+
+  button {
+    font-size: 1rem;
+    padding: 0.6rem 1.2rem;
+  }
+
+  #hud {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    font-size: 1.1rem;
+  }
+
+  #hearts {
+    font-size: 1rem;
+    letter-spacing: 2px;
+  }
+
+  #powerup-timer {
+    top: auto;
+    bottom: 16px;
+    right: 16px;
+    transform: scale(0.75);
+  }
+
+  #message-text {
+    font-size: 2.4rem;
+  }
+
+  #game-footer {
+    font-size: 0.8rem;
+    gap: 6px;
+  }
+
+  .instructions {
+    flex-direction: column;
+    align-items: stretch;
+    text-align: left;
+    gap: 6px;
+  }
+
+  .instruction {
+    justify-content: space-between;
+  }
+
+  .start-tip {
+    font-size: 0.9rem;
+  }
+
+  .footer-pause-btn {
+    width: 100%;
+    font-size: 0.85rem;
+  }
 }

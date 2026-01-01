@@ -253,6 +253,38 @@ export class AudioManager {
         osc.stop(this.ctx.currentTime + 0.15);
     }
 
+    /**
+     * Soft encouraging cue for clearing DNA gates
+     */
+    playGatePass() {
+        if (this.sfxMuted) return;
+        this.resumeContext();
+
+        const now = this.ctx.currentTime;
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.04, now);
+        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.25);
+
+        const oscA = this.ctx.createOscillator();
+        oscA.type = 'triangle';
+        oscA.frequency.setValueAtTime(450, now);
+        oscA.frequency.linearRampToValueAtTime(520, now + 0.2);
+        oscA.connect(gain);
+
+        const oscB = this.ctx.createOscillator();
+        oscB.type = 'sine';
+        oscB.frequency.setValueAtTime(700, now);
+        oscB.frequency.linearRampToValueAtTime(820, now + 0.2);
+        oscB.connect(gain);
+
+        gain.connect(this.ctx.destination);
+
+        oscA.start(now);
+        oscB.start(now);
+        oscA.stop(now + 0.25);
+        oscB.stop(now + 0.25);
+    }
+
     setSfxMuted(muted) {
         this.sfxMuted = muted;
     }

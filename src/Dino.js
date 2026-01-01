@@ -42,13 +42,15 @@ export class Dino {
     }
 
     initSprites() {
+        const basePath = import.meta.env.BASE_URL || '/';
+        const sprite = (file) => `${basePath}sprites/${file}`;
         this.sprites = {
-            raptor: this.loadImage('/sprites/raptor.png'),
-            quetzal: this.loadImage('/sprites/quetz.png'),
-            trex: this.loadImage('/sprites/trex.png'),
-            spino: this.loadImage('/sprites/spino.png'),
-            superTrex: this.loadImage('/sprites/super_trex.png'),
-            mosa: this.loadImage('/sprites/mosa.png')
+            raptor: this.loadImage(sprite('raptor.png')),
+            quetzal: this.loadImage(sprite('quetz.png')),
+            trex: this.loadImage(sprite('trex.png')),
+            spino: this.loadImage(sprite('spino.png')),
+            superTrex: this.loadImage(sprite('super_trex.png')),
+            mosa: this.loadImage(sprite('mosa.png'))
         };
     }
 

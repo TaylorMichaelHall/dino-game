@@ -5,7 +5,8 @@ export class CoinManager {
         this.game = game;
         this.coins = [];
         this.coinRadius = 12;
-        this.coinImage = this.loadImage('/sprites/coin.png');
+        const basePath = import.meta.env.BASE_URL || '/';
+        this.coinImage = this.loadImage(`${basePath}sprites/coin.png`);
 
         // Letter patterns (7-row grids for more detail/size)
         this.letters = {

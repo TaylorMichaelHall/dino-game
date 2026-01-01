@@ -8,7 +8,8 @@ export class PowerupManager {
         this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
         this.radius = 15;
 
-        this.diamondImage = this.loadImage('/sprites/diamond.png');
+        const basePath = import.meta.env.BASE_URL || '/';
+        this.diamondImage = this.loadImage(`${basePath}sprites/diamond.png`);
     }
 
     loadImage(src) {

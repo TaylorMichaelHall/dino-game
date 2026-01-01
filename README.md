@@ -11,7 +11,7 @@ A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand 
     - 💎 **Diamond (Super T-Rex)**: Transform into the invulnerable **Super T-Rex** for 30 seconds! In this mode, you smash through DNA strands instead of taking damage. Spawns every 50 points.
 - **Dynamic Difficulty**: Game speed increases with each evolution level.
 - **Procedural Audio**: 8-bit style sound effects (Jump, Hit, Point, Upgrade, Powerup, Explosion) and a looping chiptune soundtrack synthesized via the Web Audio API.
-- **Audio Toggles**: Music/SFX buttons below the controls let you instantly mute or enable the soundtrack and effects.
+- **Audio Toggles & Pause Button**: Music/SFX buttons plus a tap-friendly pause button live under the instructions so mobile players never have to reach into the gameplay area.
 - **Themes**: Atmospheric background gradients cycle every 30 points.
 - **Health System**: 3 hearts with 1s invulnerability frames. Hearts refill upon evolution.
 - **Hit Flash**: Intense visual feedback (screen/border flash) when taking damage or smashing DNA.
@@ -24,7 +24,8 @@ A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand 
 - **Space / Click / Tap**: Jump
 - **P**: Pause / Resume
 - **R**: Restart (on Game Over screen)
-- **Footer buttons**: Toggle Music or SFX anytime without refreshing.
+- **Footer controls**: Toggle Music/SFX and pause instantly from the footer (optimized for both desktop and touch).
+- **HUD**: Score sits in a separate top bar, hearts + Super T-Rex timer float over the playfield, and all elements resize gracefully down to small phones.
 
 ## 🚀 Getting Started
 
@@ -49,6 +50,40 @@ Open [http://localhost:5173](http://localhost:5173) to play.
 ```bash
 npm run build
 ```
+
+### Hosting / Deployment
+
+The build output in `dist/` is a completely static site, so you can host it anywhere that serves files:
+
+1. Run `npm run build`. This emits minified assets in `dist/`.
+2. Upload **everything** inside `dist/` to your host, keeping the folder structure intact.
+3. (Optional but recommended) Purge any caches/CDNs after you deploy so new assets load immediately.
+
+#### Example: Amazon S3
+
+1. Create (or reuse) an S3 bucket and enable *Static website hosting* in the bucket properties. Set both the index and error document to `index.html`.
+2. Upload from the repo root:
+   ```bash
+   aws s3 sync dist/ s3://your-bucket-name/dino/ --delete
+   ```
+   The trailing `/dino/` is optional—use it if you want the game under a subfolder.
+3. Make the bucket (or CloudFront distribution) publicly readable. A minimal bucket policy looks like:
+   ```json
+   {
+     "Version": "2012-10-17",
+     "Statement": [
+       {
+         "Effect": "Allow",
+         "Principal": "*",
+         "Action": "s3:GetObject",
+         "Resource": "arn:aws:s3:::your-bucket-name/dino/*"
+       }
+     ]
+   }
+   ```
+4. (Optional) Put CloudFront in front of the bucket for HTTPS and caching. Point your domain/DNS record at the CloudFront distribution.
+
+Because Vite is configured with a relative `base`, you can host the game at the bucket root or in any subdirectory without breaking asset URLs.
 
 ## 🛠 Maintenance & Tuning
 
