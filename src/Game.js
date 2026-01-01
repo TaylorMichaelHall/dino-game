@@ -33,7 +33,7 @@ export class Game {
         this.lastTime = 0;
         this.time = 0; // Cumulative game time
         this.speedBoostTimer = 0;
-        this.dRexTimer = 0;
+        this.superTRexTimer = 0;
 
         this.initUI();
         this.bindEvents();
@@ -115,7 +115,7 @@ export class Game {
         this.score = 0;
         this.hearts = CONFIG.MAX_HEARTS;
         this.speedBoostTimer = 0;
-        this.dRexTimer = 0;
+        this.superTRexTimer = 0;
         this.dino.reset();
         this.obstacles.reset();
         this.powerups.reset();
@@ -172,11 +172,11 @@ export class Game {
             if (this.speedBoostTimer <= 0) this.showMessage('Speed Normal');
         }
 
-        if (this.dRexTimer > 0) {
-            this.dRexTimer -= deltaTime;
-            if (this.dRexTimer <= 0) {
-                this.dino.setDRex(false);
-                this.showMessage('D-Rex Power Depleted');
+        if (this.superTRexTimer > 0) {
+            this.superTRexTimer -= deltaTime;
+            if (this.superTRexTimer <= 0) {
+                this.dino.setSuperTRex(false);
+                this.showMessage('Super T-Rex Power Depleted');
             }
         }
     }
@@ -184,20 +184,20 @@ export class Game {
     handlePowerupCollisions() {
         const type = this.powerups.checkCollision(this.dino);
         if (type === 'BONE') this.collectBone();
-        else if (type === 'POSTER') this.transformToDRex();
+        else if (type === 'DIAMOND') this.transformToSuperTRex();
     }
 
     handleObstacleCollisions() {
         if (this.obstacles.checkCollision(this.dino)) {
-            if (this.dino.isDRex) {
-                this.handleDrexSmash();
+            if (this.dino.isSuperTRex) {
+                this.handleSuperTRexSmash();
             } else if (!this.dino.invulnerable) {
                 this.takeDamage();
             }
         }
     }
 
-    handleDrexSmash() {
+    handleSuperTRexSmash() {
         const dx = this.dino.x + this.dino.width / 2;
         const dy = this.dino.y + this.dino.height / 2;
         const dr = this.dino.radius * 0.8;
@@ -238,11 +238,11 @@ export class Game {
         this.showMessage('🦴 MEGA SPEED 🦴');
     }
 
-    transformToDRex() {
+    transformToSuperTRex() {
         this.audio.playTransform();
-        this.dRexTimer = CONFIG.DREX_DURATION;
-        this.dino.setDRex(true);
-        this.showMessage('🧬 ULTIMATE D-REX ACTIVATED 🧬');
+        this.superTRexTimer = CONFIG.SUPER_TREX_DURATION;
+        this.dino.setSuperTRex(true);
+        this.showMessage('🧬 ULTIMATE SUPER T-REX ACTIVATED 🧬');
     }
 
     incrementScore(amount = 1) {

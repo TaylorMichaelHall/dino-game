@@ -26,8 +26,8 @@ export const CONFIG = {
     BONE_BOOST_DURATION: 5,
     BONE_SPAWN_MIN: 5,
     BONE_SPAWN_MAX: 15,
-    POSTER_THRESHOLD: 50,
-    DREX_DURATION: 30,
+    DIAMOND_THRESHOLD: 50,
+    SUPER_TREX_DURATION: 30,
 
     // Themes
     THEMES: ['theme-1', 'theme-2', 'theme-3', 'theme-4', 'theme-5'],

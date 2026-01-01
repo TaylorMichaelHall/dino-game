@@ -5,10 +5,10 @@ export class PowerupManager {
         this.game = game;
         this.powerups = [];
         this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
-        this.nextPosterSpawn = this.calculateNextPosterSpawn(0);
+        this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
         this.radius = 15;
 
-        this.posterImage = this.loadImage('/sprites/poster.png');
+        this.diamondImage = this.loadImage('/sprites/diamond.png');
     }
 
     loadImage(src) {
@@ -21,7 +21,7 @@ export class PowerupManager {
         return currentScore + Math.floor(Math.random() * (CONFIG.BONE_SPAWN_MAX - CONFIG.BONE_SPAWN_MIN + 1)) + CONFIG.BONE_SPAWN_MIN;
     }
 
-    calculateNextPosterSpawn(currentScore) {
+    calculateNextDiamondSpawn(currentScore) {
         // Appears once per 50 points (randomly within that block)
         return currentScore + Math.floor(Math.random() * 50) + 1;
     }
@@ -32,9 +32,9 @@ export class PowerupManager {
             this.nextBoneSpawn = this.calculateNextBoneSpawn(currentScore);
         }
 
-        if (currentScore >= this.nextPosterSpawn) {
-            this.spawn('POSTER');
-            this.nextPosterSpawn += CONFIG.POSTER_THRESHOLD; // Fixed block increment
+        if (currentScore >= this.nextDiamondSpawn) {
+            this.spawn('DIAMOND');
+            this.nextDiamondSpawn += CONFIG.DIAMOND_THRESHOLD; // Fixed block increment
         }
     }
 
@@ -63,7 +63,7 @@ export class PowerupManager {
     draw(ctx) {
         this.powerups.forEach(p => {
             if (p.type === 'BONE') this.drawBone(ctx, p.x, p.y);
-            else if (p.type === 'POSTER') this.drawPoster(ctx, p.x, p.y);
+            else if (p.type === 'DIAMOND') this.drawDiamond(ctx, p.x, p.y);
         });
     }
 
@@ -92,10 +92,10 @@ export class PowerupManager {
         ctx.restore();
     }
 
-    drawPoster(ctx, x, y) {
-        if (this.posterImage.complete) {
+    drawDiamond(ctx, x, y) {
+        if (this.diamondImage.complete && this.diamondImage.naturalWidth > 0) {
             const s = 40;
-            ctx.drawImage(this.posterImage, x - s / 2, y - s / 2, s, s);
+            ctx.drawImage(this.diamondImage, x - s / 2, y - s / 2, s, s);
         } else {
             ctx.fillStyle = '#f0f';
             ctx.fillRect(x - 20, y - 20, 40, 40);
@@ -108,7 +108,7 @@ export class PowerupManager {
 
         for (let p of this.powerups) {
             const dist = Math.sqrt((dx_center - p.x) ** 2 + (dy_center - p.y) ** 2);
-            const r = p.type === 'POSTER' ? 20 : 15;
+            const r = p.type === 'DIAMOND' ? 20 : 15;
             if (dist < dino.radius + r) {
                 p.collected = true;
                 return p.type;
@@ -120,6 +120,6 @@ export class PowerupManager {
     reset() {
         this.powerups = [];
         this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
-        this.nextPosterSpawn = this.calculateNextPosterSpawn(0);
+        this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
     }
 }

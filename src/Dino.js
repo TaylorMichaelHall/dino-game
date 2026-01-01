@@ -28,18 +28,18 @@ export class Dino {
         this.flashSpeed = CONFIG.FLASH_SPEED;
         this.timeSinceLastFlash = 0;
         this.visible = true;
-        this.isDRex = false;
+        this.isSuperTRex = false;
 
         this.initSprites();
     }
 
     initSprites() {
         this.sprites = {
-            raptor: this.loadImage('/sprites/raptor.webp'),
-            quetzal: this.loadImage('/sprites/quetzalcoatlus.webp'),
-            trex: this.loadImage('/sprites/t-rex.png'),
-            spino: this.loadImage('/sprites/spinosaurus.png'),
-            drex: this.loadImage('/sprites/drex.webp')
+            raptor: this.loadImage('/sprites/raptor.png'),
+            quetzal: this.loadImage('/sprites/quetz.png'),
+            trex: this.loadImage('/sprites/trex.png'),
+            spino: this.loadImage('/sprites/spino.png'),
+            superTrex: this.loadImage('/sprites/super_trex.png')
         };
     }
 
@@ -65,7 +65,7 @@ export class Dino {
         }
 
         // Invulnerability Logic
-        if (this.invulnerable && !this.isDRex) {
+        if (this.invulnerable && !this.isSuperTRex) { // Super T-Rex is inherently invulnerable in Game.js
             this.invulnerableTimer -= deltaTime;
             this.timeSinceLastFlash += deltaTime;
             if (this.timeSinceLastFlash >= this.flashSpeed) {
@@ -90,8 +90,8 @@ export class Dino {
 
         ctx.scale(0.8, 0.8);
 
-        if (this.isDRex) {
-            this.drawDRex(ctx);
+        if (this.isSuperTRex) {
+            this.drawSuperTRex(ctx);
         } else {
             const type = this.types[this.level];
             if (type === 'Raptor') this.drawRaptor(ctx);
@@ -115,8 +115,8 @@ export class Dino {
         }
     }
 
-    setDRex(active) {
-        this.isDRex = active;
+    setSuperTRex(active) {
+        this.isSuperTRex = active;
         if (active) {
             this.visible = true;
             this.invulnerable = false;
@@ -139,12 +139,12 @@ export class Dino {
         this.colorIndex = 0;
         this.invulnerable = false;
         this.visible = true;
-        this.isDRex = false;
+        this.isSuperTRex = false;
     }
 
     drawRaptor(ctx) {
-        if (this.sprites.raptor.complete) {
-            const s = 80;
+        if (this.sprites.raptor.complete && this.sprites.raptor.naturalWidth > 0) {
+            const s = 105;
             ctx.drawImage(this.sprites.raptor, -s / 2, -s / 2, s, s);
         } else {
             ctx.fillRect(-20, -20, 40, 40);
@@ -152,8 +152,8 @@ export class Dino {
     }
 
     drawQuetzalcoatlus(ctx) {
-        if (this.sprites.quetzal.complete) {
-            const s = 100;
+        if (this.sprites.quetzal.complete && this.sprites.quetzal.naturalWidth > 0) {
+            const s = 130;
             ctx.drawImage(this.sprites.quetzal, -s / 2, -s / 2, s, s);
         } else {
             ctx.fillRect(-25, -25, 50, 50);
@@ -161,8 +161,8 @@ export class Dino {
     }
 
     drawTRex(ctx) {
-        if (this.sprites.trex.complete) {
-            const s = 120;
+        if (this.sprites.trex.complete && this.sprites.trex.naturalWidth > 0) {
+            const s = 155;
             ctx.drawImage(this.sprites.trex, -s / 2, -s / 2, s, s);
         } else {
             ctx.fillRect(-25, -25, 50, 50);
@@ -170,18 +170,18 @@ export class Dino {
     }
 
     drawSpinosaurus(ctx) {
-        if (this.sprites.spino.complete) {
-            const s = 140;
+        if (this.sprites.spino.complete && this.sprites.spino.naturalWidth > 0) {
+            const s = 180;
             ctx.drawImage(this.sprites.spino, -s / 2, -s / 2, s, s);
         } else {
             ctx.fillRect(-30, -30, 60, 60);
         }
     }
 
-    drawDRex(ctx) {
-        if (this.sprites.drex.complete) {
-            const s = 160;
-            ctx.drawImage(this.sprites.drex, -s / 2, -s / 2, s, s);
+    drawSuperTRex(ctx) {
+        if (this.sprites.superTrex.complete && this.sprites.superTrex.naturalWidth > 0) {
+            const s = 210;
+            ctx.drawImage(this.sprites.superTrex, -s / 2, -s / 2, s, s);
         } else {
             ctx.fillStyle = '#0ff';
             ctx.fillRect(-40, -40, 80, 80);

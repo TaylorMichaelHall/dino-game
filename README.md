@@ -8,7 +8,7 @@ A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand 
 - **Visuals**: High-quality WebP/PNG sprites for all evolution stages.
 - **Powerups**:
     - 🦴 **Dino Bone**: (+5 points, 1.5x Speed Boost for 5s). Spawns every 5-15 points.
-    - 🧬 **Poster (D-Rex)**: Transform into the invulnerable **D-Rex** for 30 seconds! In this mode, you smash through DNA strands instead of taking damage. Spawns every 50 points.
+    - 💎 **Diamond (Super T-Rex)**: Transform into the invulnerable **Super T-Rex** for 30 seconds! In this mode, you smash through DNA strands instead of taking damage. Spawns every 50 points.
 - **Dynamic Difficulty**: Game speed increases with each evolution level.
 - **Procedural Audio**: 8-bit style sound effects (Jump, Hit, Point, Upgrade, Powerup, Explosion) synthesized via Web Audio API.
 - **Themes**: Atmospheric background gradients cycle every 30 points.
@@ -54,7 +54,7 @@ All gameplay logic is centralized in `src/Constants.js`. You can easily adjust:
 - `src/Game.js`: Main loop, state management, and entity coordination.
 - `src/Dino.js`: Physics, evolution logic, and sprite rendering.
 - `src/ObstacleManager.js`: DNA strand spawning and movement.
-- `src/PowerupManager.js`: Bone and Poster powerup lifecycle.
+- `src/PowerupManager.js`: Bone and Diamond powerup lifecycle.
 - `src/AudioManager.js`: On-the-fly sound effect synthesis.
 - `src/Constants.js`: Centralized game configuration.
 - `src/style.css`: UI layout and background themes.

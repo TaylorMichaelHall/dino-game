@@ -57,22 +57,26 @@ export class ObstacleManager {
     }
 
     drawDNAStrand(ctx, x, startY, endY, color) {
+        const width = this.obstacleWidth;
+        const height = endY - startY;
+
+        // Clip drawing to the DNA strand area
+        ctx.save();
+        ctx.beginPath();
+        ctx.rect(x, startY, width, height);
+        ctx.clip();
+
         // Double helix pattern simulation
         ctx.strokeStyle = color;
         ctx.lineWidth = 4;
 
-        const width = this.obstacleWidth;
         const step = 10;
         const amplitude = width / 2;
 
         ctx.beginPath();
 
-        // Vertical lines for bounds (optional, but good for gameplay clarity)
-        // ctx.strokeRect(x, startY, width, endY - startY); 
-
         // Sine waves
         for (let y = startY; y < endY; y += step) {
-            // We can animate this phase later using game time
             const phase = (y / 50) + (this.game.time * 0.005);
 
             const x1 = x + width / 2 + Math.sin(phase) * (amplitude - 5);
@@ -90,11 +94,12 @@ export class ObstacleManager {
             ctx.fillRect(x2 - 2, y, 4, 4);
         }
         ctx.stroke();
+        ctx.restore();
 
-        // Draw borders to make collision clear
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x, startY, width, endY - startY);
+        // Draw borders AFTER clipping to ensure they are visible and thick
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 4;
+        ctx.strokeRect(x, startY, width, height);
     }
 
     checkCollision(dino) {
