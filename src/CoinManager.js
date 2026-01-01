@@ -155,7 +155,7 @@ export class CoinManager {
         });
 
         // Dynamic Filtering: Remove coins that overlap with DNA as they move
-        this.coins = this.coins.filter(coin => !this.overlapsDNA(coin.x, coin.y));
+        // OPTIMIZATION: Removed per-frame overlap check. Objects move at same speed.
 
         // Cleanup off-screen
         this.coins = this.coins.filter(coin => !coin.collected && coin.x > -50);

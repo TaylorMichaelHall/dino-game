@@ -280,7 +280,12 @@ export class Game {
         if (this.superTRexTimer > 0) {
             this.superTRexTimer -= deltaTime;
             this.ui.powerupTimer.classList.remove('hidden');
-            this.ui.timerSeconds.innerText = Math.ceil(this.superTRexTimer);
+
+            // Optimization: Only update DOM when integer value changes
+            const seconds = Math.ceil(this.superTRexTimer);
+            if (this.ui.timerSeconds.innerText != seconds) {
+                this.ui.timerSeconds.innerText = seconds;
+            }
 
             if (this.superTRexTimer <= 0) {
                 this.dino.setSuperTRex(false);
@@ -293,14 +298,18 @@ export class Game {
     updateContainerBorder() {
         if (this.state !== 'PLAYING') return;
 
+        // Optimization: Throttle CSS updates to every ~60ms (approx 15fps for effects)
+        if (!this.lastBorderTime) this.lastBorderTime = 0;
+        if (this.time - this.lastBorderTime < 60) return;
+        this.lastBorderTime = this.time;
+
         const currentColor = this.hitFlashTimer > 0 ? '#ffffff' : this.obstacles.colors[this.obstacles.colorIndex % this.obstacles.colors.length];
         const flicker = 8 + Math.random() * 8; // Match DNA flicker intensity
 
+        // Batch style changes? CSS variables are already efficient, but throttling helps.
         this.ui.container.style.setProperty('--glow-color', currentColor);
         this.ui.container.style.setProperty('--glow-blur', `${flicker}px`);
-        this.ui.container.style.setProperty('--border-core', this.hitFlashTimer > 0 ? '#ffffff' : '#ffffff'); // Always white core, but maybe flash intensity?
-        // Actually, let's make the core flash too? It's already white. 
-        // Let's just use the glow color which is now white during flash.
+        this.ui.container.style.setProperty('--border-core', this.hitFlashTimer > 0 ? '#ffffff' : '#ffffff');
     }
 
     handlePowerupCollisions() {
@@ -378,7 +387,7 @@ export class Game {
         this.audio.playTransform();
         this.superTRexTimer = CONFIG.SUPER_TREX_DURATION;
         this.dino.setSuperTRex(true);
-        this.showMessage('🧬 ULTIMATE SUPER T-REX ACTIVATED 🧬');
+        this.showMessage('🧬 SUPER T-REX ACTIVATED 🧬');
     }
 
     incrementScore(amount = 1) {

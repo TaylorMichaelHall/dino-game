@@ -72,30 +72,43 @@ export class ObstacleManager {
         ctx.strokeStyle = drawColor;
         ctx.lineWidth = 4;
 
-        const step = 10;
         const amplitude = width / 2;
 
-        ctx.beginPath();
+        ctx.beginPath(); // Start path for crossbars
 
-        // Sine waves
+        // Optimization: Batch dot drawing and increase step size
+        const dotPath = new Path2D();
+
+        // Increase step from 10 to 15 for performance
+        const step = 15;
+
         for (let y = startY; y < endY; y += step) {
             const phase = (y / 50) + (this.game.time * 0.005);
+            const sinVal = Math.sin(phase);
 
-            const x1 = x + width / 2 + Math.sin(phase) * (amplitude - 5);
-            const x2 = x + width / 2 + Math.sin(phase + Math.PI) * (amplitude - 5);
+            const xOffset = sinVal * (amplitude - 5);
+            const x1 = x + width / 2 + xOffset;
+            const x2 = x + width / 2 - xOffset; // sin(phase + PI) = -sin(phase)
 
             // Draw crossbars
-            if (Math.abs(Math.sin(phase)) < 0.2) {
+            if (Math.abs(sinVal) < 0.2) {
+                // Determine which specific crossbar to draw to avoid too many stroke calls
+                // Actually, let's just batch these lines too?
+                // The original code stroked every time or had a single stroke at the end? 
+                // Original had ctx.stroke() outside the loop.
                 ctx.moveTo(x1, y);
                 ctx.lineTo(x2, y);
             }
 
-            // Draw points
-            ctx.fillStyle = drawColor;
-            ctx.fillRect(x1 - 2, y, 4, 4);
-            ctx.fillRect(x2 - 2, y, 4, 4);
+            // Batch points
+            dotPath.rect(x1 - 2, y, 4, 4);
+            dotPath.rect(x2 - 2, y, 4, 4);
         }
-        ctx.stroke();
+
+        ctx.stroke(); // Stroke the lines (crossbars)
+
+        ctx.fillStyle = drawColor;
+        ctx.fill(dotPath); // Fill all dots at once
         ctx.restore();
 
         // Draw Electric Borders
