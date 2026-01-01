@@ -9,6 +9,7 @@ export class PowerupManager {
         this.radius = 15;
 
         const basePath = import.meta.env.BASE_URL || '/';
+        this.emeraldImg = this.loadImage(`${basePath}sprites/emerald.png`);
     }
 
     loadImage(src) {
@@ -33,7 +34,8 @@ export class PowerupManager {
         }
 
         if (currentScore >= this.nextDiamondSpawn) {
-            this.spawn('DIAMOND');
+            const type = Math.random() < 0.5 ? 'DIAMOND' : 'EMERALD';
+            this.spawn(type);
             this.nextDiamondSpawn += CONFIG.DIAMOND_THRESHOLD; // Fixed block increment
         }
     }
@@ -85,6 +87,7 @@ export class PowerupManager {
         this.powerups.forEach(p => {
             if (p.type === 'BONE') this.drawBone(ctx, p.x, p.y);
             else if (p.type === 'DIAMOND') this.drawDiamond(ctx, p.x, p.y);
+            else if (p.type === 'EMERALD') this.drawEmerald(ctx, p.x, p.y);
         });
     }
 
@@ -98,13 +101,23 @@ export class PowerupManager {
         ctx.fillText('💎', x, y);
     }
 
+    drawEmerald(ctx, x, y) {
+        if (this.emeraldImg.complete && this.emeraldImg.naturalWidth > 0) {
+            const s = 50;
+            ctx.drawImage(this.emeraldImg, x - s / 2, y - s / 2, s, s);
+        } else {
+            ctx.font = '40px serif';
+            ctx.fillText('💚', x, y); // Fallback emoji
+        }
+    }
+
     checkCollision(dino) {
         const dx_center = dino.x + dino.width / 2;
         const dy_center = dino.y + dino.height / 2;
 
         for (let p of this.powerups) {
             const dist = Math.sqrt((dx_center - p.x) ** 2 + (dy_center - p.y) ** 2);
-            const r = p.type === 'DIAMOND' ? 20 : 15;
+            const r = (p.type === 'DIAMOND' || p.type === 'EMERALD') ? 20 : 15;
             if (dist < dino.radius + r) {
                 p.collected = true;
                 return p.type;

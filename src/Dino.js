@@ -28,7 +28,8 @@ export class Dino {
         this.flashSpeed = CONFIG.FLASH_SPEED;
         this.timeSinceLastFlash = 0;
         this.visible = true;
-        this.isSuperTRex = false;
+        this.isSuper = false;
+        this.superType = null; // 'trex' or 'spino'
 
         // Follower / Transition states
         this.history = []; // Buffer of {y, rotation}
@@ -36,7 +37,7 @@ export class Dino {
         this.followerX = 10;
         this.primaryX = 50;
         this.displayX = 50; // Current animated X position
-        this.flyingOffTrex = null;
+        this.flyingOffSprite = null;
 
         this.initSprites();
     }
@@ -50,6 +51,7 @@ export class Dino {
             trex: this.loadImage(sprite('trex.png')),
             spino: this.loadImage(sprite('spino.png')),
             superTrex: this.loadImage(sprite('super_trex.png')),
+            superSpino: this.loadImage(sprite('super_spino.png')),
             mosa: this.loadImage(sprite('mosa.png'))
         };
     }
@@ -76,7 +78,7 @@ export class Dino {
         }
 
         // Invulnerability Logic
-        if (this.invulnerable && !this.isSuperTRex) { // Super T-Rex is inherently invulnerable in Game.js
+        if (this.invulnerable && !this.isSuper) { // Super mode is inherently invulnerable in Game.js
             this.invulnerableTimer -= deltaTime;
             this.timeSinceLastFlash += deltaTime;
             if (this.timeSinceLastFlash >= this.flashSpeed) {
@@ -89,8 +91,8 @@ export class Dino {
             }
         }
 
-        // Super T-Rex Follower Logic
-        if (this.isSuperTRex) {
+        // Super Follower Logic
+        if (this.isSuper) {
             // Track history for the follower
             this.history.push({ y: this.y, rotation: Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.0015))) });
             if (this.history.length > this.historyMax) {
@@ -111,13 +113,13 @@ export class Dino {
             this.history = [];
         }
 
-        // Flying off T-Rex animation
-        if (this.flyingOffTrex) {
-            this.flyingOffTrex.x += this.flyingOffTrex.vx * deltaTime;
-            this.flyingOffTrex.y += this.flyingOffTrex.vy * deltaTime;
-            this.flyingOffTrex.vy += 500 * deltaTime; // Gravity for departing sprite
-            if (this.flyingOffTrex.x > this.game.width + 200) {
-                this.flyingOffTrex = null;
+        // Flying off sprite animation
+        if (this.flyingOffSprite) {
+            this.flyingOffSprite.x += this.flyingOffSprite.vx * deltaTime;
+            this.flyingOffSprite.y += this.flyingOffSprite.vy * deltaTime;
+            this.flyingOffSprite.vy += 500 * deltaTime; // Gravity for departing sprite
+            if (this.flyingOffSprite.x > this.game.width + 200) {
+                this.flyingOffSprite = null;
             }
         }
     }
@@ -125,8 +127,8 @@ export class Dino {
     draw(ctx) {
         if (!this.visible) return;
 
-        // Draw Follower if in Super T-Rex mode
-        if (this.isSuperTRex && this.history.length > 0) {
+        // Draw Follower if in Super mode
+        if (this.isSuper && this.history.length > 0) {
             const followerData = this.history[0];
             ctx.save();
             ctx.translate(this.followerX + this.width / 2, followerData.y + this.height / 2);
@@ -137,17 +139,17 @@ export class Dino {
             ctx.restore();
         }
 
-        // Draw Flying Off T-Rex if active
-        if (this.flyingOffTrex) {
+        // Draw Flying Off sprite if active
+        if (this.flyingOffSprite) {
             ctx.save();
-            ctx.translate(this.flyingOffTrex.x + this.width / 2, this.flyingOffTrex.y + this.height / 2);
+            ctx.translate(this.flyingOffSprite.x + this.width / 2, this.flyingOffSprite.y + this.height / 2);
             ctx.rotate(-0.2); // Slighting angle up
             ctx.scale(0.8, 0.8);
-            this.drawSuperTRex(ctx);
+            this.drawSuper(ctx, this.flyingOffSprite.type);
             ctx.restore();
         }
 
-        // Draw Primary Entity (Super T-Rex or Normal Dino)
+        // Draw Primary Entity (Super Mode or Normal Dino)
         ctx.save();
         ctx.translate(this.displayX + this.width / 2, this.y + this.height / 2);
 
@@ -156,8 +158,8 @@ export class Dino {
 
         ctx.scale(0.8, 0.8);
 
-        if (this.isSuperTRex) {
-            this.drawSuperTRex(ctx);
+        if (this.isSuper) {
+            this.drawSuper(ctx);
         } else {
             this.drawNormalDino(ctx);
         }
@@ -185,24 +187,26 @@ export class Dino {
         this.invulnerableTimer = CONFIG.INVULNERABLE_DURATION;
     }
 
-    setSuperTRex(active) {
-        if (active && !this.isSuperTRex) {
+    setSuper(active, type = 'trex') {
+        if (active && !this.isSuper) {
             // Start of powerup: the normal dino becomes the follower
-            this.isSuperTRex = true;
+            this.isSuper = true;
+            this.superType = type;
             this.visible = true;
             this.invulnerable = false;
-        } else if (!active && this.isSuperTRex) {
-            // End of powerup: Super T-Rex flies off, normal dino takes over
-            this.finishSuperTRex();
+        } else if (!active && this.isSuper) {
+            // End of powerup: Super sprite flies off, normal dino takes over
+            this.finishSuper();
         }
     }
 
-    finishSuperTRex() {
-        this.flyingOffTrex = {
+    finishSuper() {
+        this.flyingOffSprite = {
             x: this.displayX,
             y: this.y,
             vx: 800,
-            vy: -400
+            vy: -400,
+            type: this.superType
         };
 
         // Smoothly transition state: normal dino was at followerX, history[0].y
@@ -212,7 +216,8 @@ export class Dino {
             // velocity is approximated or we could store it in history
         }
         this.displayX = this.followerX;
-        this.isSuperTRex = false;
+        this.isSuper = false;
+        this.superType = null;
         this.history = [];
     }
 
@@ -233,9 +238,10 @@ export class Dino {
         this.colorIndex = 0;
         this.invulnerable = false;
         this.visible = true;
-        this.isSuperTRex = false;
+        this.isSuper = false;
+        this.superType = null;
         this.history = [];
-        this.flyingOffTrex = null;
+        this.flyingOffSprite = null;
     }
 
     drawRaptor(ctx) {
@@ -274,12 +280,13 @@ export class Dino {
         }
     }
 
-    drawSuperTRex(ctx) {
-        if (this.sprites.superTrex.complete && this.sprites.superTrex.naturalWidth > 0) {
-            const s = 210;
-            ctx.drawImage(this.sprites.superTrex, -s / 2, -s / 2, s, s);
+    drawSuper(ctx, type = this.superType) {
+        const sprite = type === 'spino' ? this.sprites.superSpino : this.sprites.superTrex;
+        if (sprite.complete && sprite.naturalWidth > 0) {
+            const s = type === 'spino' ? 240 : 210;
+            ctx.drawImage(sprite, -s / 2, -s / 2, s, s);
         } else {
-            ctx.fillStyle = '#0ff';
+            ctx.fillStyle = type === 'spino' ? '#0f0' : '#0ff';
             ctx.fillRect(-40, -40, 80, 80);
         }
     }

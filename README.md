@@ -8,7 +8,7 @@ A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand 
 - **Visuals**: High-quality WebP/PNG sprites for all evolution stages.
 - **Powerups**:
     - 🦴 **Dino Bone**: (+5 points, 1.5x Speed Boost for 5s). Spawns every 5-15 points.
-    - 💎 **Diamond (Super T-Rex)**: Transform into the invulnerable **Super T-Rex** for 30 seconds! In this mode, you smash through DNA strands instead of taking damage. Spawns every 50 points.
+    - 💎/💚 **Gems (Super Dino)**: Transform into an invulnerable **Super Dino** for 30 seconds! Diamonds turn you into a **Super T-Rex**, while Emeralds turn you into a **Super Spinosaurus**. In this mode, you smash through DNA strands instead of taking damage. Spawns every 50 points.
 - **Dynamic Difficulty**: Game speed increases with each evolution level.
 - **Procedural Audio**: 8-bit style sound effects (Jump, Hit, Point, Upgrade, Powerup, Explosion) and a looping chiptune soundtrack synthesized via the Web Audio API.
 - **Audio Toggles & Pause Button**: Music/SFX buttons plus a tap-friendly pause button live under the instructions so mobile players never have to reach into the gameplay area.
@@ -25,7 +25,7 @@ A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand 
 - **P**: Pause / Resume
 - **R**: Restart (on Game Over screen)
 - **Footer controls**: Toggle Music/SFX and pause instantly from the footer (optimized for both desktop and touch).
-- **HUD**: Score sits in a separate top bar, hearts + Super T-Rex timer float over the playfield, and all elements resize gracefully down to small phones.
+- **HUD**: Score sits in a separate top bar, hearts + Super Dino timer float over the playfield, and all elements resize gracefully down to small phones.
 
 ## 🚀 Getting Started
 
@@ -100,7 +100,7 @@ All gameplay logic is centralized in `src/Constants.js`. You can easily adjust:
 - `src/Dino.js`: Physics, evolution logic, and sprite rendering.
 - `src/ObstacleManager.js`: DNA strand spawning and movement.
 - `src/CoinManager.js`: Custom coin patterns and message spawning ("GO IAN").
-- `src/PowerupManager.js`: Bone and Diamond powerup lifecycle.
+- `src/PowerupManager.js`: Bone and Gem (Diamond/Emerald) powerup lifecycle.
 - `src/AudioManager.js`: On-the-fly sound effect synthesis.
 - `src/musicLoop.js`: Defines the procedural Jurassic background soundtrack.
 - `src/Constants.js`: Centralized game configuration.

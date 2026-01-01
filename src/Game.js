@@ -40,7 +40,7 @@ export class Game {
         this.lastTime = 0;
         this.time = 0; // Cumulative game time
         this.speedBoostTimer = 0;
-        this.superTRexTimer = 0;
+        this.superModeTimer = 0;
         this.hitFlashTimer = 0;
         this.autoPausedByVisibility = false;
 
@@ -197,7 +197,7 @@ export class Game {
         this.score = 0;
         this.hearts = CONFIG.MAX_HEARTS;
         this.speedBoostTimer = 0;
-        this.superTRexTimer = 0;
+        this.superModeTimer = 0;
         this.dino.reset();
         this.obstacles.reset();
         this.powerups.reset();
@@ -285,19 +285,20 @@ export class Game {
             if (this.speedBoostTimer <= 0) this.showMessage('Normal Speed');
         }
 
-        if (this.superTRexTimer > 0) {
-            this.superTRexTimer -= deltaTime;
+        if (this.superModeTimer > 0) {
+            this.superModeTimer -= deltaTime;
             this.ui.powerupTimer.classList.remove('hidden');
 
             // Optimization: Only update DOM when integer value changes
-            const seconds = Math.ceil(this.superTRexTimer);
+            const seconds = Math.ceil(this.superModeTimer);
             if (this.ui.timerSeconds.innerText != seconds) {
                 this.ui.timerSeconds.innerText = seconds;
             }
 
-            if (this.superTRexTimer <= 0) {
-                this.dino.setSuperTRex(false);
-                this.showMessage('Super T-Rex Power Depleted');
+            if (this.superModeTimer <= 0) {
+                const superName = this.dino.superType === 'spino' ? 'Super Spinosaurus' : 'Super T-Rex';
+                this.dino.setSuper(false);
+                this.showMessage(`${superName} Power Depleted`);
                 this.ui.powerupTimer.classList.add('hidden');
             }
         }
@@ -323,7 +324,8 @@ export class Game {
     handlePowerupCollisions() {
         const type = this.powerups.checkCollision(this.dino);
         if (type === 'BONE') this.collectBone();
-        else if (type === 'DIAMOND') this.transformToSuperTRex();
+        else if (type === 'DIAMOND') this.transformToSuperMode('trex');
+        else if (type === 'EMERALD') this.transformToSuperMode('spino');
     }
 
     handleCoinCollisions() {
@@ -335,15 +337,15 @@ export class Game {
 
     handleObstacleCollisions() {
         if (this.obstacles.checkCollision(this.dino)) {
-            if (this.dino.isSuperTRex) {
-                this.handleSuperTRexSmash();
+            if (this.dino.isSuper) {
+                this.handleSuperSmash();
             } else if (!this.dino.invulnerable) {
                 this.takeDamage();
             }
         }
     }
 
-    handleSuperTRexSmash() {
+    handleSuperSmash() {
         const dx = this.dino.x + this.dino.width / 2;
         const dy = this.dino.y + this.dino.height / 2;
         const dr = this.dino.radius * 0.8;
@@ -391,11 +393,12 @@ export class Game {
         this.showMessage('🦴 MEGA SPEED 🦴');
     }
 
-    transformToSuperTRex() {
+    transformToSuperMode(type) {
         this.audio.playTransform();
-        this.superTRexTimer = CONFIG.SUPER_TREX_DURATION;
-        this.dino.setSuperTRex(true);
-        this.showMessage('🧬 SUPER T-REX ACTIVATED 🧬');
+        this.superModeTimer = CONFIG.SUPER_TREX_DURATION;
+        this.dino.setSuper(true, type);
+        const name = type === 'spino' ? 'SUPER SPINOSAURUS' : 'SUPER T-REX';
+        this.showMessage(`🧬 ${name} ACTIVATED 🧬`);
     }
 
     incrementScore(amount = 1) {
