@@ -26,6 +26,11 @@
           <p>High Score: <span id="high-score">0</span></p>
           <button id="restart-btn">Try Again</button>
         </div>
+        <div id="pause-screen" class="hidden screen">
+          <h1>Paused</h1>
+          <p>Press 'P' or Click below to Resume</p>
+          <button id="resume-btn">Resume</button>
+        </div>
         <div id="hud" class="hidden">
           <div class="score-container">Score: <span id="score">0</span>
             <div class="sub-score">High Score: <span id="gameplay-high-score">0</span></div>
@@ -40,6 +45,7 @@
     <footer id="game-footer">
       <div class="instructions">
         <span class="key">Space / Click / Tap</span>: Jump |
+        <span class="key">P</span>: Pause |
         <span class="key">R</span>: Restart |
         <span class="key">Coins</span>: +1 pt |
         <span class="key">Bones</span>: Mega Speed |

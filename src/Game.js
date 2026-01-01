@@ -61,14 +61,17 @@ export class Game {
             gameplayHighScore: document.getElementById('gameplay-high-score'),
             hearts: document.getElementById('hearts'),
             overlay: document.getElementById('message-overlay'),
-            overlayText: document.getElementById('message-text')
+            overlayText: document.getElementById('message-text'),
+            pause: document.getElementById('pause-screen')
         };
+        this.ui.resumeBtn = document.getElementById('resume-btn');
     }
 
     bindEvents() {
         window.addEventListener('keydown', e => {
             if (e.code === 'Space') this.handleInput();
             if (e.key.toLowerCase() === 'r') this.resetGame();
+            if (e.key.toLowerCase() === 'p') this.togglePause();
         });
 
         // Mouse/Touch (bind to window to catch clicks on the UI overlay)
@@ -95,6 +98,11 @@ export class Game {
                 this.updateUI();
             }
         });
+
+        this.ui.resumeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.state === 'PAUSED') this.togglePause();
+        });
     }
 
     handleInput() {
@@ -109,6 +117,7 @@ export class Game {
     startGame() {
         this.state = 'PLAYING';
         this.ui.start.classList.add('hidden');
+        this.ui.pause.classList.add('hidden');
         this.ui.hud.classList.remove('hidden');
         this.dino.jump();
         this.audio.playJump();
@@ -124,7 +133,8 @@ export class Game {
         this.obstacles.reset();
         this.powerups.reset();
         this.coins.reset();
-        this.state = 'START'; // Go straight to playing or START? "Try Again" implies immediate restart usually, but START gives a breather. Let's go START.
+        this.state = 'START';
+        this.ui.pause.classList.add('hidden');
 
         // Reset themes
         CONFIG.THEMES.forEach(theme => this.ui.container.classList.remove(theme));
@@ -140,6 +150,16 @@ export class Game {
         this.ui.container.style.removeProperty('--border-core');
 
         this.updateUI();
+    }
+
+    togglePause() {
+        if (this.state === 'PLAYING') {
+            this.state = 'PAUSED';
+            this.ui.pause.classList.remove('hidden');
+        } else if (this.state === 'PAUSED') {
+            this.state = 'PLAYING';
+            this.ui.pause.classList.add('hidden');
+        }
     }
 
     gameLoop(timestamp) {
