@@ -42,6 +42,7 @@ export class Game {
         this.speedBoostTimer = 0;
         this.superTRexTimer = 0;
         this.hitFlashTimer = 0;
+        this.autoPausedByVisibility = false;
 
         this.initUI();
         this.bindEvents();
@@ -156,6 +157,10 @@ export class Game {
                 }
             });
         }
+
+        document.addEventListener('visibilitychange', () => {
+            this.handleVisibilityChange(document.hidden);
+        });
     }
 
     handleInput() {
@@ -479,5 +484,16 @@ export class Game {
         this.updateUI();
         this.ui.hud.classList.add('hidden');
         this.ui.gameOver.classList.remove('hidden');
+    }
+
+    handleVisibilityChange(isHidden) {
+        if (isHidden) {
+            if (this.state === 'PLAYING') {
+                this.autoPausedByVisibility = true;
+                this.togglePause();
+            }
+        } else {
+            this.autoPausedByVisibility = false;
+        }
     }
 }
