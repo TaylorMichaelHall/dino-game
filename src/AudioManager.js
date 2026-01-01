@@ -17,7 +17,18 @@ export class AudioManager {
         this.musicGain = this.ctx.createGain();
         this.musicGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
 
-        this.musicFilter.connect(this.musicGain);
+        // Subtle delay-based reverb/echo for music
+        this.musicReverbDelay = this.ctx.createDelay();
+        this.musicReverbDelay.delayTime.value = 0.15;
+        this.musicReverbFeedback = this.ctx.createGain();
+        this.musicReverbFeedback.gain.value = 0.1; // Initial subtle feedback
+
+        this.musicFilter.connect(this.musicGain); // Dry path
+        this.musicFilter.connect(this.musicReverbDelay); // Wet path
+        this.musicReverbDelay.connect(this.musicReverbFeedback);
+        this.musicReverbFeedback.connect(this.musicReverbDelay);
+        this.musicReverbDelay.connect(this.musicGain);
+
         this.musicGain.connect(this.ctx.destination);
 
         this.musicLoopId = null;
@@ -26,7 +37,11 @@ export class AudioManager {
         this.musicVolume = 0.1; // keep loop audible under punchier SFX
         this.musicLoopDuration = JURASSIC_LOOP_DURATION;
         this.sfxMuted = false;
+        this.sfxVolumeScale = 0.7; // Lower SFX by 30% to improve music balance
         this.activeMusicNodes = new Set();
+
+        this.nextMusicStartTime = 0;
+        this.musicLoopCount = 0;
     }
 
     // --- Sound Synthesis ---
@@ -44,8 +59,8 @@ export class AudioManager {
         osc.frequency.setValueAtTime(150, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(400, this.ctx.currentTime + 0.1);
 
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01 * this.sfxVolumeScale, this.ctx.currentTime + 0.1);
 
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -67,7 +82,7 @@ export class AudioManager {
         osc.frequency.setValueAtTime(120, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(40, this.ctx.currentTime + 0.2);
 
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.2 * this.sfxVolumeScale, this.ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.2);
 
         osc.connect(gain);
@@ -90,8 +105,8 @@ export class AudioManager {
         osc.frequency.setValueAtTime(800, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(1200, this.ctx.currentTime + 0.05);
 
-        gain.gain.setValueAtTime(0.05, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.1);
+        gain.gain.setValueAtTime(0.05 * this.sfxVolumeScale, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01 * this.sfxVolumeScale, this.ctx.currentTime + 0.1);
 
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -110,8 +125,8 @@ export class AudioManager {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
-            gain.gain.setValueAtTime(0.1, this.ctx.currentTime + delay);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + delay + 0.2);
+            gain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, this.ctx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01 * this.sfxVolumeScale, this.ctx.currentTime + delay + 0.2);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start(this.ctx.currentTime + delay);
@@ -137,7 +152,7 @@ export class AudioManager {
         osc.frequency.setValueAtTime(300, this.ctx.currentTime);
         osc.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.5);
 
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, this.ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
 
         osc.connect(gain);
@@ -157,8 +172,8 @@ export class AudioManager {
             const osc = this.ctx.createOscillator();
             const gain = this.ctx.createGain();
             osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
-            gain.gain.setValueAtTime(0.1, this.ctx.currentTime + delay);
-            gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + delay + 0.1);
+            gain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, this.ctx.currentTime + delay);
+            gain.gain.exponentialRampToValueAtTime(0.01 * this.sfxVolumeScale, this.ctx.currentTime + delay + 0.1);
             osc.connect(gain);
             gain.connect(this.ctx.destination);
             osc.start(this.ctx.currentTime + delay);
@@ -179,7 +194,7 @@ export class AudioManager {
         osc.type = 'sawtooth';
         osc.frequency.setValueAtTime(100, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(800, this.ctx.currentTime + 0.5);
-        gain.gain.setValueAtTime(0.1, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, this.ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -195,7 +210,7 @@ export class AudioManager {
         osc.type = 'square';
         osc.frequency.setValueAtTime(80, this.ctx.currentTime);
         osc.frequency.linearRampToValueAtTime(10, this.ctx.currentTime + 0.3);
-        gain.gain.setValueAtTime(0.2, this.ctx.currentTime);
+        gain.gain.setValueAtTime(0.2 * this.sfxVolumeScale, this.ctx.currentTime);
         gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.3);
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -216,7 +231,7 @@ export class AudioManager {
             osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
             osc.frequency.exponentialRampToValueAtTime(freq * 1.5, this.ctx.currentTime + delay + duration);
 
-            gain.gain.setValueAtTime(0.1, this.ctx.currentTime + delay);
+            gain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, this.ctx.currentTime + delay);
             gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + delay + duration);
 
             osc.connect(gain);
@@ -244,8 +259,8 @@ export class AudioManager {
         osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
         osc.frequency.exponentialRampToValueAtTime(1600, this.ctx.currentTime + 0.05);
 
-        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.08 * this.sfxVolumeScale, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01 * this.sfxVolumeScale, this.ctx.currentTime + 0.15);
 
         osc.connect(gain);
         gain.connect(this.ctx.destination);
@@ -263,8 +278,8 @@ export class AudioManager {
 
         const now = this.ctx.currentTime;
         const gain = this.ctx.createGain();
-        gain.gain.setValueAtTime(0.04, now);
-        gain.gain.exponentialRampToValueAtTime(0.005, now + 0.25);
+        gain.gain.setValueAtTime(0.04 * this.sfxVolumeScale, now);
+        gain.gain.exponentialRampToValueAtTime(0.005 * this.sfxVolumeScale, now + 0.25);
 
         const oscA = this.ctx.createOscillator();
         oscA.type = 'triangle';
@@ -303,6 +318,8 @@ export class AudioManager {
 
         this.musicPlaying = true;
         this.setMusicMuted(false);
+        this.nextMusicStartTime = this.ctx.currentTime + 0.1;
+        this.musicLoopCount = 0;
         this.scheduleMusicLoop();
     }
 
@@ -334,11 +351,27 @@ export class AudioManager {
     scheduleMusicLoop() {
         if (!this.musicPlaying) return;
 
-        scheduleJurassicLoop(this);
-        this.musicLoopId = setTimeout(() => this.scheduleMusicLoop(), this.musicLoopDuration * 1000);
+        // No pitch shift (reverting to 1.0)
+        const pitchShift = 1.0;
+
+        // Toggle reverb intensity instead of pitch (Loop A = subtle, Loop B = wetter)
+        const reverbIntensity = (this.musicLoopCount % 2 === 1) ? 0.35 : 0.1;
+        const now = this.ctx.currentTime;
+        this.musicReverbFeedback.gain.cancelScheduledValues(now);
+        this.musicReverbFeedback.gain.linearRampToValueAtTime(reverbIntensity, now + 1.0);
+
+        scheduleJurassicLoop(this, this.nextMusicStartTime, pitchShift);
+
+        // Advance the timeline
+        this.nextMusicStartTime += this.musicLoopDuration;
+        this.musicLoopCount++;
+
+        // Schedule the next check-in before the current loop finishes (lookahead)
+        const lookaheadMs = (this.musicLoopDuration / 2) * 1000;
+        this.musicLoopId = setTimeout(() => this.scheduleMusicLoop(), lookaheadMs);
     }
 
-    playMusicNote(freq, startTime, duration, type, volume, vibratoHz = 0) {
+    playMusicNote(freq, startTime, duration, type, volume, vibratoHz = 0, attack = 0.02, release = 0.1) {
         const osc = this.ctx.createOscillator();
         const gain = this.ctx.createGain();
 
@@ -357,8 +390,8 @@ export class AudioManager {
         }
 
         gain.gain.setValueAtTime(0.0001, startTime);
-        gain.gain.linearRampToValueAtTime(volume, startTime + 0.02);
-        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration);
+        gain.gain.linearRampToValueAtTime(volume, startTime + attack);
+        gain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration + release);
 
         osc.connect(gain);
         gain.connect(this.musicFilter);
@@ -371,7 +404,7 @@ export class AudioManager {
         };
 
         osc.start(startTime);
-        osc.stop(startTime + duration + 0.1);
+        osc.stop(startTime + duration + release + 0.1);
     }
 
     stopActiveMusicNodes() {

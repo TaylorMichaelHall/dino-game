@@ -10,6 +10,9 @@
 
 <body>
   <div id="game-wrapper">
+    <header id="game-header">
+      <h1 class="main-title">Ian's Jurassic Escape</h1>
+    </header>
     <div id="scoreboard">
       <div class="score-card">
         <span class="score-label">Score</span>
@@ -27,7 +30,6 @@
       <canvas id="gameCanvas"></canvas>
       <div id="ui-layer">
         <div id="start-screen" class="screen">
-          <h1>Ian's Jurassic Escape</h1>
           <p class="start-tip">Press Space, Click, or Tap to Start</p>
           <p class="small">Avoid the DNA strands!</p>
           <p class="high-score-start">High Score: <span id="start-high-score">0</span></p>
@@ -62,11 +64,11 @@
           <span class="key">Space / Click / Tap</span>
           <span class="desc">Jump</span>
         </div>
-        <div class="instruction">
+        <div class="instruction desktop-only">
           <span class="key">P</span>
           <span class="desc">Pause</span>
         </div>
-        <div class="instruction">
+        <div class="instruction desktop-only">
           <span class="key">R</span>
           <span class="desc">Restart</span>
         </div>
