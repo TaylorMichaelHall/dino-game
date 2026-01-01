@@ -36,6 +36,7 @@ export class Game {
         this.time = 0; // Cumulative game time
         this.speedBoostTimer = 0;
         this.superTRexTimer = 0;
+        this.hitFlashTimer = 0;
 
         this.initUI();
         this.bindEvents();
@@ -184,6 +185,7 @@ export class Game {
     }
 
     update(deltaTime) {
+        if (this.hitFlashTimer > 0) this.hitFlashTimer -= deltaTime;
         this.updateTimers(deltaTime);
         this.updateContainerBorder();
 
@@ -218,12 +220,14 @@ export class Game {
     updateContainerBorder() {
         if (this.state !== 'PLAYING') return;
 
-        const currentColor = this.obstacles.colors[this.obstacles.colorIndex % this.obstacles.colors.length];
+        const currentColor = this.hitFlashTimer > 0 ? '#ffffff' : this.obstacles.colors[this.obstacles.colorIndex % this.obstacles.colors.length];
         const flicker = 8 + Math.random() * 8; // Match DNA flicker intensity
 
         this.ui.container.style.setProperty('--glow-color', currentColor);
         this.ui.container.style.setProperty('--glow-blur', `${flicker}px`);
-        this.ui.container.style.setProperty('--border-core', '#ffffff');
+        this.ui.container.style.setProperty('--border-core', this.hitFlashTimer > 0 ? '#ffffff' : '#ffffff'); // Always white core, but maybe flash intensity?
+        // Actually, let's make the core flash too? It's already white. 
+        // Let's just use the glow color which is now white during flash.
     }
 
     handlePowerupCollisions() {
@@ -261,6 +265,7 @@ export class Game {
             if (hitTop || hitBottom) {
                 this.audio.playSuperSmash();
                 this.incrementScore(10);
+                this.hitFlashTimer = CONFIG.HIT_FLASH_DURATION;
                 return false;
             }
             return true;
@@ -338,6 +343,7 @@ export class Game {
         this.updateUI();
         this.dino.takeDamage();
         this.audio.playHit();
+        this.hitFlashTimer = CONFIG.HIT_FLASH_DURATION;
 
         if (this.hearts <= 0) {
             this.gameOver();

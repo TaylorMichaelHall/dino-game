@@ -6,7 +6,6 @@ export class CoinManager {
         this.coins = [];
         this.coinRadius = 12;
         this.coinImage = this.loadImage('/sprites/coin.png');
-        this.lastNameSpawnScore = 0;
 
         // Letter patterns (7-row grids for more detail/size)
         this.letters = {
@@ -112,32 +111,6 @@ export class CoinManager {
         return false;
     }
 
-    spawnName() {
-        const startX = this.game.width + 100;
-        const startY = this.game.height / 2 - 140; // Adjusted for 7-row height
-        const spacing = 40; // Increased coin spacing for size
-        const letterSpacing = 80; // Increased spacing between letters
-        let currentX = startX;
-
-        ['I', 'A', 'N'].forEach(char => {
-            const grid = this.letters[char];
-            for (let r = 0; r < grid.length; r++) {
-                for (let c = 0; c < grid[r].length; c++) {
-                    if (grid[r][c] === 1) {
-                        const x = currentX + c * spacing;
-                        const y = startY + r * spacing;
-                        if (!this.overlapsDNA(x, y)) {
-                            this.coins.push({ x, y, collected: false });
-                        }
-                    }
-                }
-            }
-            currentX += (grid[0].length * spacing) + letterSpacing;
-        });
-
-        this.lastNameSpawnScore = this.game.score;
-    }
-
     spawnStartMessage() {
         const startX = this.game.width + 100;
         const startY = this.game.height / 2 - 140;
@@ -186,11 +159,6 @@ export class CoinManager {
         // Cleanup off-screen
         this.coins = this.coins.filter(coin => !coin.collected && coin.x > -50);
 
-        // Rare "IAN" spawn every 1000 points
-        if (this.game.score >= this.lastNameSpawnScore + 1000) {
-            this.spawnName();
-        }
-
         // Improved Spawn logic: Higher probability during Mega Speed
         const spawnProb = this.game.speedBoostTimer > 0 ? 0.05 : 0.005;
         if (Math.random() < spawnProb) {
@@ -231,6 +199,5 @@ export class CoinManager {
 
     reset() {
         this.coins = [];
-        this.lastNameSpawnScore = 0;
     }
 }

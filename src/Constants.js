@@ -12,6 +12,7 @@ export const CONFIG = {
     MAX_HEARTS: 3,
     INVULNERABLE_DURATION: 1.0,
     FLASH_SPEED: 0.1,
+    HIT_FLASH_DURATION: 0.15,
 
     // Visuals
     CANVAS_WIDTH: 800,

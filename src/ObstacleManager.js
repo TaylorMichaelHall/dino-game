@@ -57,6 +57,8 @@ export class ObstacleManager {
     }
 
     drawDNAStrand(ctx, x, startY, endY, color) {
+        const isFlashing = this.game.hitFlashTimer > 0;
+        const drawColor = isFlashing ? '#ffffff' : color;
         const width = this.obstacleWidth;
         const height = endY - startY;
 
@@ -67,7 +69,7 @@ export class ObstacleManager {
         ctx.clip();
 
         // Double helix pattern simulation
-        ctx.strokeStyle = color;
+        ctx.strokeStyle = drawColor;
         ctx.lineWidth = 4;
 
         const step = 10;
@@ -89,7 +91,7 @@ export class ObstacleManager {
             }
 
             // Draw points
-            ctx.fillStyle = color;
+            ctx.fillStyle = drawColor;
             ctx.fillRect(x1 - 2, y, 4, 4);
             ctx.fillRect(x2 - 2, y, 4, 4);
         }
@@ -100,10 +102,10 @@ export class ObstacleManager {
         ctx.save();
 
         // Layer 1: Colored Glow (Matches DNA color)
-        ctx.strokeStyle = color;
+        ctx.strokeStyle = drawColor;
         ctx.lineWidth = 6;
         ctx.shadowBlur = 10 + Math.random() * 8; // Dynamic flicker
-        ctx.shadowColor = color;
+        ctx.shadowColor = drawColor;
         ctx.strokeRect(x, startY, width, height);
 
         // Layer 2: White Core
