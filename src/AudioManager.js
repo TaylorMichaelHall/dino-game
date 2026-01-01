@@ -175,6 +175,33 @@ export class AudioManager {
     }
 
     /**
+     * Fun, rewarding sound for smashing DNA as Super T-Rex
+     */
+    playSuperSmash() {
+        this.resumeContext();
+        const playTone = (freq, type, duration, delay) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = type;
+            osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
+            osc.frequency.exponentialRampToValueAtTime(freq * 1.5, this.ctx.currentTime + delay + duration);
+
+            gain.gain.setValueAtTime(0.1, this.ctx.currentTime + delay);
+            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + delay + duration);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(this.ctx.currentTime + delay);
+            osc.stop(this.ctx.currentTime + delay + duration);
+        };
+
+        // Multi-tone "pop" or "sparkle" effect
+        playTone(600, 'sine', 0.1, 0);
+        playTone(900, 'triangle', 0.1, 0.03);
+        playTone(1200, 'sine', 0.1, 0.06);
+    }
+
+    /**
      * Required to handle browser auto-play policies
      */
     resumeContext() {

@@ -56,6 +56,7 @@ export class Game {
             finalScore: document.getElementById('final-score'),
             highScore: document.getElementById('high-score'),
             startHighScore: document.getElementById('start-high-score'),
+            gameplayHighScore: document.getElementById('gameplay-high-score'),
             hearts: document.getElementById('hearts'),
             overlay: document.getElementById('message-overlay'),
             overlayText: document.getElementById('message-text')
@@ -128,6 +129,12 @@ export class Game {
         this.ui.gameOver.classList.add('hidden');
         this.ui.start.classList.remove('hidden');
         this.ui.hud.classList.add('hidden');
+
+        // Reset border
+        this.ui.container.style.removeProperty('--glow-color');
+        this.ui.container.style.removeProperty('--glow-blur');
+        this.ui.container.style.removeProperty('--border-core');
+
         this.updateUI();
     }
 
@@ -154,6 +161,7 @@ export class Game {
 
     update(deltaTime) {
         this.updateTimers(deltaTime);
+        this.updateContainerBorder();
 
         const speedMultiplier = this.speedBoostTimer > 0 ? CONFIG.BONE_SPEED_BOOST : 1;
 
@@ -179,6 +187,17 @@ export class Game {
                 this.showMessage('Super T-Rex Power Depleted');
             }
         }
+    }
+
+    updateContainerBorder() {
+        if (this.state !== 'PLAYING') return;
+
+        const currentColor = this.obstacles.colors[this.obstacles.colorIndex % this.obstacles.colors.length];
+        const flicker = 8 + Math.random() * 8; // Match DNA flicker intensity
+
+        this.ui.container.style.setProperty('--glow-color', currentColor);
+        this.ui.container.style.setProperty('--glow-blur', `${flicker}px`);
+        this.ui.container.style.setProperty('--border-core', '#ffffff');
     }
 
     handlePowerupCollisions() {
@@ -207,7 +226,7 @@ export class Game {
             const hitBottom = (dx + dr > obs.x && dx - dr < obs.x + this.obstacles.obstacleWidth && dy + dr > obs.topHeight + this.obstacles.gapSize);
 
             if (hitTop || hitBottom) {
-                this.audio.playExplosion();
+                this.audio.playSuperSmash();
                 return false;
             }
             return true;
@@ -301,6 +320,7 @@ export class Game {
     updateUI() {
         this.ui.hearts.innerText = '❤️'.repeat(this.hearts);
         this.ui.score.innerText = this.score;
+        this.ui.gameplayHighScore.innerText = this.highScore;
         this.ui.highScore.innerText = this.highScore;
         this.ui.startHighScore.innerText = this.highScore;
         this.ui.finalScore.innerText = this.score;

@@ -4,7 +4,7 @@ A prehistoric "Flappy Bird" style game featuring evolving dinosaurs, DNA strand 
 
 ## 🦖 Features
 
-- **Evolution System**: Raptor → Quetzalcoatlus → T-Rex → Spinosaurus. Evolve every 10 points!
+- **Evolution System**: Raptor → Quetzalcoatlus → T-Rex → Spinosaurus → Mosasaurus. Evolve every 10 points!
 - **Visuals**: High-quality WebP/PNG sprites for all evolution stages.
 - **Powerups**:
     - 🦴 **Dino Bone**: (+5 points, 1.5x Speed Boost for 5s). Spawns every 5-15 points.

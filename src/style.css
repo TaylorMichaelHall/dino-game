@@ -31,15 +31,19 @@ body {
   width: 100%;
   height: 100%;
   max-width: 800px;
-  /* Optional constraint for desktop */
   max-height: 600px;
   background: linear-gradient(180deg, #0f0c29 0%, #302b63 50%, #24243e 100%);
-  /* Deep twilight gradient */
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
-  border: 4px solid #ffffff;
+
+  /* Dynamic Electric Border */
+  border: 2px solid var(--border-core, #ffffff);
+  box-shadow:
+    0 0 var(--glow-blur, 8px) var(--glow-color, rgba(255, 255, 255, 0.3)),
+    inset 0 0 var(--glow-blur, 8px) var(--glow-color, rgba(255, 255, 255, 0.3)),
+    0 0 20px rgba(0, 0, 0, 0.5);
+
   border-radius: 8px;
   overflow: hidden;
-  transition: background 1s ease;
+  transition: background 1s ease, border-color 0.3s ease;
 }
 
 #game-container.theme-1 {
@@ -55,7 +59,7 @@ body {
 }
 
 #game-container.theme-4 {
-  background: linear-gradient(180deg, #0cebeb 0%, #20e3b2 50%, #29ffc6 100%);
+  background: linear-gradient(180deg, #0a2e38 0%, #154734 50%, #0c2018 100%);
 }
 
 #game-container.theme-5 {
@@ -217,4 +221,11 @@ button:active {
     opacity: 0;
     transform: translate(-50%, -60%);
   }
+}
+
+.sub-score {
+  font-size: 1rem;
+  font-weight: normal;
+  opacity: 0.7;
+  margin-top: 5px;
 }

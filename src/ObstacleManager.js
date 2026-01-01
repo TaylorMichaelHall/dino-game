@@ -96,10 +96,23 @@ export class ObstacleManager {
         ctx.stroke();
         ctx.restore();
 
-        // Draw borders AFTER clipping to ensure they are visible and thick
-        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-        ctx.lineWidth = 4;
+        // Draw Electric Borders
+        ctx.save();
+
+        // Layer 1: Colored Glow (Matches DNA color)
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 6;
+        ctx.shadowBlur = 10 + Math.random() * 8; // Dynamic flicker
+        ctx.shadowColor = color;
         ctx.strokeRect(x, startY, width, height);
+
+        // Layer 2: White Core
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2;
+        ctx.shadowBlur = 0; // Disable shadow for the inner core
+        ctx.strokeRect(x, startY, width, height);
+
+        ctx.restore();
     }
 
     checkCollision(dino) {

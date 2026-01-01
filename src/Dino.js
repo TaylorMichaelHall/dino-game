@@ -19,7 +19,7 @@ export class Dino {
 
         this.radius = 20;
 
-        this.types = ['Raptor', 'Quetzalcoatlus', 'T-Rex', 'Spinosaurus'];
+        this.types = ['Raptor', 'Quetzalcoatlus', 'T-Rex', 'Spinosaurus', 'Mosasaurus'];
         this.level = 0;
         this.colorIndex = 0;
 
@@ -39,7 +39,8 @@ export class Dino {
             quetzal: this.loadImage('/sprites/quetz.png'),
             trex: this.loadImage('/sprites/trex.png'),
             spino: this.loadImage('/sprites/spino.png'),
-            superTrex: this.loadImage('/sprites/super_trex.png')
+            superTrex: this.loadImage('/sprites/super_trex.png'),
+            mosa: this.loadImage('/sprites/mosa.png')
         };
     }
 
@@ -98,6 +99,7 @@ export class Dino {
             else if (type === 'Quetzalcoatlus') this.drawQuetzalcoatlus(ctx);
             else if (type === 'T-Rex') this.drawTRex(ctx);
             else if (type === 'Spinosaurus') this.drawSpinosaurus(ctx);
+            else if (type === 'Mosasaurus') this.drawMosasaurus(ctx);
         }
 
         ctx.restore();
@@ -144,7 +146,7 @@ export class Dino {
 
     drawRaptor(ctx) {
         if (this.sprites.raptor.complete && this.sprites.raptor.naturalWidth > 0) {
-            const s = 105;
+            const s = 126;
             ctx.drawImage(this.sprites.raptor, -s / 2, -s / 2, s, s);
         } else {
             ctx.fillRect(-20, -20, 40, 40);
@@ -184,6 +186,15 @@ export class Dino {
             ctx.drawImage(this.sprites.superTrex, -s / 2, -s / 2, s, s);
         } else {
             ctx.fillStyle = '#0ff';
+            ctx.fillRect(-40, -40, 80, 80);
+        }
+    }
+
+    drawMosasaurus(ctx) {
+        if (this.sprites.mosa.complete && this.sprites.mosa.naturalWidth > 0) {
+            const s = 200;
+            ctx.drawImage(this.sprites.mosa, -s / 2, -s / 2, s, s);
+        } else {
             ctx.fillRect(-40, -40, 80, 80);
         }
     }
