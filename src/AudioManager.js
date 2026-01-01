@@ -202,6 +202,28 @@ export class AudioManager {
     }
 
     /**
+     * Bright, high-pitched chime for collecting coins
+     */
+    playCoin() {
+        this.resumeContext();
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1200, this.ctx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(1600, this.ctx.currentTime + 0.05);
+
+        gain.gain.setValueAtTime(0.08, this.ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + 0.15);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start();
+        osc.stop(this.ctx.currentTime + 0.15);
+    }
+
+    /**
      * Required to handle browser auto-play policies
      */
     resumeContext() {

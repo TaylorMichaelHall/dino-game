@@ -1,6 +1,7 @@
 import { Dino } from './Dino.js';
 import { ObstacleManager } from './ObstacleManager.js';
 import { PowerupManager } from './PowerupManager.js';
+import { CoinManager } from './CoinManager.js';
 import { AudioManager } from './AudioManager.js';
 import { CONFIG } from './Constants.js';
 
@@ -24,6 +25,7 @@ export class Game {
         this.dino = new Dino(this);
         this.obstacles = new ObstacleManager(this);
         this.powerups = new PowerupManager(this);
+        this.coins = new CoinManager(this);
 
         this.score = 0;
         this.highScore = parseInt(localStorage.getItem('flappyDinoHighScore') || 0);
@@ -110,6 +112,7 @@ export class Game {
         this.ui.hud.classList.remove('hidden');
         this.dino.jump();
         this.audio.playJump();
+        this.coins.spawnStartMessage();
     }
 
     resetGame() {
@@ -120,6 +123,7 @@ export class Game {
         this.dino.reset();
         this.obstacles.reset();
         this.powerups.reset();
+        this.coins.reset();
         this.state = 'START'; // Go straight to playing or START? "Try Again" implies immediate restart usually, but START gives a breather. Let's go START.
 
         // Reset themes
@@ -168,8 +172,10 @@ export class Game {
         this.dino.update(deltaTime);
         this.obstacles.update(deltaTime, speedMultiplier);
         this.powerups.update(deltaTime, this.obstacles.speed * speedMultiplier);
+        this.coins.update(deltaTime, this.obstacles.speed * speedMultiplier);
 
         this.handlePowerupCollisions();
+        this.handleCoinCollisions();
         this.handleObstacleCollisions();
         this.handleScoring();
     }
@@ -206,6 +212,13 @@ export class Game {
         else if (type === 'DIAMOND') this.transformToSuperTRex();
     }
 
+    handleCoinCollisions() {
+        if (this.coins.checkCollision(this.dino)) {
+            this.incrementScore(1);
+            this.audio.playCoin();
+        }
+    }
+
     handleObstacleCollisions() {
         if (this.obstacles.checkCollision(this.dino)) {
             if (this.dino.isSuperTRex) {
@@ -227,6 +240,7 @@ export class Game {
 
             if (hitTop || hitBottom) {
                 this.audio.playSuperSmash();
+                this.incrementScore(10);
                 return false;
             }
             return true;
@@ -237,7 +251,7 @@ export class Game {
         this.obstacles.obstacles.forEach(obs => {
             if (!obs.passed && obs.x + this.obstacles.obstacleWidth < this.dino.x) {
                 obs.passed = true;
-                this.incrementScore();
+                this.incrementScore(10);
             }
         });
     }
@@ -247,6 +261,7 @@ export class Game {
 
         this.obstacles.draw(this.ctx);
         this.powerups.draw(this.ctx);
+        this.coins.draw(this.ctx);
         this.dino.draw(this.ctx);
     }
 

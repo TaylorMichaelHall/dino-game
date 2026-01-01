@@ -154,7 +154,7 @@ export class ObstacleManager {
 
     reset() {
         this.obstacles = [];
-        this.spawnTimer = 0;
+        this.spawnTimer = -2000; // Delay first spawn to allow GO IAN message
         this.colorIndex = 0;
         this.speed = CONFIG.BASE_SPEED;
     }

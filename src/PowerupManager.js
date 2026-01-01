@@ -51,12 +51,31 @@ export class PowerupManager {
         });
     }
 
+    overlapsDNA(x, y) {
+        const padding = 20;
+        for (let obs of this.game.obstacles.obstacles) {
+            if (
+                x + this.radius > obs.x - padding &&
+                x - this.radius < obs.x + this.game.obstacles.obstacleWidth + padding
+            ) {
+                if (y - this.radius < obs.topHeight + padding ||
+                    y + this.radius > obs.topHeight + this.game.obstacles.gapSize - padding) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     update(deltaTime, speed) {
         this.powerups.forEach(p => {
             p.x -= speed * deltaTime;
         });
 
-        // Cleanup
+        // Dynamic Filtering: Remove powerups that overlap with DNA
+        this.powerups = this.powerups.filter(p => !this.overlapsDNA(p.x, p.y));
+
+        // Cleanup off-screen
         this.powerups = this.powerups.filter(p => !p.collected && p.x > -100);
     }
 
