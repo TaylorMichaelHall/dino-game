@@ -166,25 +166,46 @@ export class AudioManager {
     }
 
     /**
-     * Long downward slide for game over
+     * Short melodic jingle for game over (Eb4 - D4 - C4 - G3)
      */
     playGameOver() {
         if (this.sfxMuted) return;
         this.resumeContext();
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
 
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(300, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(50, this.ctx.currentTime + 0.5);
+        const playNote = (freq, startTime, duration, slideTo = null) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
 
-        gain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, this.ctx.currentTime);
-        gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + 0.5);
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(freq, startTime);
+            if (slideTo) {
+                osc.frequency.exponentialRampToValueAtTime(slideTo, startTime + duration);
+            }
 
-        osc.connect(gain);
-        gain.connect(this.sfxGain);
+            gain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
 
-        this.setupCleanup(osc, gain, this.ctx.currentTime + 0.5);
+            osc.connect(gain);
+            gain.connect(this.sfxGain);
+
+            osc.start(startTime);
+            osc.stop(startTime + duration);
+
+            // Cleanup nodes after they finish
+            osc.onended = () => {
+                osc.disconnect();
+                gain.disconnect();
+            };
+        };
+
+        const now = this.ctx.currentTime;
+        const noteLen = 0.2;
+
+        // Eb4 - D4 - C4 - G3 (downward slide on last note)
+        playNote(311.13, now, noteLen);
+        playNote(293.66, now + noteLen, noteLen);
+        playNote(261.63, now + noteLen * 2, noteLen);
+        playNote(196.00, now + noteLen * 3, noteLen * 4, 130.81); // G3 slide to C3
     }
 
     /**
