@@ -71,7 +71,8 @@ export class Game {
             hearts: document.getElementById('hearts'),
             overlay: document.getElementById('message-overlay'),
             overlayText: document.getElementById('message-text'),
-            pause: document.getElementById('pause-screen')
+            pause: document.getElementById('pause-screen'),
+            startBtn: document.getElementById('start-btn')
         };
         this.ui.resumeBtn = document.getElementById('resume-btn');
         this.ui.powerupTimer = document.getElementById('powerup-timer');
@@ -100,6 +101,13 @@ export class Game {
                 if (this.state === 'PLAYING') e.preventDefault();
             }
         }, { passive: false });
+
+        if (this.ui.startBtn) {
+            this.ui.startBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                if (this.state === 'START') this.startGame();
+            });
+        }
 
         document.getElementById('restart-btn').addEventListener('click', (e) => {
             e.stopPropagation();

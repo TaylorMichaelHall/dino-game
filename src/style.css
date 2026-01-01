@@ -134,7 +134,7 @@ body {
 }
 
 .high-score-start {
-  margin-top: 2rem;
+  margin-top: 1rem;
   color: #ffd700;
   font-weight: 700;
   font-size: 1.2rem;
@@ -170,6 +170,11 @@ canvas {
   background-color: rgba(0, 0, 0, 0.6);
   pointer-events: auto;
   z-index: 10;
+  gap: 15px;
+}
+
+#start-screen button#start-btn {
+  margin-bottom: 10px;
 }
 
 #pause-screen {
@@ -307,11 +312,12 @@ button:active {
 
 .secondary-btn {
   background-color: transparent !important;
-  border: 2px solid rgba(255, 255, 255, 0.4) !important;
-  padding: 0.5rem 1rem !important;
-  font-size: 0.9rem !important;
-  margin-top: 1rem;
-  opacity: 0.8;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  padding: 0.35rem 0.8rem !important;
+  font-size: 0.8rem !important;
+  margin-top: 2rem;
+  opacity: 0.6;
+  font-weight: 400;
 }
 
 .secondary-btn:hover {
@@ -542,21 +548,26 @@ button:active {
     font-size: 1.4rem;
   }
 
-  .screen {
-    padding: 20px;
-  }
-
-  h1 {
-    font-size: 1.1rem;
-  }
-
-  p {
-    font-size: 1rem;
-  }
-
   button {
     font-size: 1rem;
     padding: 0.6rem 1.2rem;
+  }
+
+  .screen {
+    padding: 15px;
+    gap: 8px;
+  }
+
+  .high-score-start {
+    margin-top: 0.5rem;
+  }
+
+  .secondary-btn {
+    margin-top: 0.5rem !important;
+  }
+
+  #start-screen button#start-btn {
+    margin-bottom: 5px;
   }
 
   #hud {
@@ -582,8 +593,8 @@ button:active {
   }
 
   #game-footer {
-    font-size: 0.8rem;
-    gap: 6px;
+    font-size: 0.75rem;
+    gap: 4px;
   }
 
   .instructions {
@@ -595,6 +606,11 @@ button:active {
 
   .instruction {
     justify-content: space-between;
+    gap: 4px;
+  }
+
+  .instruction .desc {
+    font-size: 0.75rem;
   }
 
   .start-tip {
