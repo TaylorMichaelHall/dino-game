@@ -57,6 +57,27 @@
         <div id="message-overlay" class="hidden">
           <h2 id="message-text"></h2>
         </div>
+        <div id="debug-menu" class="hidden screen">
+          <div class="debug-content">
+            <h1>Debug Menu</h1>
+            <div class="debug-section">
+              <h3>Dinosaurs</h3>
+              <div class="debug-grid" id="debug-dino-list">
+                <!-- Dynamically populated -->
+              </div>
+            </div>
+            <div class="debug-section">
+              <h3>Powerups</h3>
+              <div class="debug-grid">
+                <button class="debug-btn" data-powerup="BONE">Mega Speed</button>
+                <button class="debug-btn" data-powerup="TREX">Super T-Rex</button>
+                <button class="debug-btn" data-powerup="SPINO">Super Spino</button>
+                <button class="debug-btn" data-powerup="HEAL">Full Heal</button>
+              </div>
+            </div>
+            <button id="close-debug-btn" class="secondary-btn">Close</button>
+          </div>
+        </div>
       </div>
     </div>
     <footer id="game-footer">

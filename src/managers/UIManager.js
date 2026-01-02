@@ -31,8 +31,27 @@ export class UIManager {
             sfxToggle: document.getElementById('sfx-toggle'),
             pauseBtn: document.getElementById('pause-btn'),
             restartBtn: document.getElementById('restart-btn'),
-            resetHighScoreBtn: document.getElementById('reset-high-score-btn')
+            resetHighScoreBtn: document.getElementById('reset-high-score-btn'),
+            debugMenu: document.getElementById('debug-menu'),
+            debugDinoList: document.getElementById('debug-dino-list'),
+            closeDebugBtn: document.getElementById('close-debug-btn'),
+            debugBtns: document.querySelectorAll('.debug-btn')
         };
+    }
+
+    toggleDebugMenu(show) {
+        this.elements.debugMenu.classList.toggle('hidden', !show);
+    }
+
+    populateDebugDinoList(dinos, currentLevel, onSelect) {
+        this.elements.debugDinoList.innerHTML = '';
+        dinos.forEach((dino, index) => {
+            const btn = document.createElement('button');
+            btn.className = `debug-btn ${index === currentLevel ? 'active' : ''}`;
+            btn.innerText = dino.name;
+            btn.onclick = () => onSelect(index);
+            this.elements.debugDinoList.appendChild(btn);
+        });
     }
 
     showStartScreen() {

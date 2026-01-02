@@ -6,6 +6,7 @@ import { AudioManager } from '../managers/AudioManager.js';
 import { TitleManager } from '../managers/TitleManager.js';
 import { UIManager } from '../managers/UIManager.js';
 import { CONFIG } from '../config/Constants.js';
+import { DINOS } from '../config/DinoConfig.js';
 
 /**
  * Game Controller
@@ -44,6 +45,9 @@ export class Game {
         this.initSpeedLines();
         this.glitchTimer = 0;
 
+        this.debugSequence = '';
+        this.debugActive = false;
+
         this.bindEvents();
         this.ui.updateAudioButtons(this.musicEnabled, this.sfxEnabled);
         this.ui.setTheme(0);
@@ -57,6 +61,15 @@ export class Game {
             if (e.code === 'Space') this.handleInput();
             if (e.key.toLowerCase() === 'r') this.resetGame();
             if (e.key.toLowerCase() === 'p') this.togglePause();
+
+            // Debug sequence tracking
+            this.debugSequence += e.key.toLowerCase();
+            if (this.debugSequence.includes('debug')) {
+                this.toggleDebugMenu();
+                this.debugSequence = '';
+            } else if (this.debugSequence.length > 10) {
+                this.debugSequence = this.debugSequence.slice(-5);
+            }
         });
 
         window.addEventListener('mousedown', (e) => {
@@ -78,7 +91,7 @@ export class Game {
 
         this.ui.elements.restartBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            this.resetGame();
+            if (this.state === 'GAME_OVER') this.resetGame();
         });
 
         this.ui.elements.resetHighScoreBtn?.addEventListener('click', (e) => {
@@ -119,11 +132,54 @@ export class Game {
             if (this.state === 'PLAYING') this.togglePause();
         });
 
+        this.ui.elements.closeDebugBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.toggleDebugMenu(false);
+        });
+
+        document.querySelectorAll('.debug-btn[data-powerup]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                this.debugGivePowerup(btn.dataset.powerup);
+            });
+        });
+
         document.addEventListener('visibilitychange', () => {
             if (document.hidden && this.state === 'PLAYING') {
                 this.togglePause();
             }
         });
+    }
+
+    toggleDebugMenu(show = !this.debugActive) {
+        this.debugActive = show;
+        this.ui.toggleDebugMenu(show);
+        if (show) {
+            this.ui.populateDebugDinoList(DINOS, this.dino.level, (index) => {
+                this.dino.level = index;
+                this.ui.showMessage(`Dino changed to ${DINOS[index].name}`);
+                this.toggleDebugMenu(false);
+            });
+        }
+    }
+
+    debugGivePowerup(type) {
+        switch (type) {
+            case 'BONE':
+                this.collectBone();
+                break;
+            case 'TREX':
+                this.activateSuperMode('trex');
+                break;
+            case 'SPINO':
+                this.activateSuperMode('spino');
+                break;
+            case 'HEAL':
+                this.heal();
+                this.ui.showMessage('FULL HEAL');
+                break;
+        }
+        this.toggleDebugMenu(false);
     }
 
     handleInput() {
