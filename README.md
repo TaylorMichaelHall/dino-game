@@ -26,7 +26,7 @@ Tight controls, quick feedback, and short runs. You guide a dinosaur through DNA
 
 ## Tech
 
-Kept intentionally lightweight to stay fast and portable:
+Kept intentionally lightweight to stay fast and portable. I wanted to see how far I could get without special game libraries:
 
 - Vanilla JavaScript
 - HTML5 Canvas
