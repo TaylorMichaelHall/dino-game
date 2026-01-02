@@ -61,30 +61,25 @@ export class ObstacleManager {
         });
     }
 
+    /**
+     * Draw a DNA strand with a double helix animation effect.
+     */
     drawDNAStrand(ctx, x, startY, endY, color) {
         const isFlashing = this.game.hitFlashTimer > 0;
         const drawColor = isFlashing ? '#ffffff' : color;
         const width = this.obstacleWidth;
         const height = endY - startY;
 
-        // Clip drawing to the DNA strand area
         ctx.save();
         ctx.beginPath();
         ctx.rect(x, startY, width, height);
         ctx.clip();
 
-        // Double helix pattern simulation
         ctx.strokeStyle = drawColor;
         ctx.lineWidth = 4;
 
         const amplitude = width / 2;
-
-        ctx.beginPath(); // Start path for crossbars
-
-        // Optimization: Batch dot drawing and increase step size
         const dotPath = new Path2D();
-
-        // Increase step from 10 to 15 for performance
         const step = 15;
 
         for (let y = startY; y < endY; y += step) {
@@ -93,51 +88,41 @@ export class ObstacleManager {
 
             const xOffset = sinVal * (amplitude - 5);
             const x1 = x + width / 2 + xOffset;
-            const x2 = x + width / 2 - xOffset; // sin(phase + PI) = -sin(phase)
+            const x2 = x + width / 2 - xOffset;
 
-            // Draw crossbars
             if (Math.abs(sinVal) < 0.2) {
-                // Determine which specific crossbar to draw to avoid too many stroke calls
-                // Actually, let's just batch these lines too?
-                // The original code stroked every time or had a single stroke at the end? 
-                // Original had ctx.stroke() outside the loop.
                 ctx.moveTo(x1, y);
                 ctx.lineTo(x2, y);
             }
 
-            // Batch points
             dotPath.rect(x1 - 2, y, 4, 4);
             dotPath.rect(x2 - 2, y, 4, 4);
         }
 
-        ctx.stroke(); // Stroke the lines (crossbars)
-
+        ctx.stroke();
         ctx.fillStyle = drawColor;
-        ctx.fill(dotPath); // Fill all dots at once
+        ctx.fill(dotPath);
         ctx.restore();
 
-        // Draw Electric Borders
+        // Glow effects
         ctx.save();
-
-        // Layer 1: Colored Glow (Matches DNA color)
         ctx.strokeStyle = drawColor;
         ctx.lineWidth = 6;
-        ctx.shadowBlur = 10 + Math.random() * 8; // Dynamic flicker
+        ctx.shadowBlur = 10 + Math.random() * 8;
         ctx.shadowColor = drawColor;
         ctx.strokeRect(x, startY, width, height);
 
-        // Layer 2: White Core
         ctx.strokeStyle = '#ffffff';
         ctx.lineWidth = 2;
-        ctx.shadowBlur = 0; // Disable shadow for the inner core
+        ctx.shadowBlur = 0;
         ctx.strokeRect(x, startY, width, height);
-
         ctx.restore();
     }
 
+    /**
+     * Check collision with Dino using simplified AABB/Circle logic.
+     */
     checkCollision(dino) {
-        // Simple AABB / Circle collision
-        // Dino center
         const dx = dino.x + dino.width / 2;
         const dy = dino.y + dino.height / 2;
         const dr = dino.radius * 0.8; // forgiving hitbox

@@ -4,25 +4,22 @@ import { PowerupManager } from '../managers/PowerupManager.js';
 import { CoinManager } from '../managers/CoinManager.js';
 import { AudioManager } from '../managers/AudioManager.js';
 import { TitleManager } from '../managers/TitleManager.js';
+import { UIManager } from '../managers/UIManager.js';
 import { CONFIG } from '../config/Constants.js';
 
 /**
- * Main Game Controller
- * Manages the game loop, state transitions, and coordination between entities.
+ * Game Controller
  */
 export class Game {
     constructor(canvas) {
         this.canvas = canvas;
         this.ctx = canvas.getContext('2d');
 
-        // Set internal resolution
         this.width = this.canvas.width = CONFIG.CANVAS_WIDTH;
         this.height = this.canvas.height = CONFIG.CANVAS_HEIGHT;
 
-        // Handle resizing for responsiveness logic if needed, but CSS handles display size.
-        // For physics consistency, keeping internal resolution fixed is best.
-
         this.audio = new AudioManager();
+        this.ui = new UIManager(this);
         this.dino = new Dino(this);
         this.obstacles = new ObstacleManager(this);
         this.powerups = new PowerupManager(this);
@@ -36,54 +33,23 @@ export class Game {
         this.highScore = parseInt(localStorage.getItem('jurassicEscapeHighScore') || 0);
         this.hearts = CONFIG.MAX_HEARTS;
 
-        this.state = 'START'; // START, PLAYING, GAME_OVER
+        this.state = 'START';
         this.lastTime = 0;
-        this.time = 0; // Cumulative game time
+        this.time = 0;
         this.speedBoostTimer = 0;
         this.superModeTimer = 0;
         this.hitFlashTimer = 0;
-        this.autoPausedByVisibility = false;
 
         this.speedLines = [];
         this.initSpeedLines();
         this.glitchTimer = 0;
 
-        this.initUI();
         this.bindEvents();
-        this.updateAudioButtons();
-
-        // Update High Score Display
-        this.ui.container.classList.add(CONFIG.THEMES[0]);
+        this.ui.updateAudioButtons(this.musicEnabled, this.sfxEnabled);
+        this.ui.setTheme(0);
         this.updateUI();
 
-        // Start Loop
-        requestAnimationFrame(this.gameLoop.bind(this));
-    }
-
-    initUI() {
-        this.ui = {
-            container: document.getElementById('game-container'),
-            start: document.getElementById('start-screen'),
-            gameOver: document.getElementById('game-over-screen'),
-            hud: document.getElementById('hud'),
-            score: document.getElementById('score'),
-            finalScore: document.getElementById('final-score'),
-            highScore: document.getElementById('high-score'),
-            startHighScore: document.getElementById('start-high-score'),
-            gameplayHighScore: document.getElementById('gameplay-high-score'),
-            highScoreBadge: document.getElementById('high-score-new-tag'),
-            hearts: document.getElementById('hearts'),
-            overlay: document.getElementById('message-overlay'),
-            overlayText: document.getElementById('message-text'),
-            pause: document.getElementById('pause-screen'),
-            startBtn: document.getElementById('start-btn')
-        };
-        this.ui.resumeBtn = document.getElementById('resume-btn');
-        this.ui.powerupTimer = document.getElementById('powerup-timer');
-        this.ui.timerSeconds = document.getElementById('timer-seconds');
-        this.ui.musicToggle = document.getElementById('music-toggle');
-        this.ui.sfxToggle = document.getElementById('sfx-toggle');
-        this.ui.pauseBtn = document.getElementById('pause-btn');
+        requestAnimationFrame(t => this.gameLoop(t));
     }
 
     bindEvents() {
@@ -93,34 +59,30 @@ export class Game {
             if (e.key.toLowerCase() === 'p') this.togglePause();
         });
 
-        // Mouse/Touch (bind to window to catch clicks on the UI overlay)
         window.addEventListener('mousedown', (e) => {
             if (e.target.closest('button')) return;
             this.handleInput();
         });
+
         window.addEventListener('touchstart', (e) => {
-            // Only prevent default if we're in the game area to avoid breaking other UI
             if (e.target.closest('#game-container') && !e.target.closest('button')) {
                 this.handleInput();
                 if (this.state === 'PLAYING') e.preventDefault();
             }
         }, { passive: false });
 
-        if (this.ui.startBtn) {
-            this.ui.startBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                if (this.state === 'START') this.startGame();
-            });
-        }
+        this.ui.elements.startBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.state === 'START') this.startGame();
+        });
 
-        document.getElementById('restart-btn').addEventListener('click', (e) => {
+        this.ui.elements.restartBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             this.resetGame();
         });
 
-        const resetBtn = document.getElementById('reset-high-score-btn');
-        resetBtn.addEventListener('click', (e) => {
-            e.stopPropagation(); // Don't start game on click
+        this.ui.elements.resetHighScoreBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
             if (confirm("Reset High Score?")) {
                 this.highScore = 0;
                 localStorage.removeItem('jurassicEscapeHighScore');
@@ -128,50 +90,39 @@ export class Game {
             }
         });
 
-        this.ui.resumeBtn.addEventListener('click', (e) => {
+        this.ui.elements.resumeBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (this.state === 'PAUSED') this.togglePause();
         });
 
-        if (this.ui.musicToggle) {
-            this.ui.musicToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.musicEnabled = !this.musicEnabled;
-                if (!this.musicEnabled) {
-                    this.audio.stopMusic();
-                } else if (this.state === 'PLAYING') {
-                    this.audio.startMusic();
-                } else if (this.state === 'PAUSED') {
-                    this.audio.startMusic();
-                    this.audio.setMusicMuted(true);
-                }
-                this.updateAudioButtons();
-            });
-        }
+        this.ui.elements.musicToggle?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.musicEnabled = !this.musicEnabled;
+            if (!this.musicEnabled) {
+                this.audio.stopMusic();
+            } else if (this.state === 'PLAYING' || this.state === 'PAUSED') {
+                this.audio.startMusic();
+                if (this.state === 'PAUSED') this.audio.setMusicMuted(true);
+            }
+            this.ui.updateAudioButtons(this.musicEnabled, this.sfxEnabled);
+        });
 
-        if (this.ui.sfxToggle) {
-            this.ui.sfxToggle.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                this.sfxEnabled = !this.sfxEnabled;
-                this.audio.setSfxMuted(!this.sfxEnabled);
-                this.updateAudioButtons();
-            });
-        }
+        this.ui.elements.sfxToggle?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.sfxEnabled = !this.sfxEnabled;
+            this.audio.setSfxMuted(!this.sfxEnabled);
+            this.ui.updateAudioButtons(this.musicEnabled, this.sfxEnabled);
+        });
 
-        if (this.ui.pauseBtn) {
-            this.ui.pauseBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (this.state === 'PLAYING') {
-                    this.togglePause();
-                }
-            });
-        }
+        this.ui.elements.pauseBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (this.state === 'PLAYING') this.togglePause();
+        });
 
         document.addEventListener('visibilitychange', () => {
-            this.handleVisibilityChange(document.hidden);
+            if (document.hidden && this.state === 'PLAYING') {
+                this.togglePause();
+            }
         });
     }
 
@@ -186,15 +137,11 @@ export class Game {
 
     startGame() {
         this.state = 'PLAYING';
-        this.ui.start.classList.add('hidden');
-        this.ui.pause.classList.add('hidden');
-        this.ui.hud.classList.remove('hidden');
+        this.ui.showPlayingScreen();
         this.dino.jump();
         this.audio.playJump();
         this.coins.spawnStartMessage();
-        if (this.musicEnabled) {
-            this.audio.startMusic();
-        }
+        if (this.musicEnabled) this.audio.startMusic();
     }
 
     resetGame() {
@@ -207,47 +154,30 @@ export class Game {
         this.powerups.reset();
         this.coins.reset();
         this.state = 'START';
-        this.ui.pause.classList.add('hidden');
+
         this.audio.stopMusic();
-
-        // Reset themes
-        CONFIG.THEMES.forEach(theme => this.ui.container.classList.remove(theme));
-        this.ui.container.classList.add(CONFIG.THEMES[0]);
-
-        this.ui.gameOver.classList.add('hidden');
-        this.ui.start.classList.remove('hidden');
-        this.ui.hud.classList.add('hidden');
-
-        // Reset border
-        this.ui.container.style.removeProperty('--glow-color');
-        this.ui.container.style.removeProperty('--glow-blur');
-        this.ui.container.style.removeProperty('--border-core');
-
+        this.ui.showStartScreen();
+        this.ui.setTheme(0);
+        this.ui.resetContainerStyles();
         this.updateUI();
     }
 
     togglePause() {
         if (this.state === 'PLAYING') {
             this.state = 'PAUSED';
-            this.ui.pause.classList.remove('hidden');
-            if (this.musicEnabled && this.audio.musicPlaying) {
-                this.audio.setMusicMuted(true);
-            }
+            this.ui.togglePause(true);
+            if (this.musicEnabled) this.audio.setMusicMuted(true);
         } else if (this.state === 'PAUSED') {
             this.state = 'PLAYING';
-            this.ui.pause.classList.add('hidden');
-            if (this.musicEnabled && this.audio.musicPlaying) {
-                this.audio.setMusicMuted(false);
-            }
+            this.ui.togglePause(false);
+            if (this.musicEnabled) this.audio.setMusicMuted(false);
         }
     }
 
     gameLoop(timestamp) {
         if (!this.lastTime) this.lastTime = timestamp;
         let deltaTime = (timestamp - this.lastTime) / 1000;
-
-        // Cap deltaTime to avoid physics glitches on lag or tab hidden
-        if (deltaTime > 0.1) deltaTime = 0.1;
+        deltaTime = Math.min(deltaTime, 0.1);
 
         this.lastTime = timestamp;
         this.time = timestamp;
@@ -261,119 +191,73 @@ export class Game {
         }
 
         this.draw();
-
-        requestAnimationFrame(this.gameLoop.bind(this));
+        requestAnimationFrame(t => this.gameLoop(t));
     }
 
     update(deltaTime) {
         if (this.hitFlashTimer > 0) this.hitFlashTimer -= deltaTime;
+
         this.updateTimers(deltaTime);
-        this.updateContainerBorder();
+        this.updateBorderEffect();
 
         const speedMultiplier = this.speedBoostTimer > 0 ? CONFIG.BONE_SPEED_BOOST : 1;
+        const obstacleSpeed = this.obstacles.speed * speedMultiplier;
 
         this.dino.update(deltaTime);
         this.obstacles.update(deltaTime, speedMultiplier);
-        this.powerups.update(deltaTime, this.obstacles.speed * speedMultiplier);
-        this.coins.update(deltaTime, this.obstacles.speed * speedMultiplier);
+        this.powerups.update(deltaTime, obstacleSpeed);
+        this.coins.update(deltaTime, obstacleSpeed);
 
-        this.handlePowerupCollisions();
-        this.handleCoinCollisions();
-        this.handleObstacleCollisions();
+        this.checkCollisions();
         this.handleScoring();
         this.updateSpeedLines(deltaTime);
 
-        if (this.superModeTimer > 0) {
-            this.glitchTimer += deltaTime;
-        } else {
-            this.glitchTimer = 0;
-        }
-    }
-
-    initSpeedLines() {
-        for (let i = 0; i < CONFIG.SPEED_LINE_COUNT; i++) {
-            this.speedLines.push(this.createSpeedLine());
-        }
-    }
-
-    createSpeedLine() {
-        return {
-            x: Math.random() * this.width,
-            y: Math.random() * this.height,
-            length: CONFIG.SPEED_LINE_MIN_LEN + Math.random() * (CONFIG.SPEED_LINE_MAX_LEN - CONFIG.SPEED_LINE_MIN_LEN),
-            speed: CONFIG.SPEED_LINE_MIN_SPEED + Math.random() * (CONFIG.SPEED_LINE_MAX_SPEED - CONFIG.SPEED_LINE_MIN_SPEED)
-        };
-    }
-
-    updateSpeedLines(deltaTime) {
-        if (this.speedBoostTimer <= 0) return;
-
-        this.speedLines.forEach(line => {
-            line.x -= line.speed * deltaTime;
-            if (line.x + line.length < 0) {
-                line.x = this.width;
-                line.y = Math.random() * this.height;
-            }
-        });
+        this.glitchTimer = this.superModeTimer > 0 ? this.glitchTimer + deltaTime : 0;
     }
 
     updateTimers(deltaTime) {
         if (this.speedBoostTimer > 0) {
             this.speedBoostTimer -= deltaTime;
-            if (this.speedBoostTimer <= 0) this.showMessage('Normal Speed');
+            if (this.speedBoostTimer <= 0) this.ui.showMessage('Normal Speed');
         }
 
         if (this.superModeTimer > 0) {
             this.superModeTimer -= deltaTime;
-            this.ui.powerupTimer.classList.remove('hidden');
-
-            // Optimization: Only update DOM when integer value changes
-            const seconds = Math.ceil(this.superModeTimer);
-            if (this.ui.timerSeconds.innerText != seconds) {
-                this.ui.timerSeconds.innerText = seconds;
-            }
+            this.ui.updatePowerupTimer(this.superModeTimer);
 
             if (this.superModeTimer <= 0) {
                 const superName = this.dino.superType === 'spino' ? 'Super Spinosaurus' : 'Super T-Rex';
                 this.dino.setSuper(false);
-                this.showMessage(`${superName} Power Depleted`);
-                this.ui.powerupTimer.classList.add('hidden');
+                this.ui.showMessage(`${superName} Power Depleted`);
             }
         }
     }
 
-    updateContainerBorder() {
+    updateBorderEffect() {
         if (this.state !== 'PLAYING') return;
 
-        // Optimization: Throttle CSS updates to every ~60ms (approx 15fps for effects)
         if (!this.lastBorderTime) this.lastBorderTime = 0;
         if (this.time - this.lastBorderTime < 60) return;
         this.lastBorderTime = this.time;
 
-        const currentColor = this.hitFlashTimer > 0 ? '#ffffff' : this.obstacles.colors[this.obstacles.colorIndex % this.obstacles.colors.length];
-        const flicker = 8 + Math.random() * 8; // Match DNA flicker intensity
-
-        // Batch style changes? CSS variables are already efficient, but throttling helps.
-        this.ui.container.style.setProperty('--glow-color', currentColor);
-        this.ui.container.style.setProperty('--glow-blur', `${flicker}px`);
-        this.ui.container.style.setProperty('--border-core', this.hitFlashTimer > 0 ? '#ffffff' : '#ffffff');
+        const color = this.obstacles.colors[this.obstacles.colorIndex % this.obstacles.colors.length];
+        this.ui.updateContainerBorder(this.hitFlashTimer > 0, color);
     }
 
-    handlePowerupCollisions() {
-        const type = this.powerups.checkCollision(this.dino);
-        if (type === 'BONE') this.collectBone();
-        else if (type === 'DIAMOND') this.transformToSuperMode('trex');
-        else if (type === 'EMERALD') this.transformToSuperMode('spino');
-    }
+    checkCollisions() {
+        // Powerups
+        const pType = this.powerups.checkCollision(this.dino);
+        if (pType === 'BONE') this.collectBone();
+        else if (pType === 'DIAMOND') this.activateSuperMode('trex');
+        else if (pType === 'EMERALD') this.activateSuperMode('spino');
 
-    handleCoinCollisions() {
+        // Coins
         if (this.coins.checkCollision(this.dino)) {
             this.incrementScore(1);
             this.audio.playCoin();
         }
-    }
 
-    handleObstacleCollisions() {
+        // Obstacles
         if (this.obstacles.checkCollision(this.dino)) {
             if (this.dino.isSuper) {
                 this.handleSuperSmash();
@@ -412,189 +296,63 @@ export class Game {
         });
     }
 
-    draw() {
-        // Draw Background (can add parallax here later)
-        if (this.state === 'START') {
-            this.titleAnimation.draw(this.ctx);
-        }
-
-        this.drawBackgroundEffects();
-        this.obstacles.draw(this.ctx);
-        this.powerups.draw(this.ctx);
-        this.coins.draw(this.ctx);
-        this.dino.draw(this.ctx);
-    }
-
-    drawBackgroundEffects() {
-        if (this.speedBoostTimer > 0) {
-            this.drawSpeedLines();
-        }
-        if (this.superModeTimer > 0) {
-            this.drawGlitchEffect();
-        }
-    }
-
-    drawSpeedLines() {
-        this.ctx.save();
-        this.ctx.strokeStyle = `rgba(255, 255, 255, ${CONFIG.SPEED_LINE_OPACITY})`;
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.speedLines.forEach(line => {
-            this.ctx.moveTo(line.x, line.y);
-            this.ctx.lineTo(line.x + line.length, line.y);
-        });
-        this.ctx.stroke();
-        this.ctx.restore();
-    }
-
-    drawGlitchEffect() {
-        // Slow down the "flicker" rate even more
-        // Every 800ms, decide if we should show a glitch burst for 80ms
-        const period = 0.8; // seconds
-        const burstDuration = 0.08; // seconds
-        const currentTimeInPeriod = this.glitchTimer % period;
-
-        if (currentTimeInPeriod < burstDuration) {
-            this.ctx.save();
-
-            // Random RGB Split / Color Offset - very rare
-            if (Math.random() > 0.95) {
-                this.ctx.globalCompositeOperation = 'screen';
-                this.ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
-                this.ctx.fillRect((Math.random() - 0.5) * 10, 0, this.width, this.height);
-                this.ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
-                this.ctx.fillRect((Math.random() - 0.5) * 10, 0, this.width, this.height);
-                this.ctx.globalCompositeOperation = 'source-over';
-            }
-
-            const sliceCount = 3 + Math.floor(Math.random() * 4);
-            for (let i = 0; i < sliceCount; i++) {
-                const x = Math.random() * this.width;
-                const y = Math.random() * this.height;
-                const w = 150 + Math.random() * 300;
-                const h = 3 + Math.random() * 10;
-                const offset = (Math.random() - 0.5) * 40;
-
-                // Subtle flickering rectangles
-                const color = Math.random() > 0.5 ? '255, 255, 255' : '233, 69, 96';
-                this.ctx.fillStyle = `rgba(${color}, ${0.1 + Math.random() * 0.2})`;
-                this.ctx.fillRect(x + offset, y, w, h);
-            }
-
-            // Screen distortions - very rare and subtle
-            if (Math.random() > 0.96) {
-                const shiftX = (Math.random() - 0.5) * 15;
-                this.ctx.translate(shiftX, 0);
-            }
-            this.ctx.restore();
-        }
-    }
-
     collectBone() {
         this.audio.playPowerup();
         this.speedBoostTimer = CONFIG.BONE_BOOST_DURATION;
         this.incrementScore(CONFIG.BONE_BONUS);
-        this.showMessage('🦴 MEGA SPEED 🦴');
+        this.ui.showMessage('🦴 MEGA SPEED 🦴');
     }
 
-    transformToSuperMode(type) {
+    activateSuperMode(type) {
         this.audio.playTransform();
         this.superModeTimer = CONFIG.SUPER_TREX_DURATION;
         this.dino.setSuper(true, type);
         const name = type === 'spino' ? 'SUPER SPINOSAURUS' : 'SUPER T-REX';
-        this.showMessage(`🧬 ${name} ACTIVATED 🧬`);
+        this.ui.showMessage(`🧬 ${name} ACTIVATED 🧬`);
     }
 
     incrementScore(amount = 1) {
-        // We might add multiple points at once (bone bonus)
         for (let i = 0; i < amount; i++) {
             this.score++;
-
-            // Check for powerup spawn trigger
             this.powerups.checkSpawn(this.score);
 
-            // Evolution Scaling
             if (this.score % CONFIG.EVO_THRESHOLD === 0) {
                 this.dino.upgrade();
                 this.obstacles.cycleColor();
                 this.obstacles.increaseSpeed(CONFIG.SPEED_INC_PER_EVO);
-                this.showMessage(this.dino.getDinoName() + '!');
+                this.ui.showMessage(this.dino.getDinoName() + '!');
                 this.heal();
                 this.audio.playUpgrade();
             }
 
-            // Theme Scaling
             if (this.score % CONFIG.THEME_THRESHOLD === 0) {
-                this.updateTheme();
+                const themeIndex = Math.floor(this.score / CONFIG.THEME_THRESHOLD) % CONFIG.THEMES.length;
+                this.ui.setTheme(themeIndex);
             }
         }
         this.updateUI();
         if (amount === 1) this.audio.playPoint();
     }
 
-    updateTheme() {
-        const themeIndex = Math.floor(this.score / CONFIG.THEME_THRESHOLD) % CONFIG.THEMES.length;
-
-        CONFIG.THEMES.forEach(theme => this.ui.container.classList.remove(theme));
-        this.ui.container.classList.add(CONFIG.THEMES[themeIndex]);
-    }
-
     takeDamage() {
         this.hearts--;
-        this.updateUI();
         this.dino.takeDamage();
         this.audio.playHit();
         this.hitFlashTimer = CONFIG.HIT_FLASH_DURATION;
+        this.updateUI();
 
-        if (this.hearts <= 0) {
-            this.gameOver();
-        }
+        if (this.hearts <= 0) this.gameOver();
     }
 
     heal() {
         if (this.hearts < CONFIG.MAX_HEARTS) {
             this.hearts = CONFIG.MAX_HEARTS;
             this.updateUI();
-            // maybe show healing effect
         }
     }
 
     updateUI() {
-        this.ui.hearts.innerText = '❤️'.repeat(this.hearts);
-        this.ui.score.innerText = this.score;
-
-        const isNewHigh = this.score > this.highScore;
-        const displayedHighScore = isNewHigh ? this.score : this.highScore;
-
-        this.ui.gameplayHighScore.innerText = displayedHighScore;
-        this.ui.highScore.innerText = this.highScore;
-        this.ui.startHighScore.innerText = this.highScore;
-        this.ui.finalScore.innerText = this.score;
-
-        if (this.ui.highScoreBadge) {
-            this.ui.highScoreBadge.classList.toggle('hidden', !isNewHigh || this.score === 0);
-        }
-    }
-
-    updateAudioButtons() {
-        if (this.ui.musicToggle) {
-            this.ui.musicToggle.innerText = `Music: ${this.musicEnabled ? 'On' : 'Off'}`;
-            this.ui.musicToggle.classList.toggle('off', !this.musicEnabled);
-        }
-        if (this.ui.sfxToggle) {
-            this.ui.sfxToggle.innerText = `SFX: ${this.sfxEnabled ? 'On' : 'Off'}`;
-            this.ui.sfxToggle.classList.toggle('off', !this.sfxEnabled);
-        }
-    }
-
-    showMessage(text) {
-        this.ui.overlayText.innerText = text;
-
-        // Reset animation
-        this.ui.overlay.classList.remove('hidden');
-        this.ui.overlay.style.animation = 'none';
-        this.ui.overlay.offsetHeight;
-        this.ui.overlay.style.animation = null;
+        this.ui.updateHUD(this.score, this.hearts, this.highScore);
     }
 
     gameOver() {
@@ -606,18 +364,75 @@ export class Game {
             localStorage.setItem('jurassicEscapeHighScore', this.highScore);
         }
         this.updateUI();
-        this.ui.hud.classList.add('hidden');
-        this.ui.gameOver.classList.remove('hidden');
+        this.ui.showGameOverScreen();
     }
 
-    handleVisibilityChange(isHidden) {
-        if (isHidden) {
-            if (this.state === 'PLAYING') {
-                this.autoPausedByVisibility = true;
-                this.togglePause();
+    initSpeedLines() {
+        for (let i = 0; i < CONFIG.SPEED_LINE_COUNT; i++) {
+            this.speedLines.push({
+                x: Math.random() * this.width,
+                y: Math.random() * this.height,
+                length: CONFIG.SPEED_LINE_MIN_LEN + Math.random() * (CONFIG.SPEED_LINE_MAX_LEN - CONFIG.SPEED_LINE_MIN_LEN),
+                speed: CONFIG.SPEED_LINE_MIN_SPEED + Math.random() * (CONFIG.SPEED_LINE_MAX_SPEED - CONFIG.SPEED_LINE_MIN_SPEED)
+            });
+        }
+    }
+
+    updateSpeedLines(deltaTime) {
+        if (this.speedBoostTimer <= 0) return;
+        this.speedLines.forEach(line => {
+            line.x -= line.speed * deltaTime;
+            if (line.x + line.length < 0) {
+                line.x = this.width;
+                line.y = Math.random() * this.height;
             }
-        } else {
-            this.autoPausedByVisibility = false;
+        });
+    }
+
+    draw() {
+        if (this.state === 'START') this.titleAnimation.draw(this.ctx);
+
+        if (this.speedBoostTimer > 0) {
+            this.ctx.save();
+            this.ctx.strokeStyle = `rgba(255, 255, 255, ${CONFIG.SPEED_LINE_OPACITY})`;
+            this.ctx.lineWidth = 2;
+            this.ctx.beginPath();
+            this.speedLines.forEach(l => {
+                this.ctx.moveTo(l.x, l.y);
+                this.ctx.lineTo(l.x + l.length, l.y);
+            });
+            this.ctx.stroke();
+            this.ctx.restore();
+        }
+
+        if (this.superModeTimer > 0) this.drawGlitchEffect();
+
+        this.obstacles.draw(this.ctx);
+        this.powerups.draw(this.ctx);
+        this.coins.draw(this.ctx);
+        this.dino.draw(this.ctx);
+    }
+
+    drawGlitchEffect() {
+        const period = 0.8;
+        const burstDuration = 0.08;
+        if ((this.glitchTimer % period) < burstDuration) {
+            this.ctx.save();
+            if (Math.random() > 0.95) {
+                this.ctx.globalCompositeOperation = 'screen';
+                this.ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+                this.ctx.fillRect((Math.random() - 0.5) * 10, 0, this.width, this.height);
+                this.ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+                this.ctx.fillRect((Math.random() - 0.5) * 10, 0, this.width, this.height);
+                this.ctx.globalCompositeOperation = 'source-over';
+            }
+            for (let i = 0; i < 5; i++) {
+                const x = Math.random() * this.width, y = Math.random() * this.height;
+                const offset = (Math.random() - 0.5) * 40;
+                this.ctx.fillStyle = `rgba(${Math.random() > 0.5 ? '255, 255, 255' : '233, 69, 96'}, 0.2)`;
+                this.ctx.fillRect(x + offset, y, 200, 5);
+            }
+            this.ctx.restore();
         }
     }
 }
