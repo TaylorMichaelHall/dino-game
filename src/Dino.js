@@ -1,4 +1,5 @@
 import { CONFIG } from './Constants.js';
+import { DINOS, SUPER_DINOS } from './DinoConfig.js';
 
 /**
  * Dino Class
@@ -19,7 +20,7 @@ export class Dino {
 
         this.radius = 20;
 
-        this.types = ['Raptor', 'Quetzalcoatlus', 'T-Rex', 'Spinosaurus', 'Mosasaurus', 'Allosaurus'];
+        this.types = DINOS.map(d => d.name);
         this.level = 0;
         this.colorIndex = 0;
 
@@ -44,17 +45,20 @@ export class Dino {
 
     initSprites() {
         const basePath = import.meta.env.BASE_URL || '/';
-        const sprite = (file) => `${basePath}sprites/${file}`;
-        this.sprites = {
-            raptor: this.loadImage(sprite('raptor.png')),
-            quetzal: this.loadImage(sprite('quetz.png')),
-            trex: this.loadImage(sprite('trex.png')),
-            spino: this.loadImage(sprite('spino.png')),
-            superTrex: this.loadImage(sprite('super_trex.png')),
-            superSpino: this.loadImage(sprite('super_spino.png')),
-            mosa: this.loadImage(sprite('mosa.png')),
-            allo: this.loadImage(sprite('allosaurus.png'))
-        };
+        const spritePath = (file) => `${basePath}sprites/${file}`;
+
+        this.sprites = {};
+
+        // Load normal dinos
+        DINOS.forEach(dino => {
+            this.sprites[dino.id] = this.loadImage(spritePath(dino.sprite));
+        });
+
+        // Load super dinos
+        Object.keys(SUPER_DINOS).forEach(key => {
+            const superDino = SUPER_DINOS[key];
+            this.sprites[superDino.id] = this.loadImage(spritePath(superDino.sprite));
+        });
     }
 
     loadImage(src) {
@@ -223,13 +227,28 @@ export class Dino {
     }
 
     drawNormalDino(ctx) {
-        const type = this.types[this.level];
-        if (type === 'Raptor') this.drawRaptor(ctx);
-        else if (type === 'Quetzalcoatlus') this.drawQuetzalcoatlus(ctx);
-        else if (type === 'T-Rex') this.drawTRex(ctx);
-        else if (type === 'Spinosaurus') this.drawSpinosaurus(ctx);
-        else if (type === 'Mosasaurus') this.drawMosasaurus(ctx);
-        else if (type === 'Allosaurus') this.drawAllosaurus(ctx);
+        const dinoConfig = DINOS[this.level];
+        if (!dinoConfig) return;
+        this.drawDino(ctx, dinoConfig);
+    }
+
+    drawSuper(ctx, type = this.superType) {
+        const superConfig = SUPER_DINOS[type];
+        if (!superConfig) return;
+        this.drawDino(ctx, superConfig);
+    }
+
+    drawDino(ctx, config) {
+        const sprite = this.sprites[config.id];
+        if (sprite && sprite.complete && sprite.naturalWidth > 0) {
+            const w = config.width;
+            const h = w * (sprite.naturalHeight / sprite.naturalWidth);
+            ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
+        } else {
+            // Fallback
+            ctx.fillStyle = config.isSuper ? '#0ff' : '#444';
+            ctx.fillRect(-20, -20, 40, 40);
+        }
     }
 
     reset() {
@@ -244,77 +263,5 @@ export class Dino {
         this.superType = null;
         this.history = [];
         this.flyingOffSprite = null;
-    }
-
-    drawRaptor(ctx) {
-        if (this.sprites.raptor.complete && this.sprites.raptor.naturalWidth > 0) {
-            const w = 126;
-            const h = w * (this.sprites.raptor.naturalHeight / this.sprites.raptor.naturalWidth);
-            ctx.drawImage(this.sprites.raptor, -w / 2, -h / 2, w, h);
-        } else {
-            ctx.fillRect(-20, -20, 40, 40);
-        }
-    }
-
-    drawQuetzalcoatlus(ctx) {
-        if (this.sprites.quetzal.complete && this.sprites.quetzal.naturalWidth > 0) {
-            const w = 130;
-            const h = w * (this.sprites.quetzal.naturalHeight / this.sprites.quetzal.naturalWidth);
-            ctx.drawImage(this.sprites.quetzal, -w / 2, -h / 2, w, h);
-        } else {
-            ctx.fillRect(-25, -25, 50, 50);
-        }
-    }
-
-    drawTRex(ctx) {
-        if (this.sprites.trex.complete && this.sprites.trex.naturalWidth > 0) {
-            const w = 155;
-            const h = w * (this.sprites.trex.naturalHeight / this.sprites.trex.naturalWidth);
-            ctx.drawImage(this.sprites.trex, -w / 2, -h / 2, w, h);
-        } else {
-            ctx.fillRect(-25, -25, 50, 50);
-        }
-    }
-
-    drawSpinosaurus(ctx) {
-        if (this.sprites.spino.complete && this.sprites.spino.naturalWidth > 0) {
-            const w = 180;
-            const h = w * (this.sprites.spino.naturalHeight / this.sprites.spino.naturalWidth);
-            ctx.drawImage(this.sprites.spino, -w / 2, -h / 2, w, h);
-        } else {
-            ctx.fillRect(-30, -30, 60, 60);
-        }
-    }
-
-    drawSuper(ctx, type = this.superType) {
-        const sprite = type === 'spino' ? this.sprites.superSpino : this.sprites.superTrex;
-        if (sprite.complete && sprite.naturalWidth > 0) {
-            const w = type === 'spino' ? 240 : 210;
-            const h = w * (sprite.naturalHeight / sprite.naturalWidth);
-            ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
-        } else {
-            ctx.fillStyle = type === 'spino' ? '#0f0' : '#0ff';
-            ctx.fillRect(-40, -40, 80, 80);
-        }
-    }
-
-    drawMosasaurus(ctx) {
-        if (this.sprites.mosa.complete && this.sprites.mosa.naturalWidth > 0) {
-            const w = 200;
-            const h = w * (this.sprites.mosa.naturalHeight / this.sprites.mosa.naturalWidth);
-            ctx.drawImage(this.sprites.mosa, -w / 2, -h / 2, w, h);
-        } else {
-            ctx.fillRect(-40, -40, 80, 80);
-        }
-    }
-
-    drawAllosaurus(ctx) {
-        if (this.sprites.allo.complete && this.sprites.allo.naturalWidth > 0) {
-            const w = 190;
-            const h = w * (this.sprites.allo.naturalHeight / this.sprites.allo.naturalWidth);
-            ctx.drawImage(this.sprites.allo, -w / 2, -h / 2, w, h);
-        } else {
-            ctx.fillRect(-35, -35, 70, 70);
-        }
     }
 }

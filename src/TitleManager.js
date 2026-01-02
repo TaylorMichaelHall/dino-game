@@ -1,4 +1,5 @@
 import { CONFIG } from './Constants.js';
+import { DINOS } from './DinoConfig.js';
 
 export class TitleManager {
     constructor(game) {
@@ -10,15 +11,12 @@ export class TitleManager {
 
     initSprites() {
         const basePath = import.meta.env.BASE_URL || '/';
-        const sprite = (file) => `${basePath}sprites/${file}`;
-        this.sprites = {
-            raptor: this.loadImage(sprite('raptor.png')),
-            quetzal: this.loadImage(sprite('quetz.png')),
-            trex: this.loadImage(sprite('trex.png')),
-            spino: this.loadImage(sprite('spino.png')),
-            mosa: this.loadImage(sprite('mosa.png')),
-            allo: this.loadImage(sprite('allosaurus.png'))
-        };
+        const spritePath = (file) => `${basePath}sprites/${file}`;
+
+        this.sprites = {};
+        DINOS.forEach(dino => {
+            this.sprites[dino.id] = this.loadImage(spritePath(dino.sprite));
+        });
     }
 
     loadImage(src) {
@@ -28,21 +26,14 @@ export class TitleManager {
     }
 
     initAmbientDinos() {
-        // Create a "chase" sequence
-        // Small raptor being chased by a T-Rex, etc.
-        const types = [
-            { id: 'raptor', size: 60, speed: 220, y: 150 },
-            { id: 'quetzal', size: 70, speed: 180, y: 100 },
-            { id: 'trex', size: 100, speed: 200, y: 180 },
-            { id: 'spino', size: 120, speed: 210, y: 400 },
-            { id: 'mosa', size: 140, speed: 150, y: 450 },
-            { id: 'allo', size: 150, speed: 190, y: 300 }
-        ];
-
-        this.dinos = types.map((t, i) => ({
-            ...t,
+        // Create a "chase" sequence using all configured dinosaurs
+        this.dinos = DINOS.map((dino, i) => ({
+            id: dino.id,
+            size: dino.ambientSize || dino.width * 0.5, // Default to half size for background
+            speed: 150 + Math.random() * 100,
+            y: 50 + Math.random() * (this.game.height - 150),
             x: Math.random() * this.game.width,
-            offset: i * 150 // Offset for "chase" feeling
+            offset: i * 150
         }));
     }
 
