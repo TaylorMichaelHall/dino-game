@@ -1,62 +1,59 @@
 # Ian’s Jurassic Escape
 
-A small browser game I built with my 8-year-old.
+A fast, physics-heavy arcade game built for the browser.
 
-It’s a fast, physics-based arcade game where you guide a dinosaur through increasingly dangerous obstacles, collect power-ups, and evolve into bigger, more chaotic forms. The goal was simple: make something that feels good to play and is fun to come back to.
+This started as a side project with my 8-year-old son. He acts as the product manager (dinosaurs, power-ups, “cool factor”), and I handle the implementation. The goal is simple: build something that feels good to play, is easy to pick up, and makes people want one more run.
 
-The game is still evolving.
-
-Play it here: <your link>
+Play it here: https://taylormichaelhall.com/dino
 
 ---
 
-## Why this exists
+## The vibe
 
-This started as a collaborative project where my kid acted as the product manager and I handled implementation. I focused on:
+Tight controls, quick feedback, and short runs. You guide a dinosaur through DNA obstacles, evolve as you score points, and try to survive long enough to see the world change around you.
 
-- Responsive, forgiving physics
-- Clear visual feedback
-- Short feedback loops (“one more try” gameplay)
-- Shipping something complete and playable
-
-It’s intentionally lightweight and not over-engineered.
-
----
-
-## Current highlights
-
-- Multiple dinosaur evolutions with changing difficulty
-- Power-ups that meaningfully alter gameplay
-- Polished UI with keyboard, mouse, and touch support
-- Persistent high score stored locally
-- Runs entirely in the browser (no backend)
+### What’s in the game
+- Multiple dinosaurs that you evolve into during a run
+- Power-ups that meaningfully change how the game plays
+- “Super” modes that let you smash through obstacles for a short time
+- Subtle physics that reward timing and momentum
+- Controls that feel native on keyboard, mouse, and touch
+- Local high scores saved in the browser
 
 ---
 
 ## Tech
 
+Kept intentionally lightweight to stay fast and portable:
+
 - Vanilla JavaScript
-- HTML Canvas
-- Vite for local development and builds
-- Fully static output suitable for any static host
+- HTML5 Canvas
+- Web Audio API for music and sound effects
+- Vite for local development and static builds
 
 ---
 
-## Running locally
+## Running it locally
 
-1. Install dependencies  
-   npm install
+Install dependencies:
+npm install
 
-2. Start the dev server  
-   npm run dev
+Start the dev server:
+npm run dev
 
-3. Build for production  
-   npm run build
+Build for production:
+npm run build
 
-The production build is fully static and lives in the dist/ directory.
+The output is a fully static site in the dist/ directory and can be hosted anywhere.
+
+---
+
+## Where it’s going
+
+This is an active, ongoing project. We’re still tweaking feel and balance and adding new ideas as we playtest. Current ideas include new dinos, more power-ups, and small surprise challenges during runs.
 
 ---
 
 ## Status
 
-This is an active side project. Features, balance, and polish are still being iterated as we playtest and refine the game.
+Actively developed and playtested. If something feels off, it probably got changed after the last play session.
