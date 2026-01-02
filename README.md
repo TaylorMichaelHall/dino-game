@@ -1,6 +1,16 @@
 # Ian’s Jurassic Escape
-<img width="1132" height="1010" alt="Screenshot_20260102_165507" src="https://github.com/user-attachments/assets/98749089-eae3-41c7-8182-98d40a6b1b40" />
-
+<p align="center">
+  <img
+    src="https://github.com/user-attachments/assets/98749089-eae3-41c7-8182-98d40a6b1b40"
+    alt="Desktop gameplay"
+    width="600"
+  />
+  <img
+    src="https://github.com/user-attachments/assets/9459aa82-dcd7-4a00-ac48-0c0631e19cf9"
+    alt="Mobile gameplay"
+    width="250"
+  />
+</p>
 
 A fast, physics-heavy arcade game built for the browser.
 
