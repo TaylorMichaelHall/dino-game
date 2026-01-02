@@ -5,7 +5,7 @@ import { CoinManager } from '../managers/CoinManager.js';
 import { AudioManager } from '../managers/AudioManager.js';
 import { TitleManager } from '../managers/TitleManager.js';
 import { UIManager } from '../managers/UIManager.js';
-import { CONFIG } from '../config/Constants.js';
+import { CONFIG, GAME_STATE } from '../config/Constants.js';
 import { DINOS } from '../config/DinoConfig.js';
 
 /**
@@ -34,7 +34,7 @@ export class Game {
         this.highScore = parseInt(localStorage.getItem('jurassicEscapeHighScore') || 0);
         this.hearts = CONFIG.MAX_HEARTS;
 
-        this.state = 'START';
+        this.state = GAME_STATE.START;
         this.lastTime = 0;
         this.time = 0;
         this.speedBoostTimer = 0;
@@ -51,12 +51,24 @@ export class Game {
         this.bindEvents();
         this.ui.updateAudioButtons(this.musicEnabled, this.sfxEnabled);
         this.ui.setTheme(0);
+        this.ui.setScreen(this.state);
         this.updateUI();
 
         requestAnimationFrame(t => this.gameLoop(t));
     }
 
     bindEvents() {
+        this.initInputListeners();
+        this.initUIListeners();
+
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden && this.state === GAME_STATE.PLAYING) {
+                this.togglePause();
+            }
+        });
+    }
+
+    initInputListeners() {
         window.addEventListener('keydown', e => {
             if (e.code === 'Space') this.handleInput();
             if (e.key.toLowerCase() === 'r') this.resetGame();
@@ -80,21 +92,25 @@ export class Game {
         window.addEventListener('touchstart', (e) => {
             if (e.target.closest('#game-container') && !e.target.closest('button')) {
                 this.handleInput();
-                if (this.state === 'PLAYING') e.preventDefault();
+                if (this.state === GAME_STATE.PLAYING) e.preventDefault();
             }
         }, { passive: false });
+    }
 
-        this.ui.elements.startBtn?.addEventListener('click', (e) => {
+    initUIListeners() {
+        const ui = this.ui.elements;
+
+        ui.startBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (this.state === 'START') this.startGame();
+            if (this.state === GAME_STATE.START) this.startGame();
         });
 
-        this.ui.elements.restartBtn?.addEventListener('click', (e) => {
+        ui.restartBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (this.state === 'GAME_OVER') this.resetGame();
+            if (this.state === GAME_STATE.GAME_OVER) this.resetGame();
         });
 
-        this.ui.elements.resetHighScoreBtn?.addEventListener('click', (e) => {
+        ui.resetHighScoreBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             if (confirm("Reset High Score?")) {
                 this.highScore = 0;
@@ -103,36 +119,36 @@ export class Game {
             }
         });
 
-        this.ui.elements.resumeBtn?.addEventListener('click', (e) => {
+        ui.resumeBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (this.state === 'PAUSED') this.togglePause();
+            if (this.state === GAME_STATE.PAUSED) this.togglePause();
         });
 
-        this.ui.elements.musicToggle?.addEventListener('click', (e) => {
+        ui.musicToggle?.addEventListener('click', (e) => {
             e.stopPropagation();
             this.musicEnabled = !this.musicEnabled;
             if (!this.musicEnabled) {
                 this.audio.stopMusic();
-            } else if (this.state === 'PLAYING' || this.state === 'PAUSED') {
+            } else if (this.state === GAME_STATE.PLAYING || this.state === GAME_STATE.PAUSED) {
                 this.audio.startMusic();
-                if (this.state === 'PAUSED') this.audio.setMusicMuted(true);
+                if (this.state === GAME_STATE.PAUSED) this.audio.setMusicMuted(true);
             }
             this.ui.updateAudioButtons(this.musicEnabled, this.sfxEnabled);
         });
 
-        this.ui.elements.sfxToggle?.addEventListener('click', (e) => {
+        ui.sfxToggle?.addEventListener('click', (e) => {
             e.stopPropagation();
             this.sfxEnabled = !this.sfxEnabled;
             this.audio.setSfxMuted(!this.sfxEnabled);
             this.ui.updateAudioButtons(this.musicEnabled, this.sfxEnabled);
         });
 
-        this.ui.elements.pauseBtn?.addEventListener('click', (e) => {
+        ui.pauseBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
-            if (this.state === 'PLAYING') this.togglePause();
+            if (this.state === GAME_STATE.PLAYING) this.togglePause();
         });
 
-        this.ui.elements.closeDebugBtn?.addEventListener('click', (e) => {
+        ui.closeDebugBtn?.addEventListener('click', (e) => {
             e.stopPropagation();
             this.toggleDebugMenu(false);
         });
@@ -143,57 +159,20 @@ export class Game {
                 this.debugGivePowerup(btn.dataset.powerup);
             });
         });
-
-        document.addEventListener('visibilitychange', () => {
-            if (document.hidden && this.state === 'PLAYING') {
-                this.togglePause();
-            }
-        });
-    }
-
-    toggleDebugMenu(show = !this.debugActive) {
-        this.debugActive = show;
-        this.ui.toggleDebugMenu(show);
-        if (show) {
-            this.ui.populateDebugDinoList(DINOS, this.dino.level, (index) => {
-                this.dino.level = index;
-                this.ui.showMessage(`Dino changed to ${DINOS[index].name}`);
-                this.toggleDebugMenu(false);
-            });
-        }
-    }
-
-    debugGivePowerup(type) {
-        switch (type) {
-            case 'BONE':
-                this.collectBone();
-                break;
-            case 'TREX':
-                this.activateSuperMode('trex');
-                break;
-            case 'SPINO':
-                this.activateSuperMode('spino');
-                break;
-            case 'HEAL':
-                this.heal();
-                this.ui.showMessage('FULL HEAL');
-                break;
-        }
-        this.toggleDebugMenu(false);
     }
 
     handleInput() {
-        if (this.state === 'START') {
+        if (this.state === GAME_STATE.START) {
             this.startGame();
-        } else if (this.state === 'PLAYING') {
+        } else if (this.state === GAME_STATE.PLAYING) {
             this.dino.jump();
             this.audio.playJump();
         }
     }
 
     startGame() {
-        this.state = 'PLAYING';
-        this.ui.showPlayingScreen();
+        this.state = GAME_STATE.PLAYING;
+        this.ui.setScreen(this.state);
         this.dino.jump();
         this.audio.playJump();
         this.coins.spawnStartMessage();
@@ -209,23 +188,23 @@ export class Game {
         this.obstacles.reset();
         this.powerups.reset();
         this.coins.reset();
-        this.state = 'START';
+        this.state = GAME_STATE.START;
 
         this.audio.stopMusic();
-        this.ui.showStartScreen();
+        this.ui.setScreen(this.state);
         this.ui.setTheme(0);
-        this.ui.resetContainerStyles();
+        this.ui.clearBorderEffect();
         this.updateUI();
     }
 
     togglePause() {
-        if (this.state === 'PLAYING') {
-            this.state = 'PAUSED';
-            this.ui.togglePause(true);
+        if (this.state === GAME_STATE.PLAYING) {
+            this.state = GAME_STATE.PAUSED;
+            this.ui.setScreen(this.state);
             if (this.musicEnabled) this.audio.setMusicMuted(true);
-        } else if (this.state === 'PAUSED') {
-            this.state = 'PLAYING';
-            this.ui.togglePause(false);
+        } else if (this.state === GAME_STATE.PAUSED) {
+            this.state = GAME_STATE.PLAYING;
+            this.ui.setScreen(this.state);
             if (this.musicEnabled) this.audio.setMusicMuted(false);
         }
     }
@@ -240,9 +219,9 @@ export class Game {
 
         this.ctx.clearRect(0, 0, this.width, this.height);
 
-        if (this.state === 'PLAYING') {
+        if (this.state === GAME_STATE.PLAYING) {
             this.update(deltaTime);
-        } else if (this.state === 'START') {
+        } else if (this.state === GAME_STATE.START) {
             this.titleAnimation.update(deltaTime);
         }
 
@@ -290,14 +269,14 @@ export class Game {
     }
 
     updateBorderEffect() {
-        if (this.state !== 'PLAYING') return;
+        if (this.state !== GAME_STATE.PLAYING) return;
 
         if (!this.lastBorderTime) this.lastBorderTime = 0;
         if (this.time - this.lastBorderTime < 60) return;
         this.lastBorderTime = this.time;
 
         const color = this.obstacles.colors[this.obstacles.colorIndex % this.obstacles.colors.length];
-        this.ui.updateContainerBorder(this.hitFlashTimer > 0, color);
+        this.ui.updateBorderEffect(this.hitFlashTimer > 0, color);
     }
 
     checkCollisions() {
@@ -412,7 +391,7 @@ export class Game {
     }
 
     gameOver() {
-        this.state = 'GAME_OVER';
+        this.state = GAME_STATE.GAME_OVER;
         this.audio.playGameOver();
         this.audio.stopMusic();
         if (this.score > this.highScore) {
@@ -420,7 +399,7 @@ export class Game {
             localStorage.setItem('jurassicEscapeHighScore', this.highScore);
         }
         this.updateUI();
-        this.ui.showGameOverScreen();
+        this.ui.setScreen(this.state);
     }
 
     initSpeedLines() {
@@ -446,7 +425,7 @@ export class Game {
     }
 
     draw() {
-        if (this.state === 'START') this.titleAnimation.draw(this.ctx);
+        if (this.state === GAME_STATE.START) this.titleAnimation.draw(this.ctx);
 
         if (this.speedBoostTimer > 0) {
             this.ctx.save();
@@ -490,5 +469,36 @@ export class Game {
             }
             this.ctx.restore();
         }
+    }
+
+    toggleDebugMenu(show = !this.debugActive) {
+        this.debugActive = show;
+        this.ui.toggleDebugMenu(show);
+        if (show) {
+            this.ui.populateDebugDinoList(DINOS, this.dino.level, (index) => {
+                this.dino.level = index;
+                this.ui.showMessage(`Dino changed to ${DINOS[index].name}`);
+                this.toggleDebugMenu(false);
+            });
+        }
+    }
+
+    debugGivePowerup(type) {
+        switch (type) {
+            case 'BONE':
+                this.collectBone();
+                break;
+            case 'TREX':
+                this.activateSuperMode('trex');
+                break;
+            case 'SPINO':
+                this.activateSuperMode('spino');
+                break;
+            case 'HEAL':
+                this.heal();
+                this.ui.showMessage('FULL HEAL');
+                break;
+        }
+        this.toggleDebugMenu(false);
     }
 }

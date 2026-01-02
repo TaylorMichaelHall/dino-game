@@ -9,34 +9,53 @@ export class UIManager {
         this.game = game;
         this.container = document.getElementById('game-container');
 
+        // Helper to get element by ID and group them
+        const get = (id) => document.getElementById(id);
+
         this.elements = {
-            start: document.getElementById('start-screen'),
-            gameOver: document.getElementById('game-over-screen'),
-            hud: document.getElementById('hud'),
-            score: document.getElementById('score'),
-            finalScore: document.getElementById('final-score'),
-            highScore: document.getElementById('high-score'),
-            startHighScore: document.getElementById('start-high-score'),
-            gameplayHighScore: document.getElementById('gameplay-high-score'),
-            highScoreBadge: document.getElementById('high-score-new-tag'),
-            hearts: document.getElementById('hearts'),
-            overlay: document.getElementById('message-overlay'),
-            overlayText: document.getElementById('message-text'),
-            pause: document.getElementById('pause-screen'),
-            startBtn: document.getElementById('start-btn'),
-            resumeBtn: document.getElementById('resume-btn'),
-            powerupTimer: document.getElementById('powerup-timer'),
-            timerSeconds: document.getElementById('timer-seconds'),
-            musicToggle: document.getElementById('music-toggle'),
-            sfxToggle: document.getElementById('sfx-toggle'),
-            pauseBtn: document.getElementById('pause-btn'),
-            restartBtn: document.getElementById('restart-btn'),
-            resetHighScoreBtn: document.getElementById('reset-high-score-btn'),
-            debugMenu: document.getElementById('debug-menu'),
-            debugDinoList: document.getElementById('debug-dino-list'),
-            closeDebugBtn: document.getElementById('close-debug-btn'),
-            debugBtns: document.querySelectorAll('.debug-btn')
+            start: get('start-screen'),
+            gameOver: get('game-over-screen'),
+            hud: get('hud'),
+            score: get('score'),
+            finalScore: get('final-score'),
+            highScore: get('high-score'),
+            startHighScore: get('start-high-score'),
+            gameplayHighScore: get('gameplay-high-score'),
+            highScoreBadge: get('high-score-new-tag'),
+            hearts: get('hearts'),
+            overlay: get('message-overlay'),
+            overlayText: get('message-text'),
+            pause: get('pause-screen'),
+            startBtn: get('start-btn'),
+            resumeBtn: get('resume-btn'),
+            powerupTimer: get('powerup-timer'),
+            timerSeconds: get('timer-seconds'),
+            musicToggle: get('music-toggle'),
+            sfxToggle: get('sfx-toggle'),
+            pauseBtn: get('pause-btn'),
+            restartBtn: get('restart-btn'),
+            resetHighScoreBtn: get('reset-high-score-btn'),
+            debugMenu: get('debug-menu'),
+            debugDinoList: get('debug-dino-list'),
+            closeDebugBtn: get('close-debug-btn')
         };
+    }
+
+    setScreen(state) {
+        const { start, gameOver, hud, pause } = this.elements;
+        start.classList.toggle('hidden', state !== 'START');
+        gameOver.classList.toggle('hidden', state !== 'GAME_OVER');
+        hud.classList.toggle('hidden', state !== 'PLAYING');
+        pause.classList.toggle('hidden', state !== 'PAUSED');
+    }
+
+    updateBorderEffect(hitFlash, color) {
+        const currentColor = hitFlash ? '#ffffff' : color;
+        const flicker = 8 + Math.random() * 8;
+
+        this.container.style.setProperty('--glow-color', currentColor);
+        this.container.style.setProperty('--glow-blur', `${flicker}px`);
+        this.container.style.setProperty('--border-core', '#ffffff');
     }
 
     toggleDebugMenu(show) {
@@ -52,28 +71,6 @@ export class UIManager {
             btn.onclick = () => onSelect(index);
             this.elements.debugDinoList.appendChild(btn);
         });
-    }
-
-    showStartScreen() {
-        this.elements.start.classList.remove('hidden');
-        this.elements.gameOver.classList.add('hidden');
-        this.elements.hud.classList.add('hidden');
-        this.elements.pause.classList.add('hidden');
-    }
-
-    showPlayingScreen() {
-        this.elements.start.classList.add('hidden');
-        this.elements.pause.classList.add('hidden');
-        this.elements.hud.classList.remove('hidden');
-    }
-
-    showGameOverScreen() {
-        this.elements.hud.classList.add('hidden');
-        this.elements.gameOver.classList.remove('hidden');
-    }
-
-    togglePause(isPaused) {
-        this.elements.pause.classList.toggle('hidden', !isPaused);
     }
 
     updateHUD(score, hearts, highScore) {
@@ -131,18 +128,10 @@ export class UIManager {
         this.container.classList.add(CONFIG.THEMES[themeIndex]);
     }
 
-    updateContainerBorder(hitFlash, color) {
-        const currentColor = hitFlash ? '#ffffff' : color;
-        const flicker = 8 + Math.random() * 8;
-
-        this.container.style.setProperty('--glow-color', currentColor);
-        this.container.style.setProperty('--glow-blur', `${flicker}px`);
-        this.container.style.setProperty('--border-core', '#ffffff');
-    }
-
-    resetContainerStyles() {
+    clearBorderEffect() {
         this.container.style.removeProperty('--glow-color');
         this.container.style.removeProperty('--glow-blur');
         this.container.style.removeProperty('--border-core');
     }
 }
+

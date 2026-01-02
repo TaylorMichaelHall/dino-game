@@ -46,3 +46,11 @@ export const CONFIG = {
     DINO_COLORS: ['#4ade80', '#fb923c', '#f87171', '#000000'],
     DNA_COLORS: ['#f472b6', '#c084fc', '#818cf8', '#2dd4bf']
 };
+
+export const GAME_STATE = {
+    START: 'START',
+    PLAYING: 'PLAYING',
+    PAUSED: 'PAUSED',
+    GAME_OVER: 'GAME_OVER'
+};
+
