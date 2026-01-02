@@ -9,7 +9,7 @@ export class PowerupManager {
         this.radius = 15;
 
         const basePath = import.meta.env.BASE_URL || '/';
-        this.emeraldImg = this.loadImage(`${basePath}sprites/emerald.png`);
+        this.emeraldImg = this.loadImage(`${basePath}sprites/emerald.webp`);
     }
 
     loadImage(src) {
