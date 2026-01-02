@@ -40,6 +40,11 @@ export class Dino {
         this.displayX = 50; // Current animated X position
         this.flyingOffSprite = null;
 
+        // Backflip state
+        this.isBackflipping = false;
+        this.backflipRotation = 0;
+        this.backflipDuration = 0.5; // Seconds for a full flip
+
         this.initSprites();
     }
 
@@ -127,6 +132,16 @@ export class Dino {
                 this.flyingOffSprite = null;
             }
         }
+
+        // Backflip rotation update
+        if (this.isBackflipping) {
+            const rotationSpeed = (Math.PI * 2) / this.backflipDuration;
+            this.backflipRotation += rotationSpeed * deltaTime;
+            if (this.backflipRotation >= Math.PI * 2) {
+                this.backflipRotation = 0;
+                this.isBackflipping = false;
+            }
+        }
     }
 
     draw(ctx) {
@@ -158,7 +173,13 @@ export class Dino {
         ctx.save();
         ctx.translate(this.displayX + this.width / 2, this.y + this.height / 2);
 
-        const rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.0015)));
+        let rotation = Math.min(Math.PI / 4, Math.max(-Math.PI / 4, (this.velocity * 0.0015)));
+
+        // Subtract backflip rotation if active (counterclockwise)
+        if (this.isBackflipping) {
+            rotation -= this.backflipRotation;
+        }
+
         ctx.rotate(rotation);
 
         ctx.scale(0.8, 0.8);
@@ -173,6 +194,11 @@ export class Dino {
     }
 
     jump() {
+        // Trigger backflip if jumping while moving upward and not already flipping
+        if (this.velocity < 0 && !this.isBackflipping) {
+            this.isBackflipping = true;
+            this.backflipRotation = 0;
+        }
         this.velocity = this.jumpStrength;
     }
 
@@ -263,5 +289,7 @@ export class Dino {
         this.superType = null;
         this.history = [];
         this.flyingOffSprite = null;
+        this.isBackflipping = false;
+        this.backflipRotation = 0;
     }
 }
