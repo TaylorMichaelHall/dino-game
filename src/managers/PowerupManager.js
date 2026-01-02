@@ -1,4 +1,4 @@
-import { CONFIG } from './Constants.js';
+import { CONFIG } from '../config/Constants.js';
 
 export class PowerupManager {
     constructor(game) {

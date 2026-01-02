@@ -1,5 +1,5 @@
-import './style.css'
-import { Game } from './Game.js'
+import './styles/style.css'
+import { Game } from './core/Game.js'
 
 window.addEventListener('load', () => {
   const canvas = document.getElementById('gameCanvas');

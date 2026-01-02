@@ -1,10 +1,10 @@
-import { Dino } from './Dino.js';
-import { ObstacleManager } from './ObstacleManager.js';
-import { PowerupManager } from './PowerupManager.js';
-import { CoinManager } from './CoinManager.js';
-import { AudioManager } from './AudioManager.js';
-import { TitleManager } from './TitleManager.js';
-import { CONFIG } from './Constants.js';
+import { Dino } from '../entities/Dino.js';
+import { ObstacleManager } from '../managers/ObstacleManager.js';
+import { PowerupManager } from '../managers/PowerupManager.js';
+import { CoinManager } from '../managers/CoinManager.js';
+import { AudioManager } from '../managers/AudioManager.js';
+import { TitleManager } from '../managers/TitleManager.js';
+import { CONFIG } from '../config/Constants.js';
 
 /**
  * Main Game Controller
@@ -448,42 +448,42 @@ export class Game {
     }
 
     drawGlitchEffect() {
-        // Slow down the "flicker" rate significantly
-        // Every 500ms, decide if we should show a glitch burst for 100ms
-        const period = 0.5; // seconds
-        const burstDuration = 0.15; // seconds
+        // Slow down the "flicker" rate even more
+        // Every 800ms, decide if we should show a glitch burst for 80ms
+        const period = 0.8; // seconds
+        const burstDuration = 0.08; // seconds
         const currentTimeInPeriod = this.glitchTimer % period;
 
         if (currentTimeInPeriod < burstDuration) {
             this.ctx.save();
 
-            // Random RGB Split / Color Offset - only occasionally
-            if (Math.random() > 0.9) {
+            // Random RGB Split / Color Offset - very rare
+            if (Math.random() > 0.95) {
                 this.ctx.globalCompositeOperation = 'screen';
-                this.ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
-                this.ctx.fillRect((Math.random() - 0.5) * 20, 0, this.width, this.height);
-                this.ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
-                this.ctx.fillRect((Math.random() - 0.5) * 20, 0, this.width, this.height);
+                this.ctx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+                this.ctx.fillRect((Math.random() - 0.5) * 10, 0, this.width, this.height);
+                this.ctx.fillStyle = 'rgba(0, 255, 255, 0.1)';
+                this.ctx.fillRect((Math.random() - 0.5) * 10, 0, this.width, this.height);
                 this.ctx.globalCompositeOperation = 'source-over';
             }
 
-            const sliceCount = 6 + Math.floor(Math.random() * 6);
+            const sliceCount = 3 + Math.floor(Math.random() * 4);
             for (let i = 0; i < sliceCount; i++) {
                 const x = Math.random() * this.width;
                 const y = Math.random() * this.height;
-                const w = 200 + Math.random() * 400; // Wider slices
-                const h = 5 + Math.random() * 15;
-                const offset = (Math.random() - 0.5) * 60;
+                const w = 150 + Math.random() * 300;
+                const h = 3 + Math.random() * 10;
+                const offset = (Math.random() - 0.5) * 40;
 
-                // Brighter flickering rectangles
+                // Subtle flickering rectangles
                 const color = Math.random() > 0.5 ? '255, 255, 255' : '233, 69, 96';
-                this.ctx.fillStyle = `rgba(${color}, ${0.2 + Math.random() * 0.3})`;
+                this.ctx.fillStyle = `rgba(${color}, ${0.1 + Math.random() * 0.2})`;
                 this.ctx.fillRect(x + offset, y, w, h);
             }
 
-            // Screen distortions - less frequent
-            if (Math.random() > 0.92) {
-                const shiftX = (Math.random() - 0.5) * 30;
+            // Screen distortions - very rare and subtle
+            if (Math.random() > 0.96) {
+                const shiftX = (Math.random() - 0.5) * 15;
                 this.ctx.translate(shiftX, 0);
             }
             this.ctx.restore();

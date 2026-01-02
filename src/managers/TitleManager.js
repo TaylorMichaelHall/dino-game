@@ -1,5 +1,5 @@
-import { CONFIG } from './Constants.js';
-import { DINOS } from './DinoConfig.js';
+import { CONFIG } from '../config/Constants.js';
+import { DINOS } from '../config/DinoConfig.js';
 
 export class TitleManager {
     constructor(game) {

@@ -1,4 +1,4 @@
-import { scheduleJurassicMeasure, MEASURE } from './musicLoop.js';
+import { scheduleJurassicMeasure, MEASURE } from '../audio/musicLoop.js';
 
 /**
  * AudioManager

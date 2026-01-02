@@ -1,5 +1,5 @@
-import { CONFIG } from './Constants.js';
-import { DINOS, SUPER_DINOS } from './DinoConfig.js';
+import { CONFIG } from '../config/Constants.js';
+import { DINOS, SUPER_DINOS } from '../config/DinoConfig.js';
 
 /**
  * Dino Class
