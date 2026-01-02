@@ -44,6 +44,10 @@ export class Game {
         this.hitFlashTimer = 0;
         this.autoPausedByVisibility = false;
 
+        this.speedLines = [];
+        this.initSpeedLines();
+        this.glitchTimer = 0;
+
         this.initUI();
         this.bindEvents();
         this.updateAudioButtons();
@@ -277,6 +281,40 @@ export class Game {
         this.handleCoinCollisions();
         this.handleObstacleCollisions();
         this.handleScoring();
+        this.updateSpeedLines(deltaTime);
+
+        if (this.superModeTimer > 0) {
+            this.glitchTimer += deltaTime;
+        } else {
+            this.glitchTimer = 0;
+        }
+    }
+
+    initSpeedLines() {
+        for (let i = 0; i < CONFIG.SPEED_LINE_COUNT; i++) {
+            this.speedLines.push(this.createSpeedLine());
+        }
+    }
+
+    createSpeedLine() {
+        return {
+            x: Math.random() * this.width,
+            y: Math.random() * this.height,
+            length: CONFIG.SPEED_LINE_MIN_LEN + Math.random() * (CONFIG.SPEED_LINE_MAX_LEN - CONFIG.SPEED_LINE_MIN_LEN),
+            speed: CONFIG.SPEED_LINE_MIN_SPEED + Math.random() * (CONFIG.SPEED_LINE_MAX_SPEED - CONFIG.SPEED_LINE_MIN_SPEED)
+        };
+    }
+
+    updateSpeedLines(deltaTime) {
+        if (this.speedBoostTimer <= 0) return;
+
+        this.speedLines.forEach(line => {
+            line.x -= line.speed * deltaTime;
+            if (line.x + line.length < 0) {
+                line.x = this.width;
+                line.y = Math.random() * this.height;
+            }
+        });
     }
 
     updateTimers(deltaTime) {
@@ -380,10 +418,76 @@ export class Game {
             this.titleAnimation.draw(this.ctx);
         }
 
+        this.drawBackgroundEffects();
         this.obstacles.draw(this.ctx);
         this.powerups.draw(this.ctx);
         this.coins.draw(this.ctx);
         this.dino.draw(this.ctx);
+    }
+
+    drawBackgroundEffects() {
+        if (this.speedBoostTimer > 0) {
+            this.drawSpeedLines();
+        }
+        if (this.superModeTimer > 0) {
+            this.drawGlitchEffect();
+        }
+    }
+
+    drawSpeedLines() {
+        this.ctx.save();
+        this.ctx.strokeStyle = `rgba(255, 255, 255, ${CONFIG.SPEED_LINE_OPACITY})`;
+        this.ctx.lineWidth = 2;
+        this.ctx.beginPath();
+        this.speedLines.forEach(line => {
+            this.ctx.moveTo(line.x, line.y);
+            this.ctx.lineTo(line.x + line.length, line.y);
+        });
+        this.ctx.stroke();
+        this.ctx.restore();
+    }
+
+    drawGlitchEffect() {
+        // Slow down the "flicker" rate significantly
+        // Every 500ms, decide if we should show a glitch burst for 100ms
+        const period = 0.5; // seconds
+        const burstDuration = 0.15; // seconds
+        const currentTimeInPeriod = this.glitchTimer % period;
+
+        if (currentTimeInPeriod < burstDuration) {
+            this.ctx.save();
+
+            // Random RGB Split / Color Offset - only occasionally
+            if (Math.random() > 0.9) {
+                this.ctx.globalCompositeOperation = 'screen';
+                this.ctx.fillStyle = 'rgba(255, 0, 0, 0.15)';
+                this.ctx.fillRect((Math.random() - 0.5) * 20, 0, this.width, this.height);
+                this.ctx.fillStyle = 'rgba(0, 255, 255, 0.15)';
+                this.ctx.fillRect((Math.random() - 0.5) * 20, 0, this.width, this.height);
+                this.ctx.globalCompositeOperation = 'source-over';
+            }
+
+            const sliceCount = 6 + Math.floor(Math.random() * 6);
+            for (let i = 0; i < sliceCount; i++) {
+                const x = Math.random() * this.width;
+                const y = Math.random() * this.height;
+                const w = 200 + Math.random() * 400; // Wider slices
+                const h = 5 + Math.random() * 15;
+                const offset = (Math.random() - 0.5) * 60;
+
+                // Brighter flickering rectangles
+                const color = Math.random() > 0.5 ? '255, 255, 255' : '233, 69, 96';
+                this.ctx.fillStyle = `rgba(${color}, ${0.2 + Math.random() * 0.3})`;
+                this.ctx.fillRect(x + offset, y, w, h);
+            }
+
+            // Screen distortions - less frequent
+            if (Math.random() > 0.92) {
+                const shiftX = (Math.random() - 0.5) * 30;
+                this.ctx.translate(shiftX, 0);
+            }
+            this.ctx.restore();
+        }
     }
 
     collectBone() {
