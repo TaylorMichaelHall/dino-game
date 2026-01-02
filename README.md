@@ -36,13 +36,13 @@ Kept intentionally lightweight to stay fast and portable:
 ## Running it locally
 
 Install dependencies:
-npm install
+`npm install`
 
 Start the dev server:
-npm run dev
+`npm run dev`
 
 Build for production:
-npm run build
+`npm run build`
 
 The output is a fully static site in the dist/ directory and can be hosted anywhere.
 
