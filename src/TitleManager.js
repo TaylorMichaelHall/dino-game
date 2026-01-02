@@ -16,7 +16,8 @@ export class TitleManager {
             quetzal: this.loadImage(sprite('quetz.png')),
             trex: this.loadImage(sprite('trex.png')),
             spino: this.loadImage(sprite('spino.png')),
-            mosa: this.loadImage(sprite('mosa.png'))
+            mosa: this.loadImage(sprite('mosa.png')),
+            allo: this.loadImage(sprite('allosaurus.png'))
         };
     }
 
@@ -34,7 +35,8 @@ export class TitleManager {
             { id: 'quetzal', size: 70, speed: 180, y: 100 },
             { id: 'trex', size: 100, speed: 200, y: 180 },
             { id: 'spino', size: 120, speed: 210, y: 400 },
-            { id: 'mosa', size: 140, speed: 150, y: 450 }
+            { id: 'mosa', size: 140, speed: 150, y: 450 },
+            { id: 'allo', size: 150, speed: 190, y: 300 }
         ];
 
         this.dinos = types.map((t, i) => ({
@@ -60,7 +62,9 @@ export class TitleManager {
         this.dinos.forEach(dino => {
             const sprite = this.sprites[dino.id];
             if (sprite.complete && sprite.naturalWidth > 0) {
-                ctx.drawImage(sprite, dino.x, dino.y, dino.size, dino.size);
+                const w = dino.size;
+                const h = w * (sprite.naturalHeight / sprite.naturalWidth);
+                ctx.drawImage(sprite, dino.x, dino.y, w, h);
             }
         });
 

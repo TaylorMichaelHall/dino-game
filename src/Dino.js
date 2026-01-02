@@ -19,7 +19,7 @@ export class Dino {
 
         this.radius = 20;
 
-        this.types = ['Raptor', 'Quetzalcoatlus', 'T-Rex', 'Spinosaurus', 'Mosasaurus'];
+        this.types = ['Raptor', 'Quetzalcoatlus', 'T-Rex', 'Spinosaurus', 'Mosasaurus', 'Allosaurus'];
         this.level = 0;
         this.colorIndex = 0;
 
@@ -52,7 +52,8 @@ export class Dino {
             spino: this.loadImage(sprite('spino.png')),
             superTrex: this.loadImage(sprite('super_trex.png')),
             superSpino: this.loadImage(sprite('super_spino.png')),
-            mosa: this.loadImage(sprite('mosa.png'))
+            mosa: this.loadImage(sprite('mosa.png')),
+            allo: this.loadImage(sprite('allosaurus.png'))
         };
     }
 
@@ -228,6 +229,7 @@ export class Dino {
         else if (type === 'T-Rex') this.drawTRex(ctx);
         else if (type === 'Spinosaurus') this.drawSpinosaurus(ctx);
         else if (type === 'Mosasaurus') this.drawMosasaurus(ctx);
+        else if (type === 'Allosaurus') this.drawAllosaurus(ctx);
     }
 
     reset() {
@@ -246,8 +248,9 @@ export class Dino {
 
     drawRaptor(ctx) {
         if (this.sprites.raptor.complete && this.sprites.raptor.naturalWidth > 0) {
-            const s = 126;
-            ctx.drawImage(this.sprites.raptor, -s / 2, -s / 2, s, s);
+            const w = 126;
+            const h = w * (this.sprites.raptor.naturalHeight / this.sprites.raptor.naturalWidth);
+            ctx.drawImage(this.sprites.raptor, -w / 2, -h / 2, w, h);
         } else {
             ctx.fillRect(-20, -20, 40, 40);
         }
@@ -255,8 +258,9 @@ export class Dino {
 
     drawQuetzalcoatlus(ctx) {
         if (this.sprites.quetzal.complete && this.sprites.quetzal.naturalWidth > 0) {
-            const s = 130;
-            ctx.drawImage(this.sprites.quetzal, -s / 2, -s / 2, s, s);
+            const w = 130;
+            const h = w * (this.sprites.quetzal.naturalHeight / this.sprites.quetzal.naturalWidth);
+            ctx.drawImage(this.sprites.quetzal, -w / 2, -h / 2, w, h);
         } else {
             ctx.fillRect(-25, -25, 50, 50);
         }
@@ -264,8 +268,9 @@ export class Dino {
 
     drawTRex(ctx) {
         if (this.sprites.trex.complete && this.sprites.trex.naturalWidth > 0) {
-            const s = 155;
-            ctx.drawImage(this.sprites.trex, -s / 2, -s / 2, s, s);
+            const w = 155;
+            const h = w * (this.sprites.trex.naturalHeight / this.sprites.trex.naturalWidth);
+            ctx.drawImage(this.sprites.trex, -w / 2, -h / 2, w, h);
         } else {
             ctx.fillRect(-25, -25, 50, 50);
         }
@@ -273,8 +278,9 @@ export class Dino {
 
     drawSpinosaurus(ctx) {
         if (this.sprites.spino.complete && this.sprites.spino.naturalWidth > 0) {
-            const s = 180;
-            ctx.drawImage(this.sprites.spino, -s / 2, -s / 2, s, s);
+            const w = 180;
+            const h = w * (this.sprites.spino.naturalHeight / this.sprites.spino.naturalWidth);
+            ctx.drawImage(this.sprites.spino, -w / 2, -h / 2, w, h);
         } else {
             ctx.fillRect(-30, -30, 60, 60);
         }
@@ -283,8 +289,9 @@ export class Dino {
     drawSuper(ctx, type = this.superType) {
         const sprite = type === 'spino' ? this.sprites.superSpino : this.sprites.superTrex;
         if (sprite.complete && sprite.naturalWidth > 0) {
-            const s = type === 'spino' ? 240 : 210;
-            ctx.drawImage(sprite, -s / 2, -s / 2, s, s);
+            const w = type === 'spino' ? 240 : 210;
+            const h = w * (sprite.naturalHeight / sprite.naturalWidth);
+            ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
         } else {
             ctx.fillStyle = type === 'spino' ? '#0f0' : '#0ff';
             ctx.fillRect(-40, -40, 80, 80);
@@ -293,10 +300,21 @@ export class Dino {
 
     drawMosasaurus(ctx) {
         if (this.sprites.mosa.complete && this.sprites.mosa.naturalWidth > 0) {
-            const s = 200;
-            ctx.drawImage(this.sprites.mosa, -s / 2, -s / 2, s, s);
+            const w = 200;
+            const h = w * (this.sprites.mosa.naturalHeight / this.sprites.mosa.naturalWidth);
+            ctx.drawImage(this.sprites.mosa, -w / 2, -h / 2, w, h);
         } else {
             ctx.fillRect(-40, -40, 80, 80);
+        }
+    }
+
+    drawAllosaurus(ctx) {
+        if (this.sprites.allo.complete && this.sprites.allo.naturalWidth > 0) {
+            const w = 190;
+            const h = w * (this.sprites.allo.naturalHeight / this.sprites.allo.naturalWidth);
+            ctx.drawImage(this.sprites.allo, -w / 2, -h / 2, w, h);
+        } else {
+            ctx.fillRect(-35, -35, 70, 70);
         }
     }
 }
