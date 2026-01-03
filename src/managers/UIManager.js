@@ -171,6 +171,9 @@ export class UIManager {
         if (stats.powerups.EMERALD > 0) {
             items.push({ name: 'Emeralds', count: stats.powerups.EMERALD, icon: 'emerald.webp', isImg: true });
         }
+        if (stats.powerups.MAGNET > 0) {
+            items.push({ name: 'Magnets', count: stats.powerups.MAGNET, icon: '🧲' });
+        }
         if (stats.powerups.COIN > 0) {
             items.push({ name: 'Coins', count: stats.powerups.COIN, icon: '🪙' });
         }

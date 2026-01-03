@@ -37,7 +37,9 @@ export const CONFIG = {
     BONE_SPAWN_MIN: 50,
     BONE_SPAWN_MAX: 150,
     DIAMOND_THRESHOLD: 500,
+    MAGNET_THRESHOLD: 400,
     SUPER_TREX_DURATION: 30,
+    MAGNET_DURATION: 15,
 
     // Themes
     THEMES: ['theme-1', 'theme-2', 'theme-3', 'theme-4', 'theme-5'],

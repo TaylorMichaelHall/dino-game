@@ -43,6 +43,7 @@ export class Game {
         this.time = 0;
         this.speedBoostTimer = 0;
         this.superModeTimer = 0;
+        this.magnetTimer = 0;
         this.hitFlashTimer = 0;
         this.glitchTimer = 0;
 
@@ -65,6 +66,7 @@ export class Game {
                 BONE: 0,
                 DIAMOND: 0,
                 EMERALD: 0,
+                MAGNET: 0,
                 COIN: 0
             }
         };
@@ -97,6 +99,7 @@ export class Game {
         this.hearts = CONFIG.MAX_HEARTS;
         this.speedBoostTimer = 0;
         this.superModeTimer = 0;
+        this.magnetTimer = 0;
         this.dino.reset();
         this.obstacles.reset();
         this.powerups.reset();
@@ -197,6 +200,11 @@ export class Game {
                 this.ui.showMessage(`${superName} Power Depleted`);
             }
         }
+
+        if (this.magnetTimer > 0) {
+            this.magnetTimer -= deltaTime;
+            if (this.magnetTimer <= 0) this.ui.showMessage('Magnet Deactivated');
+        }
     }
 
     updateBorderEffect() {
@@ -216,6 +224,7 @@ export class Game {
         if (pType === 'BONE') this.collectBone();
         else if (pType === 'DIAMOND') this.activateSuperMode('trex');
         else if (pType === 'EMERALD') this.activateSuperMode('spino');
+        else if (pType === 'MAGNET') this.collectMagnet();
 
         // Coins
         if (this.coins.checkCollision(this.dino)) {
@@ -280,6 +289,13 @@ export class Game {
 
         if (type === 'trex') this.stats.powerups.DIAMOND++;
         else if (type === 'spino') this.stats.powerups.EMERALD++;
+    }
+
+    collectMagnet() {
+        this.audio.playPowerup();
+        this.magnetTimer = CONFIG.MAGNET_DURATION;
+        this.ui.showMessage('🧲 COIN MAGNET ACTIVATED 🧲');
+        this.stats.powerups.MAGNET++;
     }
 
     incrementScore(amount = 1) {
@@ -377,6 +393,9 @@ export class Game {
                 break;
             case 'SPINO':
                 this.activateSuperMode('spino');
+                break;
+            case 'MAGNET':
+                this.collectMagnet();
                 break;
             case 'HEAL':
                 this.heal();

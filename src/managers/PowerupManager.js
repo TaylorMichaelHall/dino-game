@@ -6,6 +6,7 @@ export class PowerupManager {
         this.powerups = [];
         this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
         this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
+        this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
         this.radius = 15;
 
         const basePath = import.meta.env.BASE_URL || '/';
@@ -27,6 +28,10 @@ export class PowerupManager {
         return currentScore + Math.floor(Math.random() * 50) + 1;
     }
 
+    calculateNextMagnetSpawn(currentScore) {
+        return currentScore + Math.floor(Math.random() * 50) + 25;
+    }
+
     checkSpawn(currentScore) {
         if (currentScore >= this.nextBoneSpawn) {
             this.spawn('BONE');
@@ -37,6 +42,11 @@ export class PowerupManager {
             const type = Math.random() < 0.5 ? 'DIAMOND' : 'EMERALD';
             this.spawn(type);
             this.nextDiamondSpawn += CONFIG.DIAMOND_THRESHOLD; // Fixed block increment
+        }
+
+        if (currentScore >= this.nextMagnetSpawn) {
+            this.spawn('MAGNET');
+            this.nextMagnetSpawn += CONFIG.MAGNET_THRESHOLD;
         }
     }
 
@@ -88,6 +98,7 @@ export class PowerupManager {
             if (p.type === 'BONE') this.drawBone(ctx, p.x, p.y);
             else if (p.type === 'DIAMOND') this.drawDiamond(ctx, p.x, p.y);
             else if (p.type === 'EMERALD') this.drawEmerald(ctx, p.x, p.y);
+            else if (p.type === 'MAGNET') this.drawMagnet(ctx, p.x, p.y);
         });
     }
 
@@ -111,13 +122,18 @@ export class PowerupManager {
         }
     }
 
+    drawMagnet(ctx, x, y) {
+        ctx.font = '40px serif';
+        ctx.fillText('🧲', x, y);
+    }
+
     checkCollision(dino) {
         const dx_center = dino.x + dino.width / 2;
         const dy_center = dino.y + dino.height / 2;
 
         for (let p of this.powerups) {
             const dist = Math.sqrt((dx_center - p.x) ** 2 + (dy_center - p.y) ** 2);
-            const r = (p.type === 'DIAMOND' || p.type === 'EMERALD') ? 20 : 15;
+            const r = (p.type === 'DIAMOND' || p.type === 'EMERALD' || p.type === 'MAGNET') ? 20 : 15;
             if (dist < dino.radius + r) {
                 p.collected = true;
                 return p.type;
@@ -130,5 +146,6 @@ export class PowerupManager {
         this.powerups = [];
         this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
         this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
+        this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
     }
 }

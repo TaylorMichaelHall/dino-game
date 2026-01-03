@@ -149,8 +149,25 @@ export class CoinManager {
     }
 
     update(deltaTime, speed) {
+        const magnetActive = this.game.magnetTimer > 0;
+        const dinoX = this.game.dino.x + this.game.dino.width / 2;
+        const dinoY = this.game.dino.y + this.game.dino.height / 2;
+
         this.coins.forEach(coin => {
-            coin.x -= speed * deltaTime;
+            if (magnetActive) {
+                // Move towards dino
+                const dx = dinoX - coin.x;
+                const dy = dinoY - coin.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+
+                if (distance > 0) {
+                    const magnetSpeed = 600; // Fast attraction
+                    coin.x += (dx / distance) * magnetSpeed * deltaTime;
+                    coin.y += (dy / distance) * magnetSpeed * deltaTime;
+                }
+            } else {
+                coin.x -= speed * deltaTime;
+            }
         });
 
         // Dynamic Filtering: Remove coins that overlap with DNA as they move
