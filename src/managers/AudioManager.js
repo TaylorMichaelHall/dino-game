@@ -38,7 +38,7 @@ export class AudioManager {
         this.musicLoopId = null;
         this.musicPlaying = false;
         this.musicMuted = true;
-        this.musicVolume = 0.1;
+        this.musicVolume = 1;
         this.sfxMuted = false;
         this.sfxVolumeScale = 0.7;
         this.activeMusicNodes = new Set();
