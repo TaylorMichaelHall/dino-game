@@ -277,33 +277,43 @@ export class AudioManager {
     playSuperSmash() {
         if (this.sfxMuted) return;
         this.resumeContext();
-        const playTone = (freq, type, duration, delay) => {
+
+        const now = this.ctx.currentTime;
+        const duration = 0.25;
+
+        // 1. Impact Thud (Low frequency crunch)
+        const thud = this.ctx.createOscillator();
+        const thudGain = this.ctx.createGain();
+        thud.type = 'square';
+        thud.frequency.setValueAtTime(100, now);
+        thud.frequency.exponentialRampToValueAtTime(20, now + duration);
+        thudGain.gain.setValueAtTime(0.2 * this.sfxVolumeScale, now);
+        thudGain.gain.exponentialRampToValueAtTime(0.001, now + duration);
+        thud.connect(thudGain);
+        thudGain.connect(this.sfxGain);
+
+        // 2. High Shimmer/Shatter (Noise-like)
+        const noiseCount = 8;
+        for (let i = 0; i < noiseCount; i++) {
             const osc = this.ctx.createOscillator();
-            const gain = this.ctx.createGain();
-            osc.type = type;
-            osc.frequency.setValueAtTime(freq, this.ctx.currentTime + delay);
-            osc.frequency.exponentialRampToValueAtTime(freq * 1.5, this.ctx.currentTime + delay + duration);
+            const g = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            // Random high frequencies to simulate noise/shattering
+            osc.frequency.setValueAtTime(1000 + Math.random() * 3000, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + duration * (0.5 + Math.random() * 0.5));
 
-            gain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, this.ctx.currentTime + delay);
-            gain.gain.linearRampToValueAtTime(0, this.ctx.currentTime + delay + duration);
+            g.gain.setValueAtTime(0.05 * this.sfxVolumeScale, now);
+            g.gain.exponentialRampToValueAtTime(0.001, now + duration);
 
-            osc.connect(gain);
-            gain.connect(this.sfxGain);
+            osc.connect(g);
+            g.connect(this.sfxGain);
 
-            osc.onended = () => {
-                try {
-                    osc.disconnect();
-                    gain.disconnect();
-                } catch (e) { }
-            };
-            osc.start(this.ctx.currentTime + delay);
-            osc.stop(this.ctx.currentTime + delay + duration);
-        };
+            osc.start(now);
+            osc.stop(now + duration + 0.1);
+        }
 
-        // Multi-tone "pop" or "sparkle" effect
-        playTone(600, 'sine', 0.1, 0);
-        playTone(900, 'triangle', 0.1, 0.03);
-        playTone(1200, 'sine', 0.1, 0.06);
+        thud.start(now);
+        thud.stop(now + duration + 0.1);
     }
 
     /**
