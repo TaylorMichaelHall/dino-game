@@ -38,8 +38,13 @@
         </div>
         <div id="game-over-screen" class="hidden screen">
           <h1>Extinct!</h1>
-          <p>Score: <span id="final-score">0</span></p>
-          <p>High Score: <span id="high-score">0</span></p>
+          <div id="final-stats" class="stats-container">
+            <p>Score: <span id="final-score">0</span></p>
+            <p>High Score: <span id="high-score">0</span></p>
+          </div>
+          <div id="game-stats-list" class="game-stats-list hidden">
+            <!-- Dynamically populated -->
+          </div>
           <button id="restart-btn">Try Again</button>
         </div>
         <div id="pause-screen" class="hidden screen">

@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Orbitron:wght@600&display=swap');
 
 :root {
   --font-main: 'Outfit', sans-serif;
@@ -506,8 +506,30 @@ button:active {
     font-size: 0.95rem;
   }
 
+  .screen {
+    gap: 8px;
+    /* Reduced gap */
+    padding: 10px;
+  }
+
+  #game-over-screen h1 {
+    font-size: 1.1rem;
+    margin-bottom: 0px;
+  }
+
+  #game-over-screen p {
+    font-size: 0.8rem;
+    margin-bottom: 0px;
+  }
+
+  #restart-btn {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+    margin-top: 2px;
+  }
+
   .score-value {
-    font-size: 1.6rem;
+    font-size: 1.4rem;
   }
 
   #hud {
@@ -554,8 +576,8 @@ button:active {
   }
 
   .screen {
-    padding: 15px;
-    gap: 8px;
+    padding: 8px;
+    gap: 4px;
   }
 
   .high-score-start {
@@ -589,12 +611,12 @@ button:active {
   }
 
   #message-text {
-    font-size: 2.4rem;
+    font-size: 2rem;
   }
 
   #game-footer {
-    font-size: 0.75rem;
-    gap: 4px;
+    font-size: 0.7rem;
+    gap: 2px;
   }
 
   .instructions {
@@ -687,4 +709,118 @@ button:active {
 #close-debug-btn {
   margin-top: 10px;
   align-self: center;
+}
+
+/* Game Over Stats */
+.game-stats-list {
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  gap: 12px;
+  width: 95%;
+  max-width: 500px;
+  background: rgba(0, 0, 0, 0.4);
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  margin: 8px 0;
+  backdrop-filter: blur(8px);
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+.game-stats-list::-webkit-scrollbar {
+  display: none;
+  /* Chrome, Safari, etc. */
+}
+
+.stat-item {
+  flex: 0 0 auto;
+  /* No shrink, no grow */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  gap: 4px;
+}
+
+.stat-item:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.stat-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stat-icon {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.4rem;
+}
+
+.stat-img {
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
+.stat-name {
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.stat-count {
+  font-family: 'Orbitron', sans-serif;
+  font-size: 1rem;
+  color: #ffd700;
+  text-shadow: 0 0 8px rgba(255, 215, 0, 0.4);
+}
+
+@media (max-width: 480px) {
+  .game-stats-list {
+    width: 98%;
+    padding: 10px;
+    gap: 8px;
+    margin: 4px 0;
+  }
+
+  .stat-item {
+    padding: 6px 12px;
+    gap: 4px;
+  }
+
+  .stat-icon,
+  .stat-img {
+    width: 28px;
+    height: 28px;
+    font-size: 1.3rem;
+  }
+
+  .stat-count {
+    font-size: 1rem;
+  }
+
+  .stats-container p {
+    font-size: 1rem !important;
+  }
+}
+
+
+.stats-container p {
+  margin-bottom: 0px;
+  font-size: 1.1rem;
 }

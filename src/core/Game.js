@@ -44,6 +44,7 @@ export class Game {
         this.speedLines = [];
         this.initSpeedLines();
         this.glitchTimer = 0;
+        this.stats = this.initStats();
 
         this.debugSequence = '';
         this.debugActive = false;
@@ -55,6 +56,18 @@ export class Game {
         this.updateUI();
 
         requestAnimationFrame(t => this.gameLoop(t));
+    }
+
+    initStats() {
+        return {
+            dinos: DINOS.reduce((acc, d) => ({ ...acc, [d.id]: 0 }), {}),
+            powerups: {
+                BONE: 0,
+                DIAMOND: 0,
+                EMERALD: 0,
+                COIN: 0
+            }
+        };
     }
 
     bindEvents() {
@@ -177,6 +190,10 @@ export class Game {
         this.audio.playJump();
         this.coins.spawnStartMessage();
         if (this.musicEnabled) this.audio.startMusic();
+
+        // Initial dino count
+        const initialDinoId = DINOS[this.dino.level].id;
+        this.stats.dinos[initialDinoId]++;
     }
 
     resetGame() {
@@ -188,6 +205,7 @@ export class Game {
         this.obstacles.reset();
         this.powerups.reset();
         this.coins.reset();
+        this.stats = this.initStats();
         this.state = GAME_STATE.START;
 
         this.audio.stopMusic();
@@ -290,6 +308,7 @@ export class Game {
         if (this.coins.checkCollision(this.dino)) {
             this.incrementScore(1);
             this.audio.playCoin();
+            this.stats.powerups.COIN++;
         }
 
         // Obstacles
@@ -336,6 +355,7 @@ export class Game {
         this.speedBoostTimer = CONFIG.BONE_BOOST_DURATION;
         this.incrementScore(CONFIG.BONE_BONUS);
         this.ui.showMessage('🦴 MEGA SPEED 🦴');
+        this.stats.powerups.BONE++;
     }
 
     activateSuperMode(type) {
@@ -344,6 +364,9 @@ export class Game {
         this.dino.setSuper(true, type);
         const name = type === 'spino' ? 'SUPER SPINOSAURUS' : 'SUPER T-REX';
         this.ui.showMessage(`🧬 ${name} ACTIVATED 🧬`);
+
+        if (type === 'trex') this.stats.powerups.DIAMOND++;
+        else if (type === 'spino') this.stats.powerups.EMERALD++;
     }
 
     incrementScore(amount = 1) {
@@ -358,6 +381,10 @@ export class Game {
                 this.ui.showMessage(this.dino.getDinoName() + '!');
                 this.heal();
                 this.audio.playUpgrade();
+
+                // Track evolved dino
+                const dinoId = DINOS[this.dino.level].id;
+                this.stats.dinos[dinoId]++;
             }
 
             if (this.score % CONFIG.THEME_THRESHOLD === 0) {

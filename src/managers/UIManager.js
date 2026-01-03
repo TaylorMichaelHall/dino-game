@@ -37,16 +37,24 @@ export class UIManager {
             resetHighScoreBtn: get('reset-high-score-btn'),
             debugMenu: get('debug-menu'),
             debugDinoList: get('debug-dino-list'),
-            closeDebugBtn: get('close-debug-btn')
+            closeDebugBtn: get('close-debug-btn'),
+            gameStatsList: get('game-stats-list')
         };
     }
 
     setScreen(state) {
-        const { start, gameOver, hud, pause } = this.elements;
+        const { start, gameOver, hud, pause, gameStatsList } = this.elements;
         start.classList.toggle('hidden', state !== 'START');
         gameOver.classList.toggle('hidden', state !== 'GAME_OVER');
         hud.classList.toggle('hidden', state !== 'PLAYING');
         pause.classList.toggle('hidden', state !== 'PAUSED');
+
+        if (state === 'GAME_OVER') {
+            this.showStatsAnimation(this.game.stats);
+        } else {
+            gameStatsList.classList.add('hidden');
+            gameStatsList.innerHTML = '';
+        }
     }
 
     updateBorderEffect(hitFlash, color) {
@@ -132,6 +140,98 @@ export class UIManager {
         this.container.style.removeProperty('--glow-color');
         this.container.style.removeProperty('--glow-blur');
         this.container.style.removeProperty('--border-core');
+    }
+
+    async showStatsAnimation(stats) {
+        const list = this.elements.gameStatsList;
+        list.innerHTML = '';
+        list.classList.remove('hidden');
+
+        const items = [];
+
+        // Build list of stats to show
+        const DINOS_CONFIG = (await import('../config/DinoConfig.js')).DINOS;
+        DINOS_CONFIG.forEach(dino => {
+            const count = stats.dinos[dino.id];
+            if (count > 0) {
+                items.push({
+                    name: dino.name,
+                    count: count,
+                    sprite: dino.sprite
+                });
+            }
+        });
+
+        if (stats.powerups.BONE > 0) {
+            items.push({ name: 'Bones', count: stats.powerups.BONE, icon: '🦴' });
+        }
+        if (stats.powerups.DIAMOND > 0) {
+            items.push({ name: 'Diamonds', count: stats.powerups.DIAMOND, icon: '💎' });
+        }
+        if (stats.powerups.EMERALD > 0) {
+            items.push({ name: 'Emeralds', count: stats.powerups.EMERALD, icon: 'emerald.webp', isImg: true });
+        }
+        if (stats.powerups.COIN > 0) {
+            items.push({ name: 'Coins', count: stats.powerups.COIN, icon: '🪙' });
+        }
+
+        for (const item of items) {
+            await this.animateStatItem(item);
+        }
+    }
+
+    async animateStatItem(item) {
+        const list = this.elements.gameStatsList;
+        const itemEl = document.createElement('div');
+        itemEl.className = 'stat-item';
+
+        const basePath = import.meta.env.BASE_URL || '/';
+        let iconHtml = '';
+        if (item.sprite) {
+            iconHtml = `<img src="${basePath}sprites/${item.sprite}" class="stat-img">`;
+        } else if (item.isImg) {
+            iconHtml = `<img src="${basePath}sprites/${item.icon}" class="stat-img">`;
+        } else {
+            iconHtml = `<span class="stat-icon">${item.icon}</span>`;
+        }
+
+        itemEl.innerHTML = `
+            <div class="stat-info">
+                ${iconHtml}
+            </div>
+            <span class="stat-count">0</span>
+        `;
+        list.appendChild(itemEl);
+        itemEl.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+
+        const countEl = itemEl.querySelector('.stat-count');
+        const targetCount = item.count;
+        let currentCount = 0;
+
+        // Dynamic speed based on target count
+        let delay = 60;
+        let step = 1;
+
+        if (targetCount > 30) delay = 30;
+        if (targetCount > 100) {
+            delay = 15;
+            step = Math.ceil(targetCount / 60); // Aim for ~60 visual steps
+        }
+
+        // Sound and count up
+        while (currentCount < targetCount) {
+            currentCount = Math.min(targetCount, currentCount + step);
+            countEl.innerText = currentCount;
+            this.game.audio.playPoint();
+
+            // Small pop on each tick
+            itemEl.style.transform = 'scale(1.08)';
+            setTimeout(() => { itemEl.style.transform = 'scale(1)'; }, 30);
+
+            await new Promise(r => setTimeout(r, delay));
+        }
+
+        await new Promise(r => setTimeout(r, 150));
     }
 }
 
