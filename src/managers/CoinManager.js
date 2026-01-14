@@ -6,6 +6,7 @@ export class CoinManager {
         this.coins = [];
         this.coinRadius = 12;
         const basePath = import.meta.env.BASE_URL || '/';
+        this.coinImage = this.loadImage(`${basePath}sprites/coin.webp`);
 
         // Letter patterns (7-row grids for more detail/size)
         this.letters = {
@@ -188,7 +189,7 @@ export class CoinManager {
         ctx.textBaseline = 'middle';
         ctx.font = '24px serif';
         this.coins.forEach(coin => {
-            ctx.fillText('🪙', coin.x, coin.y);
+            ctx.drawImage(this.coinImage, coin.x - this.coinRadius, coin.y - this.coinRadius, this.coinRadius * 2, this.coinRadius * 2);
         });
     }
 

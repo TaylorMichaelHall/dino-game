@@ -175,7 +175,7 @@ export class UIManager {
             items.push({ name: 'Magnets', count: stats.powerups.MAGNET, icon: '🧲' });
         }
         if (stats.powerups.COIN > 0) {
-            items.push({ name: 'Coins', count: stats.powerups.COIN, icon: '🪙' });
+            items.push({ name: 'Coins', count: stats.powerups.COIN, icon: 'coin.webp', isImg: true });
         }
 
         for (const item of items) {
