@@ -38,8 +38,9 @@ Tight controls, quick feedback, and short runs. You guide a dinosaur through DNA
 
 Kept intentionally lightweight to stay fast and portable. I wanted to see how far I could get without special game libraries:
 
-- Vanilla JavaScript
+- TypeScript
 - HTML5 Canvas
+- Biome for linting and formatting
 - Web Audio API for music and sound effects
 - Vite for local development and static builds
 
