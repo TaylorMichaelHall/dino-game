@@ -407,6 +407,35 @@ button:active {
 	gap: 20px;
 }
 
+.debug-section h3 {
+	margin: 0 0 10px 0;
+	font-size: 1rem;
+	color: var(--color-accent);
+	text-transform: uppercase;
+}
+
+.debug-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+	gap: 10px;
+	margin-bottom: 10px;
+}
+
+.debug-btn {
+	padding: 8px 12px;
+	font-size: 0.8rem;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	color: #fff;
+	cursor: pointer;
+	width: 100%;
+}
+
+.debug-btn:hover {
+	background: var(--color-accent);
+}
+
 /* Stats */
 .game-stats-list {
 	display: flex;
@@ -492,8 +521,36 @@ button:active {
 
 	#hud {
 		flex-direction: column;
-		align-items: stretch;
+		align-items: flex-start;
 		gap: 6px;
+		left: 10px;
+		right: auto;
+		width: fit-content;
+	}
+
+	#powerup-timer {
+		font-size: 0.8rem;
+		padding: 4px 10px;
+		width: fit-content;
+	}
+
+	.timer-label {
+		font-size: 0.6rem;
+	}
+
+	.debug-content {
+		padding: 15px;
+		gap: 12px;
+	}
+
+	.debug-grid {
+		grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+		gap: 6px;
+	}
+
+	.debug-btn {
+		font-size: 0.7rem;
+		padding: 6px 8px;
 	}
 
 	#combo-container {
