@@ -179,6 +179,7 @@ export class Game implements IGame {
 		this.ui.setScreen(this.state);
 		this.ui.setTheme(0);
 		this.ui.clearBorderEffect();
+		this.ui.updatePowerupTimer(0);
 		this.updateUI();
 	}
 
