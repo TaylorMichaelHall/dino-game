@@ -268,7 +268,7 @@ button:active {
 }
 
 #message-text {
-	font-size: 4rem;
+	font-size: clamp(1.8rem, 8vw, 4rem);
 	font-weight: 900;
 	color: #ffd700;
 	text-shadow:
