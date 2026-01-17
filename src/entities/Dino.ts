@@ -200,12 +200,20 @@ export class Dino implements IDino {
 		}
 
 		// Trail effect when fast or super
-		if (this.game.speedBoostTimer > 0 || this.isSuper) {
-			const dinoConfig = this.isSuper ? SUPER_DINOS[this.superType!] : DINOS[this.level];
+		if (this.game.speedBoostTimer > 0 || (this.isSuper && this.superType)) {
+			const dinoConfig = this.isSuper
+				? SUPER_DINOS[this.superType as keyof typeof SUPER_DINOS]
+				: DINOS[this.level];
 			// @ts-expect-error - Vite specific env
 			const bPath = import.meta.env.BASE_URL || "/";
 			const sPath = `${bPath}sprites/${dinoConfig.sprite}`;
-			this.game.effects.spawnTrail(this.displayX, this.y, this.width, this.height, sPath);
+			this.game.effects.spawnTrail(
+				this.displayX,
+				this.y,
+				this.width,
+				this.height,
+				sPath,
+			);
 		}
 	}
 

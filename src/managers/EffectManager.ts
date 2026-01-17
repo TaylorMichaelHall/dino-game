@@ -67,11 +67,11 @@ export class EffectManager {
 				length:
 					CONFIG.SPEED_LINE_MIN_LEN +
 					Math.random() *
-					(CONFIG.SPEED_LINE_MAX_LEN - CONFIG.SPEED_LINE_MIN_LEN),
+						(CONFIG.SPEED_LINE_MAX_LEN - CONFIG.SPEED_LINE_MIN_LEN),
 				speed:
 					CONFIG.SPEED_LINE_MIN_SPEED +
 					Math.random() *
-					(CONFIG.SPEED_LINE_MAX_SPEED - CONFIG.SPEED_LINE_MIN_SPEED),
+						(CONFIG.SPEED_LINE_MAX_SPEED - CONFIG.SPEED_LINE_MIN_SPEED),
 			});
 		}
 	}

@@ -105,7 +105,10 @@ export class UIManager {
 		}
 
 		// Ensure combo container is hidden when not playing
-		this.elements.comboContainer?.classList.toggle("hidden", state !== "PLAYING");
+		this.elements.comboContainer?.classList.toggle(
+			"hidden",
+			state !== "PLAYING",
+		);
 	}
 
 	updateBorderEffect(hitFlash: boolean, color: string) {
@@ -211,7 +214,9 @@ export class UIManager {
 				// Stage styling
 				if (comboContainer) {
 					// Remove any existing stage classes
-					CONFIG.COMBO_STAGES.forEach(s => comboContainer.classList.remove(s.class));
+					CONFIG.COMBO_STAGES.forEach((s) => {
+						comboContainer.classList.remove(s.class);
+					});
 					if (stage) {
 						comboContainer.classList.add(stage.class);
 						if (comboLabel) comboLabel.innerText = stage.name;
@@ -221,7 +226,9 @@ export class UIManager {
 				}
 			}
 		} else {
-			comboContainer?.classList.add("hidden");
+			if (comboContainer) comboContainer.classList.add("hidden");
+			if (comboText) comboText.innerText = "0";
+			if (comboLabel) comboLabel.innerText = "Combo";
 		}
 	}
 

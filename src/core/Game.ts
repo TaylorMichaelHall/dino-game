@@ -456,11 +456,21 @@ export class Game implements IGame {
 			this.audio.playPoint();
 			// FCT for combo multiplier/points
 			if (multiplier > 1) {
-				this.effects.spawnFCT(this.dino.x + 20, this.dino.y - 20, `+${finalAmount}`, stage?.color || "#fff");
+				this.effects.spawnFCT(
+					this.dino.x + 20,
+					this.dino.y - 20,
+					`+${finalAmount}`,
+					stage?.color || "#fff",
+				);
 			}
 		}
 		if (amount > 1) {
-			this.effects.spawnFCT(this.dino.x + 20, this.dino.y - 20, `+${finalAmount}`, "#ffd700");
+			this.effects.spawnFCT(
+				this.dino.x + 20,
+				this.dino.y - 20,
+				`+${finalAmount}`,
+				"#ffd700",
+			);
 		}
 	}
 
@@ -486,7 +496,12 @@ export class Game implements IGame {
 		if (this.hearts < CONFIG.MAX_HEARTS) {
 			this.hearts = CONFIG.MAX_HEARTS;
 			this.updateUI();
-			this.effects.spawnFCT(this.dino.x + 20, this.dino.y - 40, "HEALED! ❤️", "#ff4d4d");
+			this.effects.spawnFCT(
+				this.dino.x + 20,
+				this.dino.y - 40,
+				"HEALED! ❤️",
+				"#ff4d4d",
+			);
 		}
 	}
 
