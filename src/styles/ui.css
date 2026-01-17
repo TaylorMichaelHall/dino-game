@@ -251,6 +251,9 @@ button:active {
 	text-shadow:
 		0 0 10px #ffffff,
 		0 0 20px #ec4899;
+}
+
+#combo-container .pre-historic {
 	animation:
 		combo-shake 0.05s infinite,
 		combo-pulse 0.5s infinite;

@@ -52,10 +52,7 @@ export class UIManager {
 			comboLabel: get("combo-label"),
 			helpBtn: get("help-btn"),
 			helpScreen: get("help-screen"),
-			closeHelpBtn: get("close-help-btn"),
 			closeHelpBtnTop: get("close-help-btn-top"),
-			scrollUpBtn: get("scroll-up-btn"),
-			scrollDownBtn: get("scroll-down-btn"),
 			helpContent: document.querySelector(".help-content") as HTMLElement,
 			displayedHighScore: get("displayed-high-score"),
 			combo: get("combo"),
@@ -66,25 +63,10 @@ export class UIManager {
 	}
 
 	private bindMobileEvents() {
-		const { closeHelpBtnTop, scrollUpBtn, scrollDownBtn, helpContent } =
-			this.elements;
+		const { closeHelpBtnTop } = this.elements;
 
 		if (closeHelpBtnTop) {
 			closeHelpBtnTop.onclick = () => this.toggleHelp(false);
-		}
-
-		if (scrollUpBtn && helpContent) {
-			scrollUpBtn.onclick = (e) => {
-				e.stopPropagation();
-				helpContent.scrollBy({ top: -150, behavior: "smooth" });
-			};
-		}
-
-		if (scrollDownBtn && helpContent) {
-			scrollDownBtn.onclick = (e) => {
-				e.stopPropagation();
-				helpContent.scrollBy({ top: 150, behavior: "smooth" });
-			};
 		}
 	}
 

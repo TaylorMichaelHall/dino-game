@@ -76,7 +76,6 @@ export interface UIElements {
 	pauseBtn: HTMLElement | null;
 	closeDebugBtn: HTMLElement | null;
 	helpBtn: HTMLElement | null;
-	closeHelpBtn: HTMLElement | null;
 	startHighScore: HTMLElement | null;
 	finalScore: HTMLElement | null;
 	highScoreBadge: HTMLElement | null;
@@ -87,8 +86,6 @@ export interface UIElements {
 	overlay: HTMLElement | null;
 	helpScreen: HTMLElement | null;
 	closeHelpBtnTop: HTMLElement | null;
-	scrollUpBtn: HTMLElement | null;
-	scrollDownBtn: HTMLElement | null;
 	helpContent: HTMLElement | null;
 }
 

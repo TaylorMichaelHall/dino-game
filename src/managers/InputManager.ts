@@ -71,11 +71,6 @@ export class InputManager implements IInputManager {
 			this.game.ui.toggleHelp(true);
 		});
 
-		ui.closeHelpBtn?.addEventListener("click", (e: MouseEvent) => {
-			e.stopPropagation();
-			this.game.ui.toggleHelp(false);
-		});
-
 		document.querySelectorAll(".debug-btn[data-powerup]").forEach((btn) => {
 			btn.addEventListener("click", (e) => {
 				e.stopPropagation();
