@@ -18,6 +18,7 @@ export interface DinoConfig {
 	width: number;
 	radius: number;
 	ambientSize?: number;
+	isSuper?: boolean;
 }
 
 export interface SuperDinoConfig {
@@ -25,6 +26,7 @@ export interface SuperDinoConfig {
 	name: string;
 	sprite: string;
 	width: number;
+	isSuper?: boolean;
 }
 
 export interface IDino {
@@ -168,13 +170,20 @@ export interface IEffectManager {
 	): void;
 }
 
+export interface IObstacle {
+	x: number;
+	topHeight: number;
+	passed: boolean;
+	color: string;
+}
+
 export interface IObstacleManager {
 	speed: number;
 	colors: string[];
 	colorIndex: number;
 	obstacleWidth: number;
 	gapSize: number;
-	obstacles: any[];
+	obstacles: IObstacle[];
 	update(deltaTime: number, speedMultiplier: number): void;
 	draw(ctx: CanvasRenderingContext2D): void;
 	checkCollision(dino: IDino): boolean;

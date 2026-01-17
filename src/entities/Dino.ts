@@ -105,10 +105,14 @@ export class Dino implements IDino {
 		});
 
 		// Load super dinos
-		Object.keys(SUPER_DINOS).forEach((key) => {
-			const superDino = SUPER_DINOS[key]!;
-			this.sprites[superDino.id] = this.loadImage(spritePath(superDino.sprite));
-		});
+		for (const key of Object.keys(SUPER_DINOS)) {
+			const superDino = SUPER_DINOS[key as keyof typeof SUPER_DINOS];
+			if (superDino) {
+				this.sprites[superDino.id] = this.loadImage(
+					spritePath(superDino.sprite),
+				);
+			}
+		}
 	}
 
 	loadImage(src: string): HTMLImageElement {
@@ -201,7 +205,8 @@ export class Dino implements IDino {
 
 		// Draw Follower if in Super mode
 		if (this.isSuper && this.history.length > 0) {
-			const followerData = this.history[0]!;
+			const followerData = this.history[0];
+			if (!followerData) return;
 			ctx.save();
 			ctx.translate(
 				this.followerX + this.width / 2,
@@ -341,7 +346,7 @@ export class Dino implements IDino {
 			ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
 		} else {
 			// Fallback
-			ctx.fillStyle = (config as any).isSuper ? "#0ff" : "#444";
+			ctx.fillStyle = config.isSuper ? "#0ff" : "#444";
 			ctx.fillRect(-20, -20, 40, 40);
 		}
 	}

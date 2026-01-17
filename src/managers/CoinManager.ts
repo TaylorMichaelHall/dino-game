@@ -148,7 +148,8 @@ export class CoinManager implements ICoinManager {
 
 		// "GO"
 		["G", "O"].forEach((char) => {
-			const grid = this.letters[char]!;
+			const grid = this.letters[char];
+			if (!grid) return;
 			for (let r = 0; r < grid.length; r++) {
 				for (let c = 0; c < grid[r]?.length; c++) {
 					if (grid[r]?.[c] === 1) {
@@ -167,7 +168,8 @@ export class CoinManager implements ICoinManager {
 
 		// "IAN"
 		["I", "A", "N"].forEach((char) => {
-			const grid = this.letters[char]!;
+			const grid = this.letters[char];
+			if (!grid) return;
 			for (let r = 0; r < grid.length; r++) {
 				for (let c = 0; c < grid[r]?.length; c++) {
 					if (grid[r]?.[c] === 1) {

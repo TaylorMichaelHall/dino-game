@@ -30,7 +30,8 @@ export function scheduleJurassicMeasure(
 	pitchShift: number = 1.0,
 ) {
 	const stepIndex = i % PROGRESSION.length;
-	const step = PROGRESSION[stepIndex]!;
+	const step = PROGRESSION[stepIndex];
+	if (!step) return;
 
 	// --- RHYTHM SECTION ---
 
@@ -137,36 +138,45 @@ export function scheduleJurassicMeasure(
 		});
 	} else {
 		// Resolution melody on 4th measure
-		audio.playMusicNote(
-			step.chords[2]! * 2 * pitchShift,
-			mStart,
-			BEAT,
-			"sine",
-			0.05,
-			4,
-			0.1,
-			0.2,
-		);
-		audio.playMusicNote(
-			step.chords[1]! * 2 * pitchShift,
-			mStart + BEAT,
-			BEAT,
-			"sine",
-			0.04,
-			4,
-			0.1,
-			0.2,
-		);
-		audio.playMusicNote(
-			step.chords[0]! * 2 * pitchShift,
-			mStart + BEAT * 2,
-			BEAT * 2,
-			"sine",
-			0.05,
-			3,
-			0.2,
-			0.4,
-		);
+		const c2 = step.chords[2];
+		if (c2 !== undefined) {
+			audio.playMusicNote(
+				c2 * 2 * pitchShift,
+				mStart,
+				BEAT,
+				"sine",
+				0.05,
+				4,
+				0.1,
+				0.2,
+			);
+		}
+		const c1 = step.chords[1];
+		if (c1 !== undefined) {
+			audio.playMusicNote(
+				c1 * 2 * pitchShift,
+				mStart + BEAT,
+				BEAT,
+				"sine",
+				0.04,
+				4,
+				0.1,
+				0.2,
+			);
+		}
+		const c0 = step.chords[0];
+		if (c0 !== undefined) {
+			audio.playMusicNote(
+				c0 * 2 * pitchShift,
+				mStart + BEAT * 2,
+				BEAT * 2,
+				"sine",
+				0.05,
+				3,
+				0.2,
+				0.4,
+			);
+		}
 	}
 }
 

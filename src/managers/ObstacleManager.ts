@@ -59,7 +59,7 @@ export class ObstacleManager implements IObstacleManager {
 			x: this.game.width,
 			topHeight: topHeight,
 			passed: false,
-			color: this.colors[this.colorIndex % this.colors.length]!,
+			color: this.colors[this.colorIndex % this.colors.length] || "#ff00ff",
 		};
 
 		this.obstacles.push(newObs);

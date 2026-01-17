@@ -13,7 +13,9 @@ export class UIManager {
 
 	constructor(game: IGame) {
 		this.game = game;
-		this.container = document.getElementById("game-container")!;
+		const container = document.getElementById("game-container");
+		if (!container) throw new Error("Game container not found");
+		this.container = container;
 
 		// Helper to get element by ID and group them
 		const get = (id: string) => document.getElementById(id);
@@ -220,8 +222,14 @@ export class UIManager {
 		if (!list) return;
 		list.innerHTML = "";
 		list.classList.remove("hidden");
-
-		const items: any[] = [];
+		interface StatItem {
+			name: string;
+			count: number;
+			sprite?: string;
+			icon?: string;
+			isImg?: boolean;
+		}
+		const items: StatItem[] = [];
 
 		const { DINOS: DINOS_CONFIG } = await import("../config/DinoConfig");
 		DINOS_CONFIG.forEach((dino) => {
@@ -279,7 +287,13 @@ export class UIManager {
 		}
 	}
 
-	async animateStatItem(item: any) {
+	async animateStatItem(item: {
+		name: string;
+		count: number;
+		sprite?: string;
+		icon?: string;
+		isImg?: boolean;
+	}) {
 		const list = this.elements.gameStatsList;
 		if (!list) return;
 		const itemEl = document.createElement("div");

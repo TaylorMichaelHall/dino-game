@@ -9,7 +9,13 @@ import { ObstacleManager } from "../managers/ObstacleManager";
 import { PowerupManager } from "../managers/PowerupManager";
 import { TitleManager } from "../managers/TitleManager";
 import { UIManager } from "../managers/UIManager";
-import type { GameState, IAudioManager, IGame, IUIManager } from "../types";
+import type {
+	GameState,
+	IAudioManager,
+	IDino,
+	IGame,
+	IUIManager,
+} from "../types";
 
 /**
  * Game Controller
@@ -21,7 +27,7 @@ export class Game implements IGame {
 	height: number;
 	audio: IAudioManager;
 	ui: IUIManager;
-	dino: any; // Will be typed properly when Dino is updated
+	dino: IDino;
 	obstacles: ObstacleManager;
 	powerups: PowerupManager;
 	coins: CoinManager;
@@ -55,7 +61,9 @@ export class Game implements IGame {
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
-		this.ctx = canvas.getContext("2d")!;
+		const ctx = canvas.getContext("2d");
+		if (!ctx) throw new Error("Could not get 2D context");
+		this.ctx = ctx;
 
 		this.width = this.canvas.width = CONFIG.CANVAS_WIDTH;
 		this.height = this.canvas.height = CONFIG.CANVAS_HEIGHT;
@@ -108,11 +116,12 @@ export class Game implements IGame {
 	}
 
 	initStats() {
+		const dinos: Record<string, number> = {};
+		for (const d of DINOS) {
+			dinos[d.id] = 0;
+		}
 		return {
-			dinos: DINOS.reduce(
-				(acc, d) => ({ ...acc, [d.id]: 0 }),
-				{} as Record<string, number>,
-			),
+			dinos: dinos,
 			powerups: {
 				BONE: 0,
 				DIAMOND: 0,
@@ -291,10 +300,9 @@ export class Game implements IGame {
 		if (this.time - this.lastBorderTime < 60) return;
 		this.lastBorderTime = this.time;
 
+		const colors = this.obstacles.colors;
 		const color =
-			this.obstacles.colors[
-				this.obstacles.colorIndex % this.obstacles.colors.length
-			]!;
+			colors[this.obstacles.colorIndex % colors.length] || "#ff00ff";
 		this.ui.updateBorderEffect(this.hitFlashTimer > 0, color);
 	}
 
@@ -375,7 +383,7 @@ export class Game implements IGame {
 		this.stats.powerups.BONE++;
 	}
 
-	activateSuperMode(type: string) {
+	activateSuperMode(type: "trex" | "spino") {
 		this.audio.playTransform();
 		this.superModeTimer = CONFIG.SUPER_TREX_DURATION;
 		this.dino.setSuper(true, type);

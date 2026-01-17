@@ -47,7 +47,7 @@ export class TitleManager implements ITitleManager {
 		// Create a "chase" sequence using all configured dinosaurs
 		this.dinos = DINOS.map((dino, i) => ({
 			id: dino.id,
-			size: (dino as any).ambientSize || dino.width * 0.5, // Default to half size for background
+			size: dino.ambientSize || dino.width * 0.5, // Default to half size for background
 			speed: 150 + Math.random() * 100,
 			y: 50 + Math.random() * (this.game.height - 150),
 			x: Math.random() * this.game.width,
