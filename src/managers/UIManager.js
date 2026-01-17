@@ -41,7 +41,10 @@ export class UIManager {
             gameStatsList: get('game-stats-list'),
             comboContainer: get('combo-container'),
             comboText: get('combo-text'),
-            comboLabel: get('combo-label')
+            comboLabel: get('combo-label'),
+            helpBtn: get('help-btn'),
+            helpScreen: get('help-screen'),
+            closeHelpBtn: get('close-help-btn')
         };
     }
 
@@ -71,6 +74,10 @@ export class UIManager {
 
     toggleDebugMenu(show) {
         this.elements.debugMenu.classList.toggle('hidden', !show);
+    }
+
+    toggleHelp(show) {
+        this.elements.helpScreen.classList.toggle('hidden', !show);
     }
 
     populateDebugDinoList(dinos, currentLevel, onSelect) {

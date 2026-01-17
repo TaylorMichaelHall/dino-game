@@ -63,6 +63,16 @@ export class InputManager {
             this.game.toggleDebugMenu(false);
         });
 
+        ui.helpBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.game.ui.toggleHelp(true);
+        });
+
+        ui.closeHelpBtn?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            this.game.ui.toggleHelp(false);
+        });
+
         document.querySelectorAll('.debug-btn[data-powerup]').forEach(btn => {
             btn.addEventListener('click', (e) => {
                 e.stopPropagation();

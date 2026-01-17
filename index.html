@@ -31,6 +31,7 @@
       <div id="ui-layer">
         <div id="start-screen" class="screen">
           <button id="start-btn">Start Game</button>
+          <button id="help-btn" class="secondary-btn-large">Rules & Info</button>
           <p class="start-tip">Press Space, Click, or Tap to Start</p>
           <p class="small">Avoid the DNA strands!</p>
           <p class="high-score-start">High Score: <span id="start-high-score">0</span></p>
@@ -86,6 +87,33 @@
               </div>
             </div>
             <button id="close-debug-btn" class="secondary-btn">Close</button>
+          </div>
+        </div>
+        <div id="help-screen" class="hidden screen">
+          <div class="help-content">
+            <h1>Rules & Info</h1>
+            <div class="help-section">
+              <h3>Core Goal</h3>
+              <p class="help-text">Collect <b>Golden Coins</b> and avoid the glowing <b>DNA Strands</b>! Every gate you
+                pass gives you points.</p>
+            </div>
+            <div class="help-section">
+              <h3>Combo System ⚡</h3>
+              <p class="help-text">Maintain a series of points to increase your <b>Multiplier</b>! Hitting DNA (even as
+                a Super Dino) resets your combo.</p>
+              <ul class="help-list">
+                <li><span class="nice">Nice!</span> (5x): 1.5x score</li>
+                <li><span class="great">Great!</span> (10x): 2x score</li>
+                <li><span class="amazing">Amazing!</span> (20x): 3x score</li>
+                <li><span class="extinct">EXTINCT!</span> (50x): 5x score</li>
+              </ul>
+            </div>
+            <div class="help-section">
+              <h3>Evolution 🧬</h3>
+              <p class="help-text">Every <b>100 points</b>, your dino evolves! Evolution restores all your hearts and
+                increases the game speed.</p>
+            </div>
+            <button id="close-help-btn">Back to Start</button>
           </div>
         </div>
       </div>
