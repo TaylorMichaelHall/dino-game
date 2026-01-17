@@ -173,6 +173,8 @@ export interface IEffectManager {
 		speed?: number,
 		life?: number,
 	): void;
+	spawnTrail(x: number, y: number, w: number, h: number, sprite: string): void;
+	spawnFCT(x: number, y: number, text: string, color?: string): void;
 }
 
 export interface IObstacle {

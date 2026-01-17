@@ -19,19 +19,43 @@ interface Particle {
 	size: number;
 }
 
+interface Trail {
+	x: number;
+	y: number;
+	width: number;
+	height: number;
+	sprite: string;
+	life: number;
+	maxLife: number;
+}
+
+interface FCT {
+	x: number;
+	y: number;
+	text: string;
+	color: string;
+	life: number;
+	maxLife: number;
+	vy: number;
+}
+
 /**
  * EffectManager
- * Handles visual effects like speed lines and glitch effects.
+ * Handles visual effects like speed lines, glitch effects, trails, and FCT.
  */
 export class EffectManager {
 	game: IGame;
 	speedLines: SpeedLine[];
 	particles: Particle[];
+	trails: Trail[];
+	fct: FCT[];
 
 	constructor(game: IGame) {
 		this.game = game;
 		this.speedLines = [];
 		this.particles = [];
+		this.trails = [];
+		this.fct = [];
 		this.initSpeedLines();
 	}
 
@@ -43,11 +67,11 @@ export class EffectManager {
 				length:
 					CONFIG.SPEED_LINE_MIN_LEN +
 					Math.random() *
-						(CONFIG.SPEED_LINE_MAX_LEN - CONFIG.SPEED_LINE_MIN_LEN),
+					(CONFIG.SPEED_LINE_MAX_LEN - CONFIG.SPEED_LINE_MIN_LEN),
 				speed:
 					CONFIG.SPEED_LINE_MIN_SPEED +
 					Math.random() *
-						(CONFIG.SPEED_LINE_MAX_SPEED - CONFIG.SPEED_LINE_MIN_SPEED),
+					(CONFIG.SPEED_LINE_MAX_SPEED - CONFIG.SPEED_LINE_MIN_SPEED),
 			});
 		}
 	}
@@ -76,6 +100,30 @@ export class EffectManager {
 		}
 	}
 
+	spawnTrail(x: number, y: number, w: number, h: number, sprite: string) {
+		this.trails.push({
+			x,
+			y,
+			width: w,
+			height: h,
+			sprite,
+			life: 0.3,
+			maxLife: 0.3,
+		});
+	}
+
+	spawnFCT(x: number, y: number, text: string, color: string = "#fff") {
+		this.fct.push({
+			x,
+			y,
+			text,
+			color,
+			life: 1.0,
+			maxLife: 1.0,
+			vy: -100,
+		});
+	}
+
 	update(deltaTime: number) {
 		// Speed Lines
 		if (this.game.speedBoostTimer > 0) {
@@ -96,6 +144,20 @@ export class EffectManager {
 			p.life -= deltaTime;
 		});
 		this.particles = this.particles.filter((p) => p.life > 0);
+
+		// Trails
+		this.trails.forEach((t) => {
+			t.life -= deltaTime;
+		});
+		this.trails = this.trails.filter((t) => t.life > 0);
+
+		// FCT
+		this.fct.forEach((f) => {
+			f.y += f.vy * deltaTime;
+			f.vy += 150 * deltaTime; // Slight arc
+			f.life -= deltaTime;
+		});
+		this.fct = this.fct.filter((f) => f.life > 0);
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
@@ -107,6 +169,29 @@ export class EffectManager {
 			ctx.beginPath();
 			ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
 			ctx.fill();
+		});
+		ctx.globalAlpha = 1.0;
+
+		// Trails
+		this.trails.forEach((t) => {
+			const alpha = (t.life / t.maxLife) * 0.4;
+			ctx.globalAlpha = alpha;
+			const img = new Image();
+			img.src = t.sprite;
+			if (img.complete) {
+				ctx.drawImage(img, t.x, t.y, t.width, t.height);
+			}
+		});
+		ctx.globalAlpha = 1.0;
+
+		// FCT
+		this.fct.forEach((f) => {
+			const alpha = f.life / f.maxLife;
+			ctx.globalAlpha = alpha;
+			ctx.fillStyle = f.color;
+			ctx.font = "bold 24px Outfit";
+			ctx.textAlign = "center";
+			ctx.fillText(f.text, f.x, f.y);
 		});
 		ctx.globalAlpha = 1.0;
 

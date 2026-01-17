@@ -73,8 +73,8 @@ export const CONFIG = {
 		{
 			threshold: 50,
 			multiplier: 5.0,
-			name: "EXTINCT!",
-			class: "combo-stage-4",
+			name: "Pre-historic!",
+			class: "pre-historic",
 			color: "#000000",
 			shake: 10,
 		},

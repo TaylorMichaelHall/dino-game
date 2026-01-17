@@ -6,6 +6,7 @@ import { CoinManager } from "../managers/CoinManager";
 import { EffectManager } from "../managers/EffectManager";
 import { InputManager } from "../managers/InputManager";
 import { ObstacleManager } from "../managers/ObstacleManager";
+import { ParallaxManager } from "../managers/ParallaxManager";
 import { PowerupManager } from "../managers/PowerupManager";
 import { TitleManager } from "../managers/TitleManager";
 import { UIManager } from "../managers/UIManager";
@@ -27,6 +28,7 @@ export class Game implements IGame {
 	height: number;
 	audio: IAudioManager;
 	ui: IUIManager;
+	parallax: ParallaxManager;
 	dino: IDino;
 	obstacles: ObstacleManager;
 	powerups: PowerupManager;
@@ -70,6 +72,7 @@ export class Game implements IGame {
 
 		this.audio = new AudioManager();
 		this.ui = new UIManager(this);
+		this.parallax = new ParallaxManager(this);
 		this.dino = new Dino(this);
 		this.obstacles = new ObstacleManager(this);
 		this.powerups = new PowerupManager(this);
@@ -165,8 +168,13 @@ export class Game implements IGame {
 		this.powerups.reset();
 		this.coins.reset();
 		this.stats = this.initStats();
-		this.state = GAME_STATE.START as GameState;
 
+		// Reset Combo fully
+		this.combo = 0;
+		this.comboTimer = 0;
+		this.ui.updateCombo(0);
+
+		this.state = GAME_STATE.START as GameState;
 		this.audio.stopMusic();
 		this.ui.setScreen(this.state);
 		this.ui.setTheme(0);
@@ -249,6 +257,7 @@ export class Game implements IGame {
 		const obstacleSpeed = this.obstacles.speed * speedMultiplier;
 
 		this.dino.update(deltaTime);
+		this.parallax.update(deltaTime, obstacleSpeed);
 		this.obstacles.update(deltaTime, speedMultiplier);
 		this.powerups.update(deltaTime, obstacleSpeed);
 		this.coins.update(deltaTime, obstacleSpeed);
@@ -443,7 +452,16 @@ export class Game implements IGame {
 			}
 		}
 		this.updateUI();
-		if (amount === 1 && !fromSmash) this.audio.playPoint();
+		if (amount === 1 && !fromSmash) {
+			this.audio.playPoint();
+			// FCT for combo multiplier/points
+			if (multiplier > 1) {
+				this.effects.spawnFCT(this.dino.x + 20, this.dino.y - 20, `+${finalAmount}`, stage?.color || "#fff");
+			}
+		}
+		if (amount > 1) {
+			this.effects.spawnFCT(this.dino.x + 20, this.dino.y - 20, `+${finalAmount}`, "#ffd700");
+		}
 	}
 
 	triggerShake(intensity: number = CONFIG.SHAKE_INTENSITY) {
@@ -468,6 +486,7 @@ export class Game implements IGame {
 		if (this.hearts < CONFIG.MAX_HEARTS) {
 			this.hearts = CONFIG.MAX_HEARTS;
 			this.updateUI();
+			this.effects.spawnFCT(this.dino.x + 20, this.dino.y - 40, "HEALED! ❤️", "#ff4d4d");
 		}
 	}
 
@@ -495,6 +514,7 @@ export class Game implements IGame {
 			this.titleAnimation.draw(this.ctx);
 		}
 
+		this.parallax.draw(this.ctx);
 		this.effects.draw(this.ctx);
 
 		this.obstacles.draw(this.ctx);

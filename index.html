@@ -32,7 +32,7 @@
         <div id="start-screen" class="screen">
           <button id="start-btn">Start Game</button>
           <button id="help-btn" class="secondary-btn-large">Rules & Info</button>
-          <p class="start-tip">Press Space, Click, or Tap to Start</p>
+
           <p class="small">Avoid the DNA strands!</p>
           <p class="high-score-start">High Score: <span id="start-high-score">0</span></p>
           <button id="reset-high-score-btn" class="secondary-btn">Reset High Score</button>
@@ -59,10 +59,10 @@
             <span class="timer-label">SUPER DINO</span>
             <span id="timer-seconds">0</span>s
           </div>
-          <div id="combo-container" class="hidden">
-            <span id="combo-text" class="combo-text">0</span>
-            <span id="combo-label" class="combo-label">Combo</span>
-          </div>
+        </div>
+        <div id="combo-container" class="hidden">
+          <span id="combo-text" class="combo-text">0</span>
+          <span id="combo-label" class="combo-label">Combo</span>
         </div>
         <div id="message-overlay" class="hidden">
           <h2 id="message-text"></h2>
@@ -105,7 +105,7 @@
                 <li><span class="nice">Nice!</span> (5x): 1.5x score</li>
                 <li><span class="great">Great!</span> (10x): 2x score</li>
                 <li><span class="amazing">Amazing!</span> (20x): 3x score</li>
-                <li><span class="extinct">EXTINCT!</span> (50x): 5x score</li>
+                <li><span class="pre-historic">Pre-historic!</span> (50x): 5x score</li>
               </ul>
             </div>
             <div class="help-section">
@@ -156,7 +156,7 @@
       </div>
       <button id="pause-btn" class="footer-pause-btn" type="button" aria-label="Pause Game">Pause Game</button>
     </footer>
-  </div>
+  </div> <!-- Closes game-wrapper -->
   <script type="module" src="/src/main.ts"></script>
 </body>
 

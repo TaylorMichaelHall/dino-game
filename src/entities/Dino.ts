@@ -198,6 +198,15 @@ export class Dino implements IDino {
 				this.isBackflipping = false;
 			}
 		}
+
+		// Trail effect when fast or super
+		if (this.game.speedBoostTimer > 0 || this.isSuper) {
+			const dinoConfig = this.isSuper ? SUPER_DINOS[this.superType!] : DINOS[this.level];
+			// @ts-expect-error - Vite specific env
+			const bPath = import.meta.env.BASE_URL || "/";
+			const sPath = `${bPath}sprites/${dinoConfig.sprite}`;
+			this.game.effects.spawnTrail(this.displayX, this.y, this.width, this.height, sPath);
+		}
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {

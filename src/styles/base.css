@@ -1,0 +1,27 @@
+@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@400;700;900&family=Orbitron:wght@600&display=swap");
+
+:root {
+    --font-main: "Outfit", sans-serif;
+    --color-bg: #1a1a2e;
+    --color-text: #ffffff;
+    --color-accent: #e94560;
+    --color-ui-bg: rgba(22, 33, 62, 0.85);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    user-select: none;
+}
+
+body {
+    font-family: var(--font-main);
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    overflow-y: auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+}

@@ -103,6 +103,9 @@ export class UIManager {
 				gameStatsList.innerHTML = "";
 			}
 		}
+
+		// Ensure combo container is hidden when not playing
+		this.elements.comboContainer?.classList.toggle("hidden", state !== "PLAYING");
 	}
 
 	updateBorderEffect(hitFlash: boolean, color: string) {
@@ -148,7 +151,13 @@ export class UIManager {
 	updateHUD(score: number, hearts: number, highScore: number) {
 		if (this.elements.hearts)
 			this.elements.hearts.innerText = "❤️".repeat(hearts);
-		if (this.elements.score) this.elements.score.innerText = score.toString();
+		if (this.elements.score) {
+			this.elements.score.innerText = score.toString();
+			// Pop effect
+			this.elements.score.classList.remove("score-pop");
+			void this.elements.score.offsetWidth; // Trigger reflow
+			this.elements.score.classList.add("score-pop");
+		}
 
 		const isNewHigh = score > highScore;
 		const displayedHighScore = isNewHigh ? score : highScore;
@@ -200,12 +209,15 @@ export class UIManager {
 				comboText.classList.add("combo-pop");
 
 				// Stage styling
-				if (comboContainer) comboContainer.className = "combo-container"; // Reset classes (keep base)
-				if (stage) {
-					comboText.classList.add(stage.class);
-					if (comboLabel) comboLabel.innerText = stage.name;
-				} else {
-					if (comboLabel) comboLabel.innerText = "Combo";
+				if (comboContainer) {
+					// Remove any existing stage classes
+					CONFIG.COMBO_STAGES.forEach(s => comboContainer.classList.remove(s.class));
+					if (stage) {
+						comboContainer.classList.add(stage.class);
+						if (comboLabel) comboLabel.innerText = stage.name;
+					} else {
+						if (comboLabel) comboLabel.innerText = "Combo";
+					}
 				}
 			}
 		} else {

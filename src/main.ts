@@ -1,4 +1,7 @@
-import "./styles/style.css";
+import "./styles/base.css";
+import "./styles/layout.css";
+import "./styles/ui.css";
+import "./styles/animations.css";
 import { Game } from "./core/Game";
 
 window.addEventListener("load", () => {
