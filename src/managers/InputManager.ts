@@ -103,6 +103,7 @@ export class InputManager implements IInputManager {
 
 		window.addEventListener("mousedown", (e: MouseEvent) => {
 			if ((e.target as HTMLElement).closest("button")) return;
+			if (this.game.ui.isHelpOpen()) return;
 			this.game.handleInput();
 		});
 
@@ -110,6 +111,7 @@ export class InputManager implements IInputManager {
 			"touchstart",
 			(e: TouchEvent) => {
 				const target = e.target as HTMLElement;
+				if (this.game.ui.isHelpOpen()) return;
 				if (target.closest("#game-container") && !target.closest("button")) {
 					this.game.handleInput();
 					if (this.game.state === GAME_STATE.PLAYING) e.preventDefault();

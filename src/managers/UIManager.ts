@@ -53,10 +53,39 @@ export class UIManager {
 			helpBtn: get("help-btn"),
 			helpScreen: get("help-screen"),
 			closeHelpBtn: get("close-help-btn"),
+			closeHelpBtnTop: get("close-help-btn-top"),
+			scrollUpBtn: get("scroll-up-btn"),
+			scrollDownBtn: get("scroll-down-btn"),
+			helpContent: document.querySelector(".help-content") as HTMLElement,
 			displayedHighScore: get("displayed-high-score"),
 			combo: get("combo"),
 			powerupTimerFill: get("powerup-timer-fill"),
 		};
+
+		this.bindMobileEvents();
+	}
+
+	private bindMobileEvents() {
+		const { closeHelpBtnTop, scrollUpBtn, scrollDownBtn, helpContent } =
+			this.elements;
+
+		if (closeHelpBtnTop) {
+			closeHelpBtnTop.onclick = () => this.toggleHelp(false);
+		}
+
+		if (scrollUpBtn && helpContent) {
+			scrollUpBtn.onclick = (e) => {
+				e.stopPropagation();
+				helpContent.scrollBy({ top: -150, behavior: "smooth" });
+			};
+		}
+
+		if (scrollDownBtn && helpContent) {
+			scrollDownBtn.onclick = (e) => {
+				e.stopPropagation();
+				helpContent.scrollBy({ top: 150, behavior: "smooth" });
+			};
+		}
 	}
 
 	setScreen(state: string) {
@@ -91,6 +120,13 @@ export class UIManager {
 
 	toggleHelp(show: boolean) {
 		this.elements.helpScreen?.classList.toggle("hidden", !show);
+		if (this.elements.start) {
+			this.elements.start.style.pointerEvents = show ? "none" : "auto";
+		}
+	}
+
+	isHelpOpen(): boolean {
+		return !this.elements.helpScreen?.classList.contains("hidden");
 	}
 
 	populateDebugDinoList(

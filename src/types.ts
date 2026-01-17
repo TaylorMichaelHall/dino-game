@@ -86,6 +86,10 @@ export interface UIElements {
 	overlayText: HTMLElement | null;
 	overlay: HTMLElement | null;
 	helpScreen: HTMLElement | null;
+	closeHelpBtnTop: HTMLElement | null;
+	scrollUpBtn: HTMLElement | null;
+	scrollDownBtn: HTMLElement | null;
+	helpContent: HTMLElement | null;
 }
 
 export interface IUIManager {
@@ -101,6 +105,7 @@ export interface IUIManager {
 	updatePowerupTimer(timeLeft: number): void;
 	toggleDebugMenu(show: boolean): void;
 	toggleHelp(show: boolean): void;
+	isHelpOpen(): boolean;
 	populateDebugDinoList(
 		dinos: DinoConfig[],
 		currentLevel: number,
