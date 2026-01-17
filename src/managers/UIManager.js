@@ -120,12 +120,13 @@ export class UIManager {
         }
     }
 
-    updateCombo(combo, stage) {
+    updateCombo(combo, stage, multiplier) {
         const { comboContainer, comboText, comboLabel } = this.elements;
 
         if (combo > 1) {
             comboContainer.classList.remove('hidden');
-            comboText.innerText = combo;
+            const multText = multiplier > 1 ? ` (${multiplier}x)` : '';
+            comboText.innerText = combo + multText;
 
             // Pop effect
             comboText.classList.remove('combo-pop');

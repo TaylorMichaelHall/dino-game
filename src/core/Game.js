@@ -340,7 +340,7 @@ export class Game {
         const multiplier = stage ? stage.multiplier : 1;
         const finalAmount = Math.ceil(amount * multiplier);
 
-        this.ui.updateCombo(this.combo, stage);
+        this.ui.updateCombo(this.combo, stage, multiplier);
 
         for (let i = 0; i < finalAmount; i++) {
             this.score++;
