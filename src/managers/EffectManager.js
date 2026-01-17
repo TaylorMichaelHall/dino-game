@@ -8,6 +8,7 @@ export class EffectManager {
     constructor(game) {
         this.game = game;
         this.speedLines = [];
+        this.particles = [];
         this.initSpeedLines();
     }
 
@@ -22,19 +23,57 @@ export class EffectManager {
         }
     }
 
-    update(deltaTime) {
-        if (this.game.speedBoostTimer <= 0) return;
+    spawnParticles(x, y, color, count = 10, speed = 200, life = 1.0) {
+        for (let i = 0; i < count; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const velocity = (Math.random() * 0.5 + 0.5) * speed;
+            this.particles.push({
+                x,
+                y,
+                vx: Math.cos(angle) * velocity,
+                vy: Math.sin(angle) * velocity,
+                life,
+                maxLife: life,
+                color,
+                size: Math.random() * 4 + 2
+            });
+        }
+    }
 
-        this.speedLines.forEach(line => {
-            line.x -= line.speed * deltaTime;
-            if (line.x + line.length < 0) {
-                line.x = this.game.width;
-                line.y = Math.random() * this.game.height;
-            }
+    update(deltaTime) {
+        // Speed Lines
+        if (this.game.speedBoostTimer > 0) {
+            this.speedLines.forEach(line => {
+                line.x -= line.speed * deltaTime;
+                if (line.x + line.length < 0) {
+                    line.x = this.game.width;
+                    line.y = Math.random() * this.game.height;
+                }
+            });
+        }
+
+        // Particles
+        this.particles.forEach(p => {
+            p.x += p.vx * deltaTime;
+            p.y += p.vy * deltaTime;
+            p.vy += 400 * deltaTime; // Gravity
+            p.life -= deltaTime;
         });
+        this.particles = this.particles.filter(p => p.life > 0);
     }
 
     draw(ctx) {
+        // Particles
+        this.particles.forEach(p => {
+            const alpha = p.life / p.maxLife;
+            ctx.fillStyle = p.color;
+            ctx.globalAlpha = alpha;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+        });
+        ctx.globalAlpha = 1.0;
+
         if (this.game.speedBoostTimer > 0) {
             ctx.save();
             ctx.strokeStyle = `rgba(255, 255, 255, ${CONFIG.SPEED_LINE_OPACITY})`;

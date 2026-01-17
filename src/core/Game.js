@@ -47,6 +47,12 @@ export class Game {
         this.hitFlashTimer = 0;
         this.glitchTimer = 0;
 
+        this.combo = 0;
+        this.comboTimer = 0;
+        this.maxCombo = 0;
+        this.shakeTimer = 0;
+        this.shakeIntensity = 0;
+
         this.stats = this.initStats();
         this.debugActive = false;
 
@@ -159,7 +165,19 @@ export class Game {
             this.titleAnimation.update(deltaTime);
         }
 
+        if (this.shakeTimer > 0) {
+            this.ctx.save();
+            const dx = (Math.random() - 0.5) * this.shakeIntensity;
+            const dy = (Math.random() - 0.5) * this.shakeIntensity;
+            this.ctx.translate(dx, dy);
+        }
+
         this.draw();
+
+        if (this.shakeTimer > 0) {
+            this.ctx.restore();
+        }
+
         requestAnimationFrame(t => this.gameLoop(t));
     }
 
@@ -182,6 +200,15 @@ export class Game {
         this.effects.update(deltaTime);
 
         this.glitchTimer = this.superModeTimer > 0 ? this.glitchTimer + deltaTime : 0;
+
+        if (this.shakeTimer > 0) this.shakeTimer -= deltaTime;
+        if (this.comboTimer > 0) {
+            this.comboTimer -= deltaTime;
+            if (this.comboTimer <= 0) {
+                this.combo = 0;
+                this.ui.updateCombo(0);
+            }
+        }
     }
 
     updateTimers(deltaTime) {
@@ -254,8 +281,11 @@ export class Game {
 
             if (hitTop || hitBottom) {
                 this.audio.playSuperSmash();
-                this.incrementScore(10);
+                this.combo = 0; // Reset combo on hit
+                this.incrementScore(10, true);
                 this.hitFlashTimer = CONFIG.HIT_FLASH_DURATION;
+                this.triggerShake(CONFIG.SHAKE_INTENSITY * 1.5);
+                this.effects.spawnParticles(obs.x + this.obstacles.obstacleWidth / 2, hitTop ? obs.topHeight : obs.topHeight + this.obstacles.gapSize, obs.color, 15, 300);
                 return false;
             }
             return true;
@@ -298,8 +328,21 @@ export class Game {
         this.stats.powerups.MAGNET++;
     }
 
-    incrementScore(amount = 1) {
-        for (let i = 0; i < amount; i++) {
+    incrementScore(amount = 1, fromSmash = false) {
+        // Handle Combo
+        this.combo++;
+        this.comboTimer = CONFIG.COMBO_TIMEOUT;
+        if (this.combo > this.maxCombo) {
+            this.maxCombo = this.combo;
+        }
+
+        const stage = [...CONFIG.COMBO_STAGES].reverse().find(s => this.combo >= s.threshold);
+        const multiplier = stage ? stage.multiplier : 1;
+        const finalAmount = Math.ceil(amount * multiplier);
+
+        this.ui.updateCombo(this.combo, stage);
+
+        for (let i = 0; i < finalAmount; i++) {
             this.score++;
             this.powerups.checkSpawn(this.score);
 
@@ -310,6 +353,7 @@ export class Game {
                 this.ui.showMessage(this.dino.getDinoName() + '!');
                 this.heal();
                 this.audio.playUpgrade();
+                this.triggerShake(CONFIG.SHAKE_INTENSITY * 2);
 
                 // Track evolved dino
                 const dinoId = DINOS[this.dino.level].id;
@@ -322,14 +366,22 @@ export class Game {
             }
         }
         this.updateUI();
-        if (amount === 1) this.audio.playPoint();
+        if (amount === 1 && !fromSmash) this.audio.playPoint();
+    }
+
+    triggerShake(intensity = CONFIG.SHAKE_INTENSITY) {
+        this.shakeTimer = CONFIG.SHAKE_DURATION;
+        this.shakeIntensity = intensity;
     }
 
     takeDamage() {
         this.hearts--;
+        this.combo = 0;
+        this.ui.updateCombo(0);
         this.dino.takeDamage();
         this.audio.playHit();
         this.hitFlashTimer = CONFIG.HIT_FLASH_DURATION;
+        this.triggerShake(CONFIG.SHAKE_INTENSITY * 2);
         this.updateUI();
 
         if (this.hearts <= 0) this.gameOver();

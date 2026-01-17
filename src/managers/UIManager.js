@@ -38,7 +38,10 @@ export class UIManager {
             debugMenu: get('debug-menu'),
             debugDinoList: get('debug-dino-list'),
             closeDebugBtn: get('close-debug-btn'),
-            gameStatsList: get('game-stats-list')
+            gameStatsList: get('game-stats-list'),
+            comboContainer: get('combo-container'),
+            comboText: get('combo-text'),
+            comboLabel: get('combo-label')
         };
     }
 
@@ -50,7 +53,7 @@ export class UIManager {
         pause.classList.toggle('hidden', state !== 'PAUSED');
 
         if (state === 'GAME_OVER') {
-            this.showStatsAnimation(this.game.stats);
+            this.showStatsAnimation(this.game.stats, this.game.maxCombo);
         } else {
             gameStatsList.classList.add('hidden');
             gameStatsList.innerHTML = '';
@@ -110,6 +113,31 @@ export class UIManager {
         }
     }
 
+    updateCombo(combo, stage) {
+        const { comboContainer, comboText, comboLabel } = this.elements;
+
+        if (combo > 1) {
+            comboContainer.classList.remove('hidden');
+            comboText.innerText = combo;
+
+            // Pop effect
+            comboText.classList.remove('combo-pop');
+            void comboText.offsetWidth; // Trigger reflow
+            comboText.classList.add('combo-pop');
+
+            // Stage styling
+            comboContainer.className = ''; // Reset classes
+            if (stage) {
+                comboText.classList.add(stage.class);
+                comboLabel.innerText = stage.name;
+            } else {
+                comboLabel.innerText = 'Combo';
+            }
+        } else {
+            comboContainer.classList.add('hidden');
+        }
+    }
+
     updateAudioButtons(musicEnabled, sfxEnabled) {
         if (this.elements.musicToggle) {
             this.elements.musicToggle.innerText = `Music: ${musicEnabled ? 'On' : 'Off'}`;
@@ -142,14 +170,13 @@ export class UIManager {
         this.container.style.removeProperty('--border-core');
     }
 
-    async showStatsAnimation(stats) {
+    async showStatsAnimation(stats, maxCombo) {
         const list = this.elements.gameStatsList;
         list.innerHTML = '';
         list.classList.remove('hidden');
 
         const items = [];
 
-        // Build list of stats to show
         const DINOS_CONFIG = (await import('../config/DinoConfig.js')).DINOS;
         DINOS_CONFIG.forEach(dino => {
             const count = stats.dinos[dino.id];
@@ -176,6 +203,11 @@ export class UIManager {
         }
         if (stats.powerups.COIN > 0) {
             items.push({ name: 'Coins', count: stats.powerups.COIN, icon: 'coin.webp', isImg: true });
+        }
+
+        // Max Combo (Flame) - Show last
+        if (maxCombo > 1) {
+            items.push({ name: 'Max Combo', count: maxCombo, icon: '🔥' });
         }
 
         for (const item of items) {

@@ -41,6 +41,19 @@ export const CONFIG = {
     SUPER_TREX_DURATION: 30,
     MAGNET_DURATION: 15,
 
+    // Combo System
+    COMBO_TIMEOUT: 2.0, // Seconds until combo resets
+    COMBO_STAGES: [
+        { threshold: 5, multiplier: 1.5, name: 'Nice!', class: 'combo-stage-1' },
+        { threshold: 10, multiplier: 2.0, name: 'Great!', class: 'combo-stage-2' },
+        { threshold: 20, multiplier: 3.0, name: 'Amazing!', class: 'combo-stage-3' },
+        { threshold: 50, multiplier: 5.0, name: 'EXTINCT!', class: 'combo-stage-4' }
+    ],
+
+    // Screen Shake
+    SHAKE_DURATION: 0.2, // Seconds
+    SHAKE_INTENSITY: 5,   // Pixels
+
     // Themes
     THEMES: ['theme-1', 'theme-2', 'theme-3', 'theme-4', 'theme-5'],
 

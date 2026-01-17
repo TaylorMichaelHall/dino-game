@@ -219,6 +219,7 @@ export class CoinManager {
             const dist = Math.sqrt((dx_center - coin.x) ** 2 + (dy_center - coin.y) ** 2);
             if (dist < dino.radius + this.coinRadius) {
                 coin.collected = true;
+                this.game.effects.spawnParticles(coin.x, coin.y, '#ffd700', 8, 150, 0.6);
                 return true;
             }
         }
