@@ -177,8 +177,8 @@ export class CoinManager {
         // Cleanup off-screen
         this.coins = this.coins.filter(coin => !coin.collected && coin.x > -50);
 
-        // Improved Spawn logic: Higher probability during Mega Speed
-        const spawnProb = this.game.speedBoostTimer > 0 ? 0.05 : 0.005;
+        // Improved Spawn logic: Higher probability overall
+        const spawnProb = this.game.speedBoostTimer > 0 ? 0.08 : 0.015;
         if (Math.random() < spawnProb) {
             this.spawnLine();
         }
