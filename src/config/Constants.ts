@@ -75,7 +75,7 @@ export const CONFIG = {
 			multiplier: 5.0,
 			name: "Pre-historic!",
 			class: "pre-historic",
-			color: "#000000",
+			color: "#ec4899",
 			shake: 10,
 		},
 	],

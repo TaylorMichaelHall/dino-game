@@ -247,10 +247,10 @@ button:active {
 }
 
 .pre-historic {
-	color: #000;
+	color: #ec4899;
 	text-shadow:
 		0 0 10px #ffffff,
-		0 0 20px #ffffff;
+		0 0 20px #ec4899;
 	animation:
 		combo-shake 0.05s infinite,
 		combo-pulse 0.5s infinite;
@@ -333,7 +333,7 @@ button:active {
 }
 
 .help-list .pre-historic {
-	color: #ff00ff;
+	color: #ec4899;
 }
 
 /* Footer & Instructions */

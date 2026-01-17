@@ -67,11 +67,11 @@ export class EffectManager {
 				length:
 					CONFIG.SPEED_LINE_MIN_LEN +
 					Math.random() *
-						(CONFIG.SPEED_LINE_MAX_LEN - CONFIG.SPEED_LINE_MIN_LEN),
+					(CONFIG.SPEED_LINE_MAX_LEN - CONFIG.SPEED_LINE_MIN_LEN),
 				speed:
 					CONFIG.SPEED_LINE_MIN_SPEED +
 					Math.random() *
-						(CONFIG.SPEED_LINE_MAX_SPEED - CONFIG.SPEED_LINE_MIN_SPEED),
+					(CONFIG.SPEED_LINE_MAX_SPEED - CONFIG.SPEED_LINE_MIN_SPEED),
 			});
 		}
 	}
@@ -191,7 +191,20 @@ export class EffectManager {
 			ctx.fillStyle = f.color;
 			ctx.font = "bold 24px Outfit";
 			ctx.textAlign = "center";
+
+			// Add text shadow for better visibility
+			ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+			ctx.shadowBlur = 4;
+			ctx.shadowOffsetX = 2;
+			ctx.shadowOffsetY = 2;
+
 			ctx.fillText(f.text, f.x, f.y);
+
+			// Reset shadow
+			ctx.shadowColor = "transparent";
+			ctx.shadowBlur = 0;
+			ctx.shadowOffsetX = 0;
+			ctx.shadowOffsetY = 0;
 		});
 		ctx.globalAlpha = 1.0;
 
