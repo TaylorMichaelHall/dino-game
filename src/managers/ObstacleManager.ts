@@ -51,7 +51,7 @@ export class ObstacleManager implements IObstacleManager {
 	}
 
 	spawn() {
-		const minHeight = 50;
+		const minHeight = CONFIG.OBSTACLE_MIN_HEIGHT;
 		const maxHeight = this.game.height - this.gapSize - minHeight;
 		const topHeight = Math.random() * (maxHeight - minHeight) + minHeight;
 
@@ -97,7 +97,7 @@ export class ObstacleManager implements IObstacleManager {
 		endY: number,
 		color: string,
 	) {
-		const isFlashing = this.game.hitFlashTimer > 0;
+		const isFlashing = this.game.timers.hitFlash > 0;
 		const drawColor = isFlashing ? "#ffffff" : color;
 		const width = this.obstacleWidth;
 		const height = endY - startY;

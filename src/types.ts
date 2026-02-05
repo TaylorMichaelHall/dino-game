@@ -1,3 +1,6 @@
+import type { IScoreManager } from "./core/ScoreManager";
+import type { ITimerManager } from "./core/TimerManager";
+
 export type GameState = "START" | "PLAYING" | "PAUSED" | "GAME_OVER";
 
 export type PowerupType = "BONE" | "DIAMOND" | "EMERALD" | "MAGNET";
@@ -219,26 +222,20 @@ export interface ITitleManager {
 }
 
 export interface IGame {
+	// Canvas & Core
 	width: number;
 	height: number;
 	canvas: HTMLCanvasElement;
 	ctx: CanvasRenderingContext2D;
 	state: GameState;
-	score: number;
-	highScore: number;
+	time: number;
 	hearts: number;
 	musicEnabled: boolean;
 	sfxEnabled: boolean;
-	time: number;
-	speedBoostTimer: number;
-	superModeTimer: number;
-	magnetTimer: number;
-	glitchTimer: number;
-	hitFlashTimer: number;
-	shakeTimer: number;
-	combo: number;
-	comboTimer: number;
-	maxCombo: number;
+
+	// Managers
+	timers: ITimerManager;
+	scoring: IScoreManager;
 	dino: IDino;
 	ui: IUIManager;
 	audio: IAudioManager;
@@ -248,10 +245,14 @@ export interface IGame {
 	effects: IEffectManager;
 	input: IInputManager;
 	titleAnimation: ITitleManager;
+
+	// Stats
 	stats: {
 		dinos: Record<string, number>;
 		powerups: Record<string, number>;
 	};
+
+	// Methods
 	updateUI(): void;
 	startGame(): void;
 	resetGame(): void;

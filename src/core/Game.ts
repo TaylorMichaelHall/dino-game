@@ -17,6 +17,8 @@ import type {
 	IGame,
 	IUIManager,
 } from "../types";
+import { type IScoreManager, ScoreManager } from "./ScoreManager";
+import { type ITimerManager, TimerManager } from "./TimerManager";
 
 /**
  * Game Controller
@@ -38,22 +40,12 @@ export class Game implements IGame {
 	effects: EffectManager;
 	musicEnabled: boolean;
 	sfxEnabled: boolean;
-	score: number;
-	highScore: number;
 	hearts: number;
 	state: GameState;
 	lastTime: number;
 	time: number;
-	speedBoostTimer: number;
-	superModeTimer: number;
-	magnetTimer: number;
-	hitFlashTimer: number;
-	glitchTimer: number;
-	combo: number;
-	comboTimer: number;
-	maxCombo: number;
-	shakeTimer: number;
-	shakeIntensity: number;
+	timers: ITimerManager;
+	scoring: IScoreManager;
 	stats: {
 		dinos: Record<string, number>;
 		powerups: Record<string, number>;
@@ -83,28 +75,13 @@ export class Game implements IGame {
 
 		this.musicEnabled = true;
 		this.sfxEnabled = true;
-
-		this.score = 0;
-		this.highScore = parseInt(
-			localStorage.getItem("jurassicEscapeHighScore") || "0",
-			10,
-		);
 		this.hearts = CONFIG.MAX_HEARTS;
 
 		this.state = GAME_STATE.START as GameState;
 		this.lastTime = 0;
 		this.time = 0;
-		this.speedBoostTimer = 0;
-		this.superModeTimer = 0;
-		this.magnetTimer = 0;
-		this.hitFlashTimer = 0;
-		this.glitchTimer = 0;
-
-		this.combo = 0;
-		this.comboTimer = 0;
-		this.maxCombo = 0;
-		this.shakeTimer = 0;
-		this.shakeIntensity = 0;
+		this.timers = new TimerManager();
+		this.scoring = new ScoreManager();
 
 		this.stats = this.initStats();
 		this.debugActive = false;
@@ -158,20 +135,14 @@ export class Game implements IGame {
 	}
 
 	resetGame() {
-		this.score = 0;
 		this.hearts = CONFIG.MAX_HEARTS;
-		this.speedBoostTimer = 0;
-		this.superModeTimer = 0;
-		this.magnetTimer = 0;
+		this.timers.reset();
+		this.scoring.reset();
 		this.dino.reset();
 		this.obstacles.reset();
 		this.powerups.reset();
 		this.coins.reset();
 		this.stats = this.initStats();
-
-		// Reset Combo fully
-		this.combo = 0;
-		this.comboTimer = 0;
 		this.ui.updateCombo(0);
 
 		this.state = GAME_STATE.START as GameState;
@@ -231,16 +202,16 @@ export class Game implements IGame {
 			this.titleAnimation.update(deltaTime);
 		}
 
-		if (this.shakeTimer > 0) {
+		if (this.timers.shake > 0) {
 			this.ctx.save();
-			const dx = (Math.random() - 0.5) * this.shakeIntensity;
-			const dy = (Math.random() - 0.5) * this.shakeIntensity;
+			const dx = (Math.random() - 0.5) * this.timers.shakeIntensity;
+			const dy = (Math.random() - 0.5) * this.timers.shakeIntensity;
 			this.ctx.translate(dx, dy);
 		}
 
 		this.draw();
 
-		if (this.shakeTimer > 0) {
+		if (this.timers.shake > 0) {
 			this.ctx.restore();
 		}
 
@@ -248,13 +219,40 @@ export class Game implements IGame {
 	}
 
 	update(deltaTime: number) {
-		if (this.hitFlashTimer > 0) this.hitFlashTimer -= deltaTime;
+		// Update timers and handle expired events
+		const timerEvents = this.timers.update(
+			deltaTime,
+			this.timers.superMode > 0,
+		);
 
-		this.updateTimers(deltaTime);
+		if (timerEvents.speedBoostExpired) {
+			this.ui.showMessage("Normal Speed");
+		}
+
+		if (this.timers.superMode > 0) {
+			this.ui.updatePowerupTimer(this.timers.superMode);
+		}
+
+		if (timerEvents.superModeExpired) {
+			const superName =
+				this.dino.superType === "spino" ? "Super Spinosaurus" : "Super T-Rex";
+			this.dino.setSuper(false);
+			this.ui.showMessage(`${superName} Power Depleted`);
+		}
+
+		if (timerEvents.magnetExpired) {
+			this.ui.showMessage("Magnet Deactivated");
+		}
+
+		if (timerEvents.comboExpired) {
+			this.scoring.combo = 0;
+			this.ui.updateCombo(0);
+		}
+
 		this.updateBorderEffect();
 
 		const speedMultiplier =
-			this.speedBoostTimer > 0 ? CONFIG.BONE_SPEED_BOOST : 1;
+			this.timers.speedBoost > 0 ? CONFIG.BONE_SPEED_BOOST : 1;
 		const obstacleSpeed = this.obstacles.speed * speedMultiplier;
 
 		this.dino.update(deltaTime);
@@ -266,42 +264,6 @@ export class Game implements IGame {
 		this.checkCollisions();
 		this.handleScoring();
 		this.effects.update(deltaTime);
-
-		this.glitchTimer =
-			this.superModeTimer > 0 ? this.glitchTimer + deltaTime : 0;
-
-		if (this.shakeTimer > 0) this.shakeTimer -= deltaTime;
-		if (this.comboTimer > 0) {
-			this.comboTimer -= deltaTime;
-			if (this.comboTimer <= 0) {
-				this.combo = 0;
-				this.ui.updateCombo(0);
-			}
-		}
-	}
-
-	updateTimers(deltaTime: number) {
-		if (this.speedBoostTimer > 0) {
-			this.speedBoostTimer -= deltaTime;
-			if (this.speedBoostTimer <= 0) this.ui.showMessage("Normal Speed");
-		}
-
-		if (this.superModeTimer > 0) {
-			this.superModeTimer -= deltaTime;
-			this.ui.updatePowerupTimer(this.superModeTimer);
-
-			if (this.superModeTimer <= 0) {
-				const superName =
-					this.dino.superType === "spino" ? "Super Spinosaurus" : "Super T-Rex";
-				this.dino.setSuper(false);
-				this.ui.showMessage(`${superName} Power Depleted`);
-			}
-		}
-
-		if (this.magnetTimer > 0) {
-			this.magnetTimer -= deltaTime;
-			if (this.magnetTimer <= 0) this.ui.showMessage("Magnet Deactivated");
-		}
 	}
 
 	updateBorderEffect() {
@@ -313,7 +275,7 @@ export class Game implements IGame {
 		const colors = this.obstacles.colors;
 		const color =
 			colors[this.obstacles.colorIndex % colors.length] || "#ff00ff";
-		this.ui.updateBorderEffect(this.hitFlashTimer > 0, color);
+		this.ui.updateBorderEffect(this.timers.hitFlash > 0, color);
 	}
 
 	checkCollisions() {
@@ -358,9 +320,9 @@ export class Game implements IGame {
 
 			if (hitTop || hitBottom) {
 				this.audio.playSuperSmash();
-				this.combo = 0; // Reset combo on hit
-				this.incrementScore(10, true);
-				this.hitFlashTimer = CONFIG.HIT_FLASH_DURATION;
+				this.scoring.resetCombo();
+				this.incrementScore(CONFIG.SUPER_SMASH_SCORE, true);
+				this.timers.hitFlash = CONFIG.HIT_FLASH_DURATION;
 				this.triggerShake(CONFIG.SHAKE_INTENSITY * 1.5);
 				this.effects.spawnParticles(
 					obs.x + this.obstacles.obstacleWidth / 2,
@@ -379,7 +341,7 @@ export class Game implements IGame {
 		this.obstacles.obstacles.forEach((obs) => {
 			if (!obs.passed && obs.x + this.obstacles.obstacleWidth < this.dino.x) {
 				obs.passed = true;
-				this.incrementScore(10);
+				this.incrementScore(CONFIG.SUPER_SMASH_SCORE);
 				this.audio.playGatePass();
 			}
 		});
@@ -387,7 +349,7 @@ export class Game implements IGame {
 
 	collectBone() {
 		this.audio.playPowerup();
-		this.speedBoostTimer = CONFIG.BONE_BOOST_DURATION;
+		this.timers.speedBoost = CONFIG.BONE_BOOST_DURATION;
 		this.incrementScore(CONFIG.BONE_BONUS);
 		this.ui.showMessage("🦴 MEGA SPEED 🦴");
 		this.stats.powerups.BONE++;
@@ -395,7 +357,7 @@ export class Game implements IGame {
 
 	activateSuperMode(type: "trex" | "spino") {
 		this.audio.playTransform();
-		this.superModeTimer = CONFIG.SUPER_TREX_DURATION;
+		this.timers.superMode = CONFIG.SUPER_TREX_DURATION;
 		this.dino.setSuper(true, type);
 		const name = type === "spino" ? "SUPER SPINOSAURUS" : "SUPER T-REX";
 		this.ui.showMessage(`🧬 ${name} ACTIVATED 🧬`);
@@ -406,87 +368,82 @@ export class Game implements IGame {
 
 	collectMagnet() {
 		this.audio.playPowerup();
-		this.magnetTimer = CONFIG.MAGNET_DURATION;
+		this.timers.magnet = CONFIG.MAGNET_DURATION;
 		this.ui.showMessage("🧲 COIN MAGNET ACTIVATED 🧲");
 		this.stats.powerups.MAGNET++;
 	}
 
 	incrementScore(amount: number = 1, fromSmash: boolean = false) {
-		// Handle Combo
-		this.combo++;
-		this.comboTimer = CONFIG.COMBO_TIMEOUT;
-		if (this.combo > this.maxCombo) {
-			this.maxCombo = this.combo;
+		// Increment combo and reset timer
+		this.scoring.incrementCombo();
+		this.timers.combo = CONFIG.COMBO_TIMEOUT;
+
+		// Delegate scoring calculation to ScoreManager
+		const events = this.scoring.addScore(amount);
+
+		// Update combo UI
+		this.ui.updateCombo(this.scoring.combo, events.stage, events.multiplier);
+
+		// Check powerup spawns for each point
+		this.powerups.checkSpawn(this.scoring.score);
+
+		// Handle evolution events
+		for (let i = 0; i < events.evolutionCount; i++) {
+			this.dino.upgrade();
+			this.obstacles.cycleColor();
+			this.obstacles.increaseSpeed(CONFIG.SPEED_INC_PER_EVO);
+			this.ui.showMessage(`${this.dino.getDinoName()}!`);
+			this.heal();
+			this.audio.playUpgrade();
+			this.triggerShake(CONFIG.SHAKE_INTENSITY * 2);
+
+			// Track evolved dino
+			const dinoId = DINOS[this.dino.level].id;
+			this.stats.dinos[dinoId]++;
 		}
 
-		const stage = [...CONFIG.COMBO_STAGES]
-			.reverse()
-			.find((s) => this.combo >= s.threshold);
-		const multiplier = stage ? stage.multiplier : 1;
-		const finalAmount = Math.ceil(amount * multiplier);
-
-		this.ui.updateCombo(this.combo, stage, multiplier);
-
-		for (let i = 0; i < finalAmount; i++) {
-			this.score++;
-			this.powerups.checkSpawn(this.score);
-
-			if (this.score % CONFIG.EVO_THRESHOLD === 0) {
-				this.dino.upgrade();
-				this.obstacles.cycleColor();
-				this.obstacles.increaseSpeed(CONFIG.SPEED_INC_PER_EVO);
-				this.ui.showMessage(`${this.dino.getDinoName()}!`);
-				this.heal();
-				this.audio.playUpgrade();
-				this.triggerShake(CONFIG.SHAKE_INTENSITY * 2);
-
-				// Track evolved dino
-				const dinoId = DINOS[this.dino.level].id;
-				this.stats.dinos[dinoId]++;
-			}
-
-			if (this.score % CONFIG.THEME_THRESHOLD === 0) {
-				const themeIndex =
-					Math.floor(this.score / CONFIG.THEME_THRESHOLD) %
-					CONFIG.THEMES.length;
-				this.ui.setTheme(themeIndex);
-			}
+		// Handle theme change
+		if (events.themeChanged) {
+			this.ui.setTheme(events.themeIndex);
 		}
+
 		this.updateUI();
+
+		// FCT and audio for small scores
 		if (amount === 1 && !fromSmash) {
 			this.audio.playPoint();
-			// FCT for combo multiplier/points
-			if (multiplier > 1) {
+			if (events.multiplier > 1) {
 				this.effects.spawnFCT(
-					this.dino.x + 20,
-					this.dino.y - 20,
-					`+${finalAmount}`,
-					stage?.color || "#fff",
+					this.dino.x + CONFIG.FCT_OFFSET_X,
+					this.dino.y + CONFIG.FCT_OFFSET_Y,
+					`+${events.finalAmount}`,
+					events.stage?.color || "#fff",
 				);
 			}
 		}
+
+		// FCT for larger scores
 		if (amount > 1) {
 			this.effects.spawnFCT(
-				this.dino.x + 20,
-				this.dino.y - 20,
-				`+${finalAmount}`,
-				"#ffd700",
+				this.dino.x + CONFIG.FCT_OFFSET_X,
+				this.dino.y + CONFIG.FCT_OFFSET_Y,
+				`+${events.finalAmount}`,
+				CONFIG.COIN_PARTICLE_COLOR,
 			);
 		}
 	}
 
 	triggerShake(intensity: number = CONFIG.SHAKE_INTENSITY) {
-		this.shakeTimer = CONFIG.SHAKE_DURATION;
-		this.shakeIntensity = intensity;
+		this.timers.triggerShake(intensity);
 	}
 
 	takeDamage() {
 		this.hearts--;
-		this.combo = 0;
+		this.scoring.resetCombo();
 		this.ui.updateCombo(0);
 		this.dino.takeDamage();
 		this.audio.playHit();
-		this.hitFlashTimer = CONFIG.HIT_FLASH_DURATION;
+		this.timers.hitFlash = CONFIG.HIT_FLASH_DURATION;
 		this.triggerShake(CONFIG.SHAKE_INTENSITY * 2);
 		this.updateUI();
 
@@ -498,8 +455,8 @@ export class Game implements IGame {
 			this.hearts = CONFIG.MAX_HEARTS;
 			this.updateUI();
 			this.effects.spawnFCT(
-				this.dino.x + 20,
-				this.dino.y - 40,
+				this.dino.x + CONFIG.FCT_OFFSET_X,
+				this.dino.y + CONFIG.FCT_OFFSET_Y * 2,
 				"HEALED! ❤️",
 				"#ff4d4d",
 			);
@@ -507,20 +464,14 @@ export class Game implements IGame {
 	}
 
 	updateUI() {
-		this.ui.updateHUD(this.score, this.hearts, this.highScore);
+		this.ui.updateHUD(this.scoring.score, this.hearts, this.scoring.highScore);
 	}
 
 	gameOver() {
 		this.state = GAME_STATE.GAME_OVER as GameState;
 		this.audio.playGameOver();
 		this.audio.stopMusic();
-		if (this.score > this.highScore) {
-			this.highScore = this.score;
-			localStorage.setItem(
-				"jurassicEscapeHighScore",
-				this.highScore.toString(),
-			);
-		}
+		this.scoring.saveHighScore();
 		this.updateUI();
 		this.ui.setScreen(this.state);
 	}

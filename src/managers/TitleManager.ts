@@ -1,5 +1,6 @@
 import { DINOS } from "../config/DinoConfig";
 import type { IGame, ITitleManager } from "../types";
+import { loadImage, spritePath } from "../utils/helpers";
 
 interface AmbientDino {
 	id: string;
@@ -28,19 +29,9 @@ export class TitleManager implements ITitleManager {
 	}
 
 	initSprites() {
-		// @ts-expect-error
-		const basePath = import.meta.env.BASE_URL || "/";
-		const spritePath = (file: string) => `${basePath}sprites/${file}`;
-
 		DINOS.forEach((dino) => {
-			this.sprites[dino.id] = this.loadImage(spritePath(dino.sprite));
+			this.sprites[dino.id] = loadImage(spritePath(dino.sprite));
 		});
-	}
-
-	loadImage(src: string): HTMLImageElement {
-		const img = new Image();
-		img.src = src;
-		return img;
 	}
 
 	initAmbientDinos() {

@@ -35,7 +35,7 @@ export class InputManager implements IInputManager {
 		ui.resetHighScoreBtn?.addEventListener("click", (e: MouseEvent) => {
 			e.stopPropagation();
 			if (confirm("Reset High Score?")) {
-				this.game.highScore = 0;
+				this.game.scoring.highScore = 0;
 				localStorage.removeItem("jurassicEscapeHighScore");
 				this.game.updateUI();
 			}

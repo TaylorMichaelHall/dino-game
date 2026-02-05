@@ -49,6 +49,7 @@ export class EffectManager {
 	particles: Particle[];
 	trails: Trail[];
 	fct: FCT[];
+	spriteCache: Map<string, HTMLImageElement>;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -56,7 +57,18 @@ export class EffectManager {
 		this.particles = [];
 		this.trails = [];
 		this.fct = [];
+		this.spriteCache = new Map();
 		this.initSpeedLines();
+	}
+
+	getCachedImage(src: string): HTMLImageElement {
+		let img = this.spriteCache.get(src);
+		if (!img) {
+			img = new Image();
+			img.src = src;
+			this.spriteCache.set(src, img);
+		}
+		return img;
 	}
 
 	initSpeedLines() {
@@ -101,14 +113,16 @@ export class EffectManager {
 	}
 
 	spawnTrail(x: number, y: number, w: number, h: number, sprite: string) {
+		// Pre-warm the cache when spawning trails
+		this.getCachedImage(sprite);
 		this.trails.push({
 			x,
 			y,
 			width: w,
 			height: h,
 			sprite,
-			life: 0.3,
-			maxLife: 0.3,
+			life: CONFIG.TRAIL_LIFETIME,
+			maxLife: CONFIG.TRAIL_LIFETIME,
 		});
 	}
 
@@ -118,15 +132,15 @@ export class EffectManager {
 			y,
 			text,
 			color,
-			life: 1.0,
-			maxLife: 1.0,
-			vy: -100,
+			life: CONFIG.FCT_LIFETIME,
+			maxLife: CONFIG.FCT_LIFETIME,
+			vy: CONFIG.FCT_INITIAL_VY,
 		});
 	}
 
 	update(deltaTime: number) {
 		// Speed Lines
-		if (this.game.speedBoostTimer > 0) {
+		if (this.game.timers.speedBoost > 0) {
 			this.speedLines.forEach((line) => {
 				line.x -= line.speed * deltaTime;
 				if (line.x + line.length < 0) {
@@ -140,7 +154,7 @@ export class EffectManager {
 		this.particles.forEach((p) => {
 			p.x += p.vx * deltaTime;
 			p.y += p.vy * deltaTime;
-			p.vy += 400 * deltaTime; // Gravity
+			p.vy += CONFIG.PARTICLE_GRAVITY * deltaTime;
 			p.life -= deltaTime;
 		});
 		this.particles = this.particles.filter((p) => p.life > 0);
@@ -154,7 +168,7 @@ export class EffectManager {
 		// FCT
 		this.fct.forEach((f) => {
 			f.y += f.vy * deltaTime;
-			f.vy += 150 * deltaTime; // Slight arc
+			f.vy += CONFIG.FCT_GRAVITY * deltaTime;
 			f.life -= deltaTime;
 		});
 		this.fct = this.fct.filter((f) => f.life > 0);
@@ -176,8 +190,7 @@ export class EffectManager {
 		this.trails.forEach((t) => {
 			const alpha = (t.life / t.maxLife) * 0.4;
 			ctx.globalAlpha = alpha;
-			const img = new Image();
-			img.src = t.sprite;
+			const img = this.getCachedImage(t.sprite);
 			if (img.complete) {
 				ctx.drawImage(img, t.x, t.y, t.width, t.height);
 			}
@@ -208,7 +221,7 @@ export class EffectManager {
 		});
 		ctx.globalAlpha = 1.0;
 
-		if (this.game.speedBoostTimer > 0) {
+		if (this.game.timers.speedBoost > 0) {
 			ctx.save();
 			ctx.strokeStyle = `rgba(255, 255, 255, ${CONFIG.SPEED_LINE_OPACITY})`;
 			ctx.lineWidth = 2;
@@ -221,15 +234,16 @@ export class EffectManager {
 			ctx.restore();
 		}
 
-		if (this.game.superModeTimer > 0) {
+		if (this.game.timers.superMode > 0) {
 			this.drawGlitchEffect(ctx);
 		}
 	}
 
 	drawGlitchEffect(ctx: CanvasRenderingContext2D) {
-		const period = 0.8;
-		const burstDuration = 0.08;
-		if (this.game.glitchTimer % period < burstDuration) {
+		if (
+			this.game.timers.glitch % CONFIG.GLITCH_PERIOD <
+			CONFIG.GLITCH_BURST_DURATION
+		) {
 			ctx.save();
 			if (Math.random() > 0.95) {
 				ctx.globalCompositeOperation = "screen";

@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import type { ComboStage, DinoConfig, IGame, UIElements } from "../types";
+import { spritePath } from "../utils/helpers";
 
 /**
  * UIManager
@@ -78,7 +79,7 @@ export class UIManager {
 		pause?.classList.toggle("hidden", state !== "PAUSED");
 
 		if (state === "GAME_OVER") {
-			this.showStatsAnimation(this.game.stats, this.game.maxCombo);
+			this.showStatsAnimation(this.game.stats, this.game.scoring.maxCombo);
 		} else {
 			if (gameStatsList) {
 				gameStatsList.classList.add("hidden");
@@ -336,13 +337,11 @@ export class UIManager {
 		const itemEl = document.createElement("div");
 		itemEl.className = "stat-item";
 
-		// @ts-expect-error
-		const basePath = import.meta.env.BASE_URL || "/";
 		let iconHtml = "";
 		if (item.sprite) {
-			iconHtml = `<img src="${basePath}sprites/${item.sprite}" class="stat-img">`;
-		} else if (item.isImg) {
-			iconHtml = `<img src="${basePath}sprites/${item.icon}" class="stat-img">`;
+			iconHtml = `<img src="${spritePath(item.sprite)}" class="stat-img">`;
+		} else if (item.isImg && item.icon) {
+			iconHtml = `<img src="${spritePath(item.icon)}" class="stat-img">`;
 		} else {
 			iconHtml = `<span class="stat-icon">${item.icon}</span>`;
 		}

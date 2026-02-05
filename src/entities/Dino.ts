@@ -1,6 +1,7 @@
 import { CONFIG } from "../config/Constants";
 import { DINOS, SUPER_DINOS } from "../config/DinoConfig";
 import type { DinoConfig, IDino, IGame } from "../types";
+import { loadImage, spritePath } from "../utils/helpers";
 
 interface HistoryPoint {
 	y: number;
@@ -55,7 +56,7 @@ export class Dino implements IDino {
 		this.game = game;
 		this.width = 40;
 		this.height = 40;
-		this.x = 50;
+		this.x = CONFIG.DINO_START_X;
 		this.y = this.game.height / 2;
 		this.velocity = 0;
 
@@ -75,50 +76,38 @@ export class Dino implements IDino {
 		this.timeSinceLastFlash = 0;
 		this.visible = true;
 		this.isSuper = false;
-		this.superType = null; // 'trex' or 'spino'
+		this.superType = null;
 
 		// Follower / Transition states
-		this.history = []; // Buffer of {y, rotation}
-		this.historyMax = 15;
-		this.followerX = 10;
-		this.primaryX = 50;
-		this.displayX = 50; // Current animated X position
+		this.history = [];
+		this.historyMax = CONFIG.DINO_HISTORY_MAX;
+		this.followerX = CONFIG.DINO_FOLLOWER_X;
+		this.primaryX = CONFIG.DINO_START_X;
+		this.displayX = CONFIG.DINO_START_X;
 		this.flyingOffSprite = null;
 
 		// Backflip state
 		this.isBackflipping = false;
 		this.backflipRotation = 0;
-		this.backflipDuration = 0.5; // Seconds for a full flip
+		this.backflipDuration = CONFIG.DINO_BACKFLIP_DURATION;
 
 		this.sprites = {};
 		this.initSprites();
 	}
 
 	initSprites() {
-		// @ts-expect-error - Vite specific env
-		const basePath = import.meta.env.BASE_URL || "/";
-		const spritePath = (file: string) => `${basePath}sprites/${file}`;
-
 		// Load normal dinos
 		DINOS.forEach((dino) => {
-			this.sprites[dino.id] = this.loadImage(spritePath(dino.sprite));
+			this.sprites[dino.id] = loadImage(spritePath(dino.sprite));
 		});
 
 		// Load super dinos
 		for (const key of Object.keys(SUPER_DINOS)) {
 			const superDino = SUPER_DINOS[key as keyof typeof SUPER_DINOS];
 			if (superDino) {
-				this.sprites[superDino.id] = this.loadImage(
-					spritePath(superDino.sprite),
-				);
+				this.sprites[superDino.id] = loadImage(spritePath(superDino.sprite));
 			}
 		}
-	}
-
-	loadImage(src: string): HTMLImageElement {
-		const img = new Image();
-		img.src = src;
-		return img;
 	}
 
 	update(deltaTime: number) {
@@ -127,8 +116,8 @@ export class Dino implements IDino {
 		this.y += this.velocity * deltaTime;
 
 		// Boundary collision
-		if (this.y + this.height * 0.8 > this.game.height) {
-			this.y = this.game.height - this.height * 0.8;
+		if (this.y + this.height * CONFIG.DINO_HITBOX_FACTOR > this.game.height) {
+			this.y = this.game.height - this.height * CONFIG.DINO_HITBOX_FACTOR;
 			this.velocity = 0;
 		}
 		if (this.y < 0) {
@@ -157,8 +146,11 @@ export class Dino implements IDino {
 			this.history.push({
 				y: this.y,
 				rotation: Math.min(
-					Math.PI / 4,
-					Math.max(-Math.PI / 4, this.velocity * 0.0015),
+					CONFIG.DINO_MAX_ROTATION,
+					Math.max(
+						-CONFIG.DINO_MAX_ROTATION,
+						this.velocity * CONFIG.DINO_ROTATION_FACTOR,
+					),
 				),
 			});
 			if (this.history.length > this.historyMax) {
@@ -200,19 +192,16 @@ export class Dino implements IDino {
 		}
 
 		// Trail effect when fast or super
-		if (this.game.speedBoostTimer > 0 || (this.isSuper && this.superType)) {
+		if (this.game.timers.speedBoost > 0 || (this.isSuper && this.superType)) {
 			const dinoConfig = this.isSuper
 				? SUPER_DINOS[this.superType as keyof typeof SUPER_DINOS]
 				: DINOS[this.level];
-			// @ts-expect-error - Vite specific env
-			const bPath = import.meta.env.BASE_URL || "/";
-			const sPath = `${bPath}sprites/${dinoConfig.sprite}`;
 			this.game.effects.spawnTrail(
 				this.displayX,
 				this.y,
 				this.width,
 				this.height,
-				sPath,
+				spritePath(dinoConfig.sprite),
 			);
 		}
 	}
@@ -254,8 +243,11 @@ export class Dino implements IDino {
 		ctx.translate(this.displayX + this.width / 2, this.y + this.height / 2);
 
 		let rotation = Math.min(
-			Math.PI / 4,
-			Math.max(-Math.PI / 4, this.velocity * 0.0015),
+			CONFIG.DINO_MAX_ROTATION,
+			Math.max(
+				-CONFIG.DINO_MAX_ROTATION,
+				this.velocity * CONFIG.DINO_ROTATION_FACTOR,
+			),
 		);
 
 		// Subtract backflip rotation if active (counterclockwise)
@@ -370,7 +362,7 @@ export class Dino implements IDino {
 
 	reset() {
 		this.y = this.game.height / 2;
-		this.displayX = 50;
+		this.displayX = CONFIG.DINO_START_X;
 		this.velocity = 0;
 		this.level = 0;
 		this.colorIndex = 0;

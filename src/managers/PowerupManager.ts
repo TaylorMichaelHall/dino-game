@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import type { IDino, IGame, IPowerupManager, PowerupType } from "../types";
+import { distance, loadImage, overlapsDNA, spritePath } from "../utils/helpers";
 
 interface Powerup {
 	type: PowerupType;
@@ -23,17 +24,9 @@ export class PowerupManager implements IPowerupManager {
 		this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
 		this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
-		this.radius = 15;
+		this.radius = CONFIG.POWERUP_RADIUS;
 
-		// @ts-expect-error
-		const basePath = import.meta.env.BASE_URL || "/";
-		this.emeraldImg = this.loadImage(`${basePath}sprites/emerald.webp`);
-	}
-
-	loadImage(src: string): HTMLImageElement {
-		const img = new Image();
-		img.src = src;
-		return img;
+		this.emeraldImg = loadImage(spritePath("emerald.webp"));
 	}
 
 	calculateNextBoneSpawn(currentScore: number): number {
@@ -75,7 +68,7 @@ export class PowerupManager implements IPowerupManager {
 
 	spawn(type: PowerupType) {
 		// Spawn in the middle-ish area vertically
-		const padding = 100;
+		const padding = CONFIG.POWERUP_SPAWN_PADDING;
 		const y = Math.random() * (this.game.height - padding * 2) + padding;
 
 		this.powerups.push({
@@ -86,23 +79,16 @@ export class PowerupManager implements IPowerupManager {
 		});
 	}
 
-	overlapsDNA(x: number, y: number): boolean {
-		const padding = 20;
-		for (const obs of this.game.obstacles.obstacles) {
-			if (
-				x + this.radius > obs.x - padding &&
-				x - this.radius < obs.x + this.game.obstacles.obstacleWidth + padding
-			) {
-				if (
-					y - this.radius < obs.topHeight + padding ||
-					y + this.radius >
-						obs.topHeight + this.game.obstacles.gapSize - padding
-				) {
-					return true;
-				}
-			}
-		}
-		return false;
+	overlapsDNACheck(x: number, y: number): boolean {
+		return overlapsDNA(
+			x,
+			y,
+			this.radius,
+			CONFIG.OBSTACLE_DNA_PADDING,
+			this.game.obstacles.obstacles,
+			this.game.obstacles.obstacleWidth,
+			this.game.obstacles.gapSize,
+		);
 	}
 
 	update(deltaTime: number, speed: number) {
@@ -111,7 +97,9 @@ export class PowerupManager implements IPowerupManager {
 		});
 
 		// Dynamic Filtering: Remove powerups that overlap with DNA
-		this.powerups = this.powerups.filter((p) => !this.overlapsDNA(p.x, p.y));
+		this.powerups = this.powerups.filter(
+			(p) => !this.overlapsDNACheck(p.x, p.y),
+		);
 
 		// Cleanup off-screen
 		this.powerups = this.powerups.filter((p) => !p.collected && p.x > -100);
@@ -140,7 +128,7 @@ export class PowerupManager implements IPowerupManager {
 
 	drawEmerald(ctx: CanvasRenderingContext2D, x: number, y: number) {
 		if (this.emeraldImg.complete && this.emeraldImg.naturalWidth > 0) {
-			const s = 50;
+			const s = CONFIG.EMERALD_SIZE;
 			ctx.drawImage(this.emeraldImg, x - s / 2, y - s / 2, s, s);
 		} else {
 			ctx.font = "40px serif";
@@ -158,11 +146,11 @@ export class PowerupManager implements IPowerupManager {
 		const dy_center = dino.y + dino.height / 2;
 
 		for (const p of this.powerups) {
-			const dist = Math.sqrt((dx_center - p.x) ** 2 + (dy_center - p.y) ** 2);
+			const dist = distance(dx_center, dy_center, p.x, p.y);
 			const r =
 				p.type === "DIAMOND" || p.type === "EMERALD" || p.type === "MAGNET"
-					? 20
-					: 15;
+					? CONFIG.POWERUP_LARGE_RADIUS
+					: CONFIG.POWERUP_RADIUS;
 			if (dist < dino.radius + r) {
 				p.collected = true;
 				return p.type;

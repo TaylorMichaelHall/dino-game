@@ -1,4 +1,6 @@
+import { CONFIG } from "../config/Constants";
 import type { ICoinManager, IDino, IGame } from "../types";
+import { distance, loadImage, overlapsDNA, spritePath } from "../utils/helpers";
 
 interface Coin {
 	x: number;
@@ -18,10 +20,8 @@ export class CoinManager implements ICoinManager {
 	constructor(game: IGame) {
 		this.game = game;
 		this.coins = [];
-		this.coinRadius = 12;
-		// @ts-expect-error
-		const basePath = import.meta.env.BASE_URL || "/";
-		this.coinImage = this.loadImage(`${basePath}sprites/coin.webp`);
+		this.coinRadius = CONFIG.COIN_RADIUS;
+		this.coinImage = loadImage(spritePath("coin.webp"));
 
 		// Letter patterns (7-row grids for more detail/size)
 		this.letters = {
@@ -73,14 +73,8 @@ export class CoinManager implements ICoinManager {
 		};
 	}
 
-	loadImage(src: string): HTMLImageElement {
-		const img = new Image();
-		img.src = src;
-		return img;
-	}
-
 	spawnLine() {
-		const isMegaSpeed = this.game.speedBoostTimer > 0;
+		const isMegaSpeed = this.game.timers.speedBoost > 0;
 		const minGap = isMegaSpeed ? 50 : 150; // Tighter spacing during bonus mode
 		const furthestX =
 			this.coins.length > 0 ? Math.max(...this.coins.map((c) => c.x)) : 0;
@@ -106,7 +100,16 @@ export class CoinManager implements ICoinManager {
 			const y = startY + Math.sin(i * frequency * 10) * amplitude;
 
 			// Check for overlap with existing DNA obstacles
-			if (!this.overlapsDNA(x, y)) {
+			const overlaps = overlapsDNA(
+				x,
+				y,
+				this.coinRadius,
+				CONFIG.COIN_DNA_PADDING,
+				this.game.obstacles.obstacles,
+				this.game.obstacles.obstacleWidth,
+				this.game.obstacles.gapSize,
+			);
+			if (!overlaps) {
 				this.coins.push({
 					x: x,
 					y: y,
@@ -114,28 +117,6 @@ export class CoinManager implements ICoinManager {
 				});
 			}
 		}
-	}
-
-	overlapsDNA(x: number, y: number): boolean {
-		const padding = 15; // Refined padding
-		for (const obs of this.game.obstacles.obstacles) {
-			// Check if coin is horizontally within obstacle bounds
-			if (
-				x + this.coinRadius > obs.x - padding &&
-				x - this.coinRadius <
-					obs.x + this.game.obstacles.obstacleWidth + padding
-			) {
-				// Check if coin is vertically hitting the top or bottom pipe
-				if (
-					y - this.coinRadius < obs.topHeight + padding ||
-					y + this.coinRadius >
-						obs.topHeight + this.game.obstacles.gapSize - padding
-				) {
-					return true;
-				}
-			}
-		}
-		return false;
 	}
 
 	spawnStartMessage() {
@@ -186,7 +167,7 @@ export class CoinManager implements ICoinManager {
 	}
 
 	update(deltaTime: number, speed: number) {
-		const magnetActive = this.game.magnetTimer > 0;
+		const magnetActive = this.game.timers.magnet > 0;
 		const dinoX = this.game.dino.x + this.game.dino.width / 2;
 		const dinoY = this.game.dino.y + this.game.dino.height / 2;
 
@@ -195,12 +176,11 @@ export class CoinManager implements ICoinManager {
 				// Move towards dino
 				const dx = dinoX - coin.x;
 				const dy = dinoY - coin.y;
-				const distance = Math.sqrt(dx * dx + dy * dy);
+				const dist = Math.sqrt(dx * dx + dy * dy);
 
-				if (distance > 0) {
-					const magnetSpeed = 600; // Fast attraction
-					coin.x += (dx / distance) * magnetSpeed * deltaTime;
-					coin.y += (dy / distance) * magnetSpeed * deltaTime;
+				if (dist > 0) {
+					coin.x += (dx / dist) * CONFIG.MAGNET_SPEED * deltaTime;
+					coin.y += (dy / dist) * CONFIG.MAGNET_SPEED * deltaTime;
 				}
 			} else {
 				coin.x -= speed * deltaTime;
@@ -214,7 +194,10 @@ export class CoinManager implements ICoinManager {
 		this.coins = this.coins.filter((coin) => !coin.collected && coin.x > -50);
 
 		// Improved Spawn logic: Higher probability overall
-		const spawnProb = this.game.speedBoostTimer > 0 ? 0.08 : 0.015;
+		const spawnProb =
+			this.game.timers.speedBoost > 0
+				? CONFIG.COIN_SPAWN_PROB_MEGA
+				: CONFIG.COIN_SPAWN_PROB;
 		if (Math.random() < spawnProb) {
 			this.spawnLine();
 		}
@@ -236,24 +219,16 @@ export class CoinManager implements ICoinManager {
 	}
 
 	removeOverlappingWithObstacle(obs: { x: number; topHeight: number }) {
-		const padding = 15;
 		this.coins = this.coins.filter((coin) => {
-			// Check if coin is horizontally within obstacle bounds
-			if (
-				coin.x + this.coinRadius > obs.x - padding &&
-				coin.x - this.coinRadius <
-					obs.x + this.game.obstacles.obstacleWidth + padding
-			) {
-				// Check if coin is vertically hitting the top or bottom pipe
-				if (
-					coin.y - this.coinRadius < obs.topHeight + padding ||
-					coin.y + this.coinRadius >
-						obs.topHeight + this.game.obstacles.gapSize - padding
-				) {
-					return false; // Remove this coin
-				}
-			}
-			return true;
+			return !overlapsDNA(
+				coin.x,
+				coin.y,
+				this.coinRadius,
+				CONFIG.COIN_DNA_PADDING,
+				[obs],
+				this.game.obstacles.obstacleWidth,
+				this.game.obstacles.gapSize,
+			);
 		});
 	}
 
@@ -262,15 +237,13 @@ export class CoinManager implements ICoinManager {
 		const dy_center = dino.y + dino.height / 2;
 
 		for (const coin of this.coins) {
-			const dist = Math.sqrt(
-				(dx_center - coin.x) ** 2 + (dy_center - coin.y) ** 2,
-			);
+			const dist = distance(dx_center, dy_center, coin.x, coin.y);
 			if (dist < dino.radius + this.coinRadius) {
 				coin.collected = true;
 				this.game.effects.spawnParticles(
 					coin.x,
 					coin.y,
-					"#ffd700",
+					CONFIG.COIN_PARTICLE_COLOR,
 					8,
 					150,
 					0.6,
