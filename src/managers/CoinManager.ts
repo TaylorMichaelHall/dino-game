@@ -204,17 +204,55 @@ export class CoinManager implements ICoinManager {
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
-		ctx.textAlign = "center";
-		ctx.textBaseline = "middle";
-		ctx.font = "24px serif";
+		const phase = this.game.time * 0.004;
+		const scaleX = Math.cos(phase);
+		// Clamp so the coin never fully disappears
+		const absScaleX = Math.max(0.12, Math.abs(scaleX));
+		const size = this.coinRadius * 2;
+
 		this.coins.forEach((coin) => {
-			ctx.drawImage(
-				this.coinImage,
-				coin.x - this.coinRadius,
-				coin.y - this.coinRadius,
-				this.coinRadius * 2,
-				this.coinRadius * 2,
-			);
+			ctx.save();
+			ctx.translate(coin.x, coin.y);
+
+			// Always draw the golden edge core (visible when thin)
+			ctx.fillStyle = "#daa520";
+			const edgeWidth = Math.max(2, absScaleX * 4);
+			ctx.fillRect(-edgeWidth / 2, -this.coinRadius, edgeWidth, size);
+
+			// Draw sprite on top, fading out as it gets thin
+			ctx.scale(absScaleX, 1);
+			const spriteAlpha = Math.min(1, (absScaleX - 0.12) / 0.2);
+			if (spriteAlpha > 0) {
+				ctx.globalAlpha = spriteAlpha;
+				ctx.drawImage(
+					this.coinImage,
+					-this.coinRadius,
+					-this.coinRadius,
+					size,
+					size,
+				);
+				// Specular highlight that shifts with rotation
+				if (scaleX > 0.3) {
+					const highlightX = (scaleX - 0.5) * this.coinRadius;
+					const grad = ctx.createRadialGradient(
+						highlightX,
+						-this.coinRadius * 0.3,
+						0,
+						highlightX,
+						-this.coinRadius * 0.3,
+						this.coinRadius * 0.6,
+					);
+					grad.addColorStop(0, "rgba(255, 255, 255, 0.35)");
+					grad.addColorStop(1, "rgba(255, 255, 255, 0)");
+					ctx.fillStyle = grad;
+					ctx.beginPath();
+					ctx.arc(0, 0, this.coinRadius, 0, Math.PI * 2);
+					ctx.fill();
+				}
+				ctx.globalAlpha = 1;
+			}
+
+			ctx.restore();
 		});
 	}
 
