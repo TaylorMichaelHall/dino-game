@@ -126,6 +126,15 @@ export const CONFIG = {
 	// Themes
 	THEMES: ["theme-1", "theme-2", "theme-3", "theme-4", "theme-5"],
 
+	// Ground Plane (Mode 7)
+	HORIZON_Y: 420,
+	GROUND_PERSPECTIVE_SCALE: 0.8,
+	GROUND_SCROLL_FACTOR: 0.03,
+	GROUND_GRID_LINES: 12,
+	GROUND_COLOR_DARK: [45, 35, 25],
+	GROUND_COLOR_LIGHT: [75, 60, 45],
+	GROUND_MAX_ALPHA: 0.85,
+
 	// Colors
 	DINO_COLORS: ["#4ade80", "#fb923c", "#f87171", "#000000"],
 	DNA_COLORS: ["#f472b6", "#c084fc", "#818cf8", "#2dd4bf"],

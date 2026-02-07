@@ -1,3 +1,4 @@
+import { CONFIG } from "../config/Constants";
 import type { IGame } from "../types";
 
 interface ParallaxLayer {
@@ -50,11 +51,25 @@ export class ParallaxManager {
 	): { x: number; y: number }[] {
 		const points = [];
 		const step = 40;
-		// Generate enough points to cover WORLD_WIDTH plus extra for interpolation/safety
-		for (let x = 0; x <= this.WORLD_WIDTH + step; x += step) {
+		const period = this.WORLD_WIDTH;
+		const twoPi = Math.PI * 2;
+
+		// Snap frequencies to whole cycles so the pattern tiles seamlessly
+		const sinCycles = Math.max(
+			1,
+			Math.round((frequency * 0.01 * period) / twoPi),
+		);
+		const cosCycles = Math.max(1, Math.round((0.02 * period) / twoPi));
+		const sinFreq = (sinCycles * twoPi) / period;
+		const cosFreq = (cosCycles * twoPi) / period;
+		// Third harmonic for extra shape variety (also tiles perfectly)
+		const detailFreq = (sinCycles * 3 * twoPi) / period;
+
+		for (let x = 0; x <= period + step; x += step) {
 			const y =
-				Math.sin(x * frequency * 0.01) * amplitude +
-				Math.cos(x * 0.02) * (amplitude * 0.5);
+				Math.sin(x * sinFreq) * amplitude +
+				Math.cos(x * cosFreq) * (amplitude * 0.5) +
+				Math.sin(x * detailFreq + 1.5) * (amplitude * 0.15);
 			points.push({ x, y });
 		}
 		return points;
@@ -70,10 +85,15 @@ export class ParallaxManager {
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
+		ctx.save();
+		ctx.beginPath();
+		ctx.rect(0, 0, this.game.width, CONFIG.HORIZON_Y);
+		ctx.clip();
 		this.layers.forEach((layer) => {
 			this.drawLayer(ctx, layer, 0);
 			this.drawLayer(ctx, layer, this.WORLD_WIDTH);
 		});
+		ctx.restore();
 	}
 
 	private drawLayer(
@@ -85,9 +105,10 @@ export class ParallaxManager {
 		ctx.fillStyle = layer.color;
 		ctx.translate(worldOffset - layer.offset, 0);
 
+		const groundY = CONFIG.HORIZON_Y;
 		ctx.beginPath();
-		const startY = this.game.height - layer.height;
-		ctx.moveTo(layer.points[0].x, this.game.height);
+		const startY = groundY - layer.height;
+		ctx.moveTo(layer.points[0].x, groundY);
 
 		layer.points.forEach((p, i) => {
 			if (i === 0) {
@@ -101,7 +122,7 @@ export class ParallaxManager {
 		});
 
 		const last = layer.points[layer.points.length - 1];
-		ctx.lineTo(last.x, this.game.height);
+		ctx.lineTo(last.x, groundY);
 		ctx.closePath();
 		ctx.fill();
 		ctx.restore();
