@@ -45,6 +45,7 @@ export interface IDino {
 	velocity: number;
 	update(deltaTime: number): void;
 	draw(ctx: CanvasRenderingContext2D): void;
+	drawGroundShadow(ctx: CanvasRenderingContext2D): void;
 	jump(): void;
 	upgrade(): void;
 	getDinoName(): string;

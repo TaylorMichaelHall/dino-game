@@ -488,6 +488,7 @@ export class Game implements IGame {
 
 		this.parallax.draw(this.ctx);
 		this.groundPlane.draw(this.ctx);
+		this.dino.drawGroundShadow(this.ctx);
 		this.effects.draw(this.ctx);
 
 		this.obstacles.draw(this.ctx);

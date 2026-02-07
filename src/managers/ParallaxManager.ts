@@ -89,10 +89,17 @@ export class ParallaxManager {
 		ctx.beginPath();
 		ctx.rect(0, 0, this.game.width, CONFIG.HORIZON_Y);
 		ctx.clip();
-		this.layers.forEach((layer) => {
+		this.layers.forEach((layer, index) => {
+			// Depth-of-field: blur the farthest layer
+			if (index === 0) {
+				ctx.filter = "blur(2px)";
+			} else {
+				ctx.filter = "none";
+			}
 			this.drawLayer(ctx, layer, 0);
 			this.drawLayer(ctx, layer, this.WORLD_WIDTH);
 		});
+		ctx.filter = "none";
 		ctx.restore();
 	}
 

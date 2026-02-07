@@ -69,13 +69,37 @@ export class ObstacleManager implements IObstacleManager {
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
+		const shadowOffsetX = 6;
+		const shadowOffsetY = 4;
+
 		this.obstacles.forEach((obs) => {
-			// Draw DNA Strands
-			// Bottom limit of top pipe
 			const topPipeBottomY = obs.topHeight;
-			// Top limit of bottom pipe
 			const bottomPipeTopY = obs.topHeight + this.gapSize;
 
+			// Depth shadows
+			ctx.save();
+			ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
+			ctx.beginPath();
+			ctx.roundRect(
+				obs.x + shadowOffsetX,
+				0,
+				this.obstacleWidth,
+				topPipeBottomY + shadowOffsetY,
+				4,
+			);
+			ctx.fill();
+			ctx.beginPath();
+			ctx.roundRect(
+				obs.x + shadowOffsetX,
+				bottomPipeTopY + shadowOffsetY,
+				this.obstacleWidth,
+				this.game.height - bottomPipeTopY,
+				4,
+			);
+			ctx.fill();
+			ctx.restore();
+
+			// DNA strands
 			this.drawDNAStrand(ctx, obs.x, 0, topPipeBottomY, obs.color);
 			this.drawDNAStrand(
 				ctx,

@@ -206,6 +206,33 @@ export class Dino implements IDino {
 		}
 	}
 
+	drawGroundShadow(ctx: CanvasRenderingContext2D) {
+		if (!this.visible) return;
+		const groundY = CONFIG.HORIZON_Y;
+		const centerY = this.y + this.height / 2;
+
+		// Only show shadow when dino is above the horizon
+		if (centerY >= groundY) return;
+
+		const centerX = this.displayX + this.width / 2;
+		const distFromGround = groundY - centerY;
+		const maxDist = groundY;
+
+		// Shadow gets larger and fainter the higher the dino is
+		const t = Math.min(1, distFromGround / maxDist);
+		const shadowWidth = 25 + t * 35;
+		const shadowHeight = 6 + t * 4;
+		const shadowAlpha = 0.35 * (1 - t * 0.8);
+		const shadowY = groundY + 8;
+
+		ctx.save();
+		ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
+		ctx.beginPath();
+		ctx.ellipse(centerX, shadowY, shadowWidth, shadowHeight, 0, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.restore();
+	}
+
 	draw(ctx: CanvasRenderingContext2D) {
 		if (!this.visible) return;
 
