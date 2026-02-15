@@ -37,9 +37,9 @@ export class MusicManager {
 		this.musicGain = musicGain;
 
 		this.musicReverbDelay = this.ctx.createDelay();
-		this.musicReverbDelay.delayTime.value = 0.15;
+		this.musicReverbDelay.delayTime.value = 0.2;
 		this.musicReverbFeedback = this.ctx.createGain();
-		this.musicReverbFeedback.gain.value = 0.1;
+		this.musicReverbFeedback.gain.value = 0.15;
 
 		this.musicFilter.connect(this.musicGain); // Dry path
 		this.musicFilter.connect(this.musicReverbDelay); // Wet path
@@ -106,9 +106,9 @@ export class MusicManager {
 		const now = this.ctx.currentTime;
 		while (this.nextMusicStartTime < now + this.lookahead) {
 			const pitchShift = 1.0;
-			const measureIndex = this.musicLoopCount % 8;
+			const measureIndex = this.musicLoopCount % 16;
 			const reverbIntensity =
-				Math.floor(this.musicLoopCount / 8) % 2 === 1 ? 0.35 : 0.1;
+				measureIndex >= 8 && measureIndex < 12 ? 0.35 : 0.15;
 
 			this.musicReverbFeedback.gain.cancelScheduledValues(
 				this.nextMusicStartTime,

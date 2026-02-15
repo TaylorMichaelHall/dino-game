@@ -25,7 +25,7 @@ export class AudioManager implements IAudioManager {
 		// Music chain
 		this.musicFilter = this.ctx.createBiquadFilter();
 		this.musicFilter.type = "lowpass";
-		this.musicFilter.frequency.setValueAtTime(1800, this.ctx.currentTime);
+		this.musicFilter.frequency.setValueAtTime(3200, this.ctx.currentTime);
 
 		this.musicGain = this.ctx.createGain();
 		this.musicGain.gain.setValueAtTime(0.0001, this.ctx.currentTime);
