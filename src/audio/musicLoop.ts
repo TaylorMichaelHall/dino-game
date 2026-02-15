@@ -177,8 +177,7 @@ export function scheduleJurassicMeasure(
 		);
 		// Hi-hat (16th notes)
 		for (let h = 0; h < 16; h++) {
-			const accent =
-				h % 4 === 0 ? 0.012 : h % 2 === 0 ? 0.008 : 0.005;
+			const accent = h % 4 === 0 ? 0.012 : h % 2 === 0 ? 0.008 : 0.005;
 			audio.playMusicNote(
 				6000 * pitchShift,
 				mStart + h * SIXTEENTH,
@@ -361,8 +360,8 @@ function scheduleASectionMelody(
 
 		// Harmony arpeggio (next chord tone up, offset by 1 sixteenth)
 		step.chords.forEach((_freq, ci) => {
-			if (ci + 1 < step.chords.length) {
-				const harmonyFreq = step.chords[ci + 1]!;
+			const harmonyFreq = step.chords[ci + 1];
+			if (harmonyFreq !== undefined) {
 				const noteStart = mStart + ci * (BEAT / 2) + SIXTEENTH;
 				audio.playMusicNote(
 					harmonyFreq * 2 * pitchShift,
