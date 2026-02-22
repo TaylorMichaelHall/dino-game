@@ -211,11 +211,11 @@ export class Dino implements IDino {
 		const groundY = CONFIG.HORIZON_Y;
 		const centerY = this.y + this.height / 2;
 
-		// Only show shadow when dino is above the horizon
-		if (centerY >= groundY) return;
-
 		const centerX = this.displayX + this.width / 2;
-		const distFromGround = groundY - centerY;
+		
+		// If Dino is above horizon, distance is positive.
+		// If below horizon, treat distance as 0 (skimming the ground plane).
+		const distFromGround = Math.max(0, groundY - centerY);
 		const maxDist = groundY;
 
 		// Shadow gets larger and fainter the higher the dino is
@@ -223,7 +223,9 @@ export class Dino implements IDino {
 		const shadowWidth = 25 + t * 35;
 		const shadowHeight = 6 + t * 4;
 		const shadowAlpha = 0.35 * (1 - t * 0.8);
-		const shadowY = groundY + 8;
+		
+		// Keep shadow at horizon if flying high, otherwise follow Dino's feet
+		const shadowY = Math.max(groundY + 8, centerY + 8);
 
 		ctx.save();
 		ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
