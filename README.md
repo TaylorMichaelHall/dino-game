@@ -1,12 +1,12 @@
 # Ian’s Jurassic Escape
 <p align="center">
   <img
-    src="https://github.com/user-attachments/assets/98749089-eae3-41c7-8182-98d40a6b1b40"
+    src="https://github.com/user-attachments/assets/0d4642f6-9082-4de1-a1ca-7eb879754eb5"
     alt="Desktop gameplay"
     width="600"
   />
   <img
-    src="https://github.com/user-attachments/assets/9459aa82-dcd7-4a00-ac48-0c0631e19cf9"
+    src="https://github.com/user-attachments/assets/f2e1a99a-6219-4a12-a9f8-780adbc6dad6"
     alt="Mobile gameplay"
     width="250"
   />
