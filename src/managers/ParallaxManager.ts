@@ -21,7 +21,7 @@ export class ParallaxManager {
 			{
 				id: "mountain-far",
 				speedFactor: 0.1,
-				color: "rgba(100, 100, 120, 0.2)",
+				color: "rgba(100, 100, 120, 0.2)", // Base color, gets overridden
 				points: this.generateMountainPoints(0.1, 150),
 				height: 200,
 				offset: 0,
@@ -84,7 +84,55 @@ export class ParallaxManager {
 		});
 	}
 
+	// Helper to interpolate between day/night sky colors
+	getCycleColor(cycleFactor: number, colors: number[][]): number[] {
+		const phase = cycleFactor * colors.length;
+		const index1 = Math.floor(phase) % colors.length;
+		const index2 = (index1 + 1) % colors.length;
+		const mix = phase - Math.floor(phase);
+
+		const c1 = colors[index1];
+		const c2 = colors[index2];
+		return [
+			c1[0] + (c2[0] - c1[0]) * mix,
+			c1[1] + (c2[1] - c1[1]) * mix,
+			c1[2] + (c2[2] - c1[2]) * mix,
+		];
+	}
+
 	draw(ctx: CanvasRenderingContext2D) {
+		const cycleFactor =
+			((this.game.time / 1000) % CONFIG.CYCLE_DURATION) / CONFIG.CYCLE_DURATION;
+		const skyColor = this.getCycleColor(cycleFactor, CONFIG.SKY_COLORS);
+
+		// Draw Sky background
+		ctx.fillStyle = `rgb(${skyColor[0]}, ${skyColor[1]}, ${skyColor[2]})`;
+		ctx.fillRect(0, 0, this.game.width, CONFIG.HORIZON_Y);
+
+		// Layer Colors based on time of day
+		const mountainFarColor = this.getCycleColor(cycleFactor, [
+			[40, 40, 60], // Night
+			[150, 100, 100], // Dawn
+			[120, 130, 150], // Day
+			[140, 90, 80], // Dusk
+		]);
+		const mountainNearColor = this.getCycleColor(cycleFactor, [
+			[30, 30, 40], // Night
+			[120, 80, 80], // Dawn
+			[90, 100, 120], // Day
+			[110, 70, 60], // Dusk
+		]);
+		const treesColor = this.getCycleColor(cycleFactor, [
+			[15, 20, 25], // Night
+			[60, 50, 60], // Dawn
+			[60, 80, 70], // Day
+			[60, 40, 40], // Dusk
+		]);
+
+		this.layers[0].color = `rgba(${mountainFarColor.join(",")}, 0.6)`;
+		this.layers[1].color = `rgba(${mountainNearColor.join(",")}, 0.8)`;
+		this.layers[2].color = `rgba(${treesColor.join(",")}, 1.0)`;
+
 		ctx.save();
 		ctx.beginPath();
 		ctx.rect(0, 0, this.game.width, CONFIG.HORIZON_Y);

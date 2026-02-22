@@ -134,6 +134,17 @@ export const CONFIG = {
 	GROUND_COLOR_DARK: [45, 35, 25],
 	GROUND_COLOR_LIGHT: [75, 60, 45],
 	GROUND_MAX_ALPHA: 0.85,
+	GROUND_WAVE_AMPLITUDE: 30, // new: undulating hills
+	GROUND_WAVE_FREQUENCY: 4.0, // new: hills
+
+	// Day/Night Cycle
+	CYCLE_DURATION: 60, // seconds per full cycle
+	SKY_COLORS: [
+		[10, 10, 20], // Night
+		[255, 100, 100], // Dawn
+		[100, 200, 255], // Day
+		[255, 150, 50], // Dusk
+	],
 
 	// Colors
 	DINO_COLORS: ["#4ade80", "#fb923c", "#f87171", "#000000"],

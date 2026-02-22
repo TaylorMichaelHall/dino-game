@@ -329,12 +329,12 @@ export class Game implements IGame {
 				this.incrementScore(CONFIG.SUPER_SMASH_SCORE, true);
 				this.timers.hitFlash = CONFIG.HIT_FLASH_DURATION;
 				this.triggerShake(CONFIG.SHAKE_INTENSITY * 1.5);
-				this.effects.spawnParticles(
+				this.effects.spawnShatter(
 					obs.x + this.obstacles.obstacleWidth / 2,
 					hitTop ? obs.topHeight : obs.topHeight + this.obstacles.gapSize,
 					obs.color,
 					15,
-					300,
+					400,
 				);
 				return false;
 			}

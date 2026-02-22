@@ -19,6 +19,20 @@ interface Particle {
 	size: number;
 }
 
+interface ShatterParticle {
+	x: number;
+	y: number;
+	vx: number;
+	vy: number;
+	rot: number;
+	vrot: number;
+	life: number;
+	maxLife: number;
+	color: string;
+	size: number;
+	vertices: { x: number; y: number }[];
+}
+
 interface Trail {
 	x: number;
 	y: number;
@@ -47,6 +61,7 @@ export class EffectManager {
 	game: IGame;
 	speedLines: SpeedLine[];
 	particles: Particle[];
+	shatterParticles: ShatterParticle[];
 	trails: Trail[];
 	fct: FCT[];
 	spriteCache: Map<string, HTMLImageElement>;
@@ -55,6 +70,7 @@ export class EffectManager {
 		this.game = game;
 		this.speedLines = [];
 		this.particles = [];
+		this.shatterParticles = [];
 		this.trails = [];
 		this.fct = [];
 		this.spriteCache = new Map();
@@ -112,6 +128,45 @@ export class EffectManager {
 		}
 	}
 
+	spawnShatter(
+		x: number,
+		y: number,
+		color: string,
+		count: number = 15,
+		speed: number = 300,
+	) {
+		for (let i = 0; i < count; i++) {
+			const angle = Math.random() * Math.PI + Math.PI; // mostly upwards
+			const velocity = (Math.random() * 0.8 + 0.2) * speed;
+
+			// Create a random polygon shape for the shard
+			const vertices = [];
+			const numSides = Math.floor(Math.random() * 3) + 3; // 3 to 5 sides
+			const radius = Math.random() * 8 + 4;
+			for (let s = 0; s < numSides; s++) {
+				const vAngle = (s / numSides) * Math.PI * 2 + Math.random() * 0.5;
+				vertices.push({
+					x: Math.cos(vAngle) * radius,
+					y: Math.sin(vAngle) * radius,
+				});
+			}
+
+			this.shatterParticles.push({
+				x: x + (Math.random() - 0.5) * 20,
+				y: y + (Math.random() - 0.5) * 20,
+				vx: Math.cos(angle) * velocity,
+				vy: Math.sin(angle) * velocity,
+				rot: Math.random() * Math.PI * 2,
+				vrot: (Math.random() - 0.5) * 15,
+				life: 1.5,
+				maxLife: 1.5,
+				color,
+				size: radius,
+				vertices,
+			});
+		}
+	}
+
 	spawnTrail(x: number, y: number, w: number, h: number, sprite: string) {
 		// Pre-warm the cache when spawning trails
 		this.getCachedImage(sprite);
@@ -159,6 +214,16 @@ export class EffectManager {
 		});
 		this.particles = this.particles.filter((p) => p.life > 0);
 
+		// Shatter Particles
+		this.shatterParticles.forEach((p) => {
+			p.x += p.vx * deltaTime;
+			p.y += p.vy * deltaTime;
+			p.vy += CONFIG.PARTICLE_GRAVITY * 1.5 * deltaTime; // Shards fall slightly faster
+			p.rot += p.vrot * deltaTime;
+			p.life -= deltaTime;
+		});
+		this.shatterParticles = this.shatterParticles.filter((p) => p.life > 0);
+
 		// Trails
 		this.trails.forEach((t) => {
 			t.life -= deltaTime;
@@ -183,6 +248,33 @@ export class EffectManager {
 			ctx.beginPath();
 			ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
 			ctx.fill();
+		});
+		ctx.globalAlpha = 1.0;
+
+		// Shatter Particles
+		this.shatterParticles.forEach((p) => {
+			const alpha = p.life / p.maxLife;
+			ctx.fillStyle = p.color;
+			ctx.globalAlpha = alpha;
+
+			ctx.save();
+			ctx.translate(p.x, p.y);
+			ctx.rotate(p.rot);
+
+			ctx.beginPath();
+			ctx.moveTo(p.vertices[0].x, p.vertices[0].y);
+			for (let i = 1; i < p.vertices.length; i++) {
+				ctx.lineTo(p.vertices[i].x, p.vertices[i].y);
+			}
+			ctx.closePath();
+			ctx.fill();
+
+			// Highlight edge for depth
+			ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
+			ctx.lineWidth = 1;
+			ctx.stroke();
+
+			ctx.restore();
 		});
 		ctx.globalAlpha = 1.0;
 
