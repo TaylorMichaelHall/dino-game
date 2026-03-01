@@ -102,11 +102,7 @@ export class MeteorShowerManager {
 	}
 
 	update(dt: number) {
-		if (
-			!this.active &&
-			this.meteors.length === 0 &&
-			this.impacts.length === 0
-		)
+		if (!this.active && this.meteors.length === 0 && this.impacts.length === 0)
 			return;
 
 		// Update residual meteors/impacts even after event ends
