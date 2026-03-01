@@ -281,6 +281,88 @@ export class SoundEffects {
 		this.setupCleanup(osc, gain, this.ctx.currentTime + 0.15);
 	}
 
+	playMeteorRumble() {
+		const now = this.ctx.currentTime;
+		const duration = 2.0;
+
+		// Sawtooth bass oscillator 40→25 Hz
+		const bass = this.ctx.createOscillator();
+		const bassGain = this.ctx.createGain();
+		bass.type = "sawtooth";
+		bass.frequency.setValueAtTime(40, now);
+		bass.frequency.linearRampToValueAtTime(25, now + duration);
+		bassGain.gain.setValueAtTime(0.12 * this.sfxVolumeScale, now);
+		bassGain.gain.linearRampToValueAtTime(0, now + duration);
+		bass.connect(bassGain);
+		bassGain.connect(this.sfxGain);
+
+		// Square mid-texture 80→30 Hz
+		const mid = this.ctx.createOscillator();
+		const midGain = this.ctx.createGain();
+		mid.type = "square";
+		mid.frequency.setValueAtTime(80, now);
+		mid.frequency.linearRampToValueAtTime(30, now + duration);
+		midGain.gain.setValueAtTime(0.06 * this.sfxVolumeScale, now);
+		midGain.gain.linearRampToValueAtTime(0, now + duration);
+		mid.connect(midGain);
+		midGain.connect(this.sfxGain);
+
+		bass.onended = () => {
+			try {
+				bass.disconnect();
+				bassGain.disconnect();
+				mid.disconnect();
+				midGain.disconnect();
+			} catch (_e) {}
+		};
+
+		bass.start(now);
+		mid.start(now);
+		bass.stop(now + duration);
+		mid.stop(now + duration);
+	}
+
+	playMeteorImpact() {
+		const now = this.ctx.currentTime;
+		const duration = 0.3;
+
+		// Sawtooth sweep 600→40 Hz (whoosh)
+		const whoosh = this.ctx.createOscillator();
+		const whooshGain = this.ctx.createGain();
+		whoosh.type = "sawtooth";
+		whoosh.frequency.setValueAtTime(600, now);
+		whoosh.frequency.exponentialRampToValueAtTime(40, now + duration);
+		whooshGain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, now);
+		whooshGain.gain.linearRampToValueAtTime(0, now + duration);
+		whoosh.connect(whooshGain);
+		whooshGain.connect(this.sfxGain);
+
+		// Sine punch 60→20 Hz (thud)
+		const thud = this.ctx.createOscillator();
+		const thudGain = this.ctx.createGain();
+		thud.type = "sine";
+		thud.frequency.setValueAtTime(60, now);
+		thud.frequency.linearRampToValueAtTime(20, now + duration);
+		thudGain.gain.setValueAtTime(0.15 * this.sfxVolumeScale, now);
+		thudGain.gain.linearRampToValueAtTime(0, now + duration);
+		thud.connect(thudGain);
+		thudGain.connect(this.sfxGain);
+
+		whoosh.onended = () => {
+			try {
+				whoosh.disconnect();
+				whooshGain.disconnect();
+				thud.disconnect();
+				thudGain.disconnect();
+			} catch (_e) {}
+		};
+
+		whoosh.start(now);
+		thud.start(now);
+		whoosh.stop(now + duration);
+		thud.stop(now + duration);
+	}
+
 	playGatePass() {
 		const now = this.ctx.currentTime;
 		const gain = this.ctx.createGain();

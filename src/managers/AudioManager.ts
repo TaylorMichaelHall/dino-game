@@ -113,6 +113,18 @@ export class AudioManager implements IAudioManager {
 			this.sfx.playGatePass();
 		}
 	}
+	playMeteorRumble() {
+		if (!this.sfxMuted) {
+			this.resumeContext();
+			this.sfx.playMeteorRumble();
+		}
+	}
+	playMeteorImpact() {
+		if (!this.sfxMuted) {
+			this.resumeContext();
+			this.sfx.playMeteorImpact();
+		}
+	}
 
 	setSfxMuted(muted: boolean) {
 		this.sfxMuted = muted;
