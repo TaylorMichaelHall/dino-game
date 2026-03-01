@@ -128,6 +128,8 @@ export interface IAudioManager {
 	playSuperSmash(): void;
 	playCoin(): void;
 	playGatePass(): void;
+	playMeteorRumble(): void;
+	playMeteorImpact(): void;
 	setSfxMuted(muted: boolean): void;
 	startMusic(): void;
 	stopMusic(): void;

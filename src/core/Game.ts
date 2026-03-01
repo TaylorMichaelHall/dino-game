@@ -6,6 +6,7 @@ import { CoinManager } from "../managers/CoinManager";
 import { EffectManager } from "../managers/EffectManager";
 import { GroundPlaneManager } from "../managers/GroundPlaneManager";
 import { InputManager } from "../managers/InputManager";
+import { MeteorShowerManager } from "../managers/MeteorShowerManager";
 import { ObstacleManager } from "../managers/ObstacleManager";
 import { ParallaxManager } from "../managers/ParallaxManager";
 import { PowerupManager } from "../managers/PowerupManager";
@@ -40,6 +41,7 @@ export class Game implements IGame {
 	titleAnimation: TitleManager;
 	input: InputManager;
 	effects: EffectManager;
+	meteorShower: MeteorShowerManager;
 	musicEnabled: boolean;
 	sfxEnabled: boolean;
 	hearts: number;
@@ -75,6 +77,7 @@ export class Game implements IGame {
 		this.titleAnimation = new TitleManager(this);
 		this.input = new InputManager(this);
 		this.effects = new EffectManager(this);
+		this.meteorShower = new MeteorShowerManager(this);
 
 		this.musicEnabled = true;
 		this.sfxEnabled = true;
@@ -146,6 +149,7 @@ export class Game implements IGame {
 		this.groundPlane.reset();
 		this.powerups.reset();
 		this.coins.reset();
+		this.meteorShower.reset();
 		this.stats = this.initStats();
 		this.ui.updateCombo(0);
 
@@ -269,6 +273,8 @@ export class Game implements IGame {
 		this.checkCollisions();
 		this.handleScoring();
 		this.effects.update(deltaTime);
+		this.meteorShower.checkSpawn(this.scoring.score);
+		this.meteorShower.update(deltaTime);
 	}
 
 	updateBorderEffect() {
@@ -488,6 +494,7 @@ export class Game implements IGame {
 
 		this.parallax.draw(this.ctx);
 		this.groundPlane.draw(this.ctx);
+		this.meteorShower.draw(this.ctx);
 		this.dino.drawGroundShadow(this.ctx);
 		this.effects.draw(this.ctx);
 
@@ -526,6 +533,10 @@ export class Game implements IGame {
 			case "HEAL":
 				this.heal();
 				this.ui.showMessage("FULL HEAL");
+				break;
+			case "METEOR":
+				this.meteorShower.trigger();
+				this.ui.showMessage("METEOR SHOWER!");
 				break;
 		}
 		this.toggleDebugMenu(false);
