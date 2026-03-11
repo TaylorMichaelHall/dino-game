@@ -242,6 +242,7 @@ export class Game implements IGame {
 		}
 
 		if (timerEvents.superModeExpired) {
+			this.ui.updatePowerupTimer(0);
 			const superName =
 				this.dino.superType === "spino" ? "Super Spinosaurus" : "Super T-Rex";
 			this.dino.setSuper(false);
