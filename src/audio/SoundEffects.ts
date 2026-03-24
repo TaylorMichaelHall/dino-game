@@ -363,6 +363,47 @@ export class SoundEffects {
 		thud.stop(now + duration);
 	}
 
+	playPteroPickup() {
+		const now = this.ctx.currentTime;
+		const duration = 0.6;
+
+		// Triangle wave sweep 200→1200Hz (whoosh)
+		const sweep = this.ctx.createOscillator();
+		const sweepGain = this.ctx.createGain();
+		sweep.type = "triangle";
+		sweep.frequency.setValueAtTime(200, now);
+		sweep.frequency.exponentialRampToValueAtTime(1200, now + duration);
+		sweepGain.gain.setValueAtTime(0.1 * this.sfxVolumeScale, now);
+		sweepGain.gain.linearRampToValueAtTime(0, now + duration);
+		sweep.connect(sweepGain);
+		sweepGain.connect(this.sfxGain);
+
+		// Sine shimmer 400→2000Hz
+		const shimmer = this.ctx.createOscillator();
+		const shimmerGain = this.ctx.createGain();
+		shimmer.type = "sine";
+		shimmer.frequency.setValueAtTime(400, now);
+		shimmer.frequency.exponentialRampToValueAtTime(2000, now + duration);
+		shimmerGain.gain.setValueAtTime(0.06 * this.sfxVolumeScale, now);
+		shimmerGain.gain.linearRampToValueAtTime(0, now + duration);
+		shimmer.connect(shimmerGain);
+		shimmerGain.connect(this.sfxGain);
+
+		sweep.onended = () => {
+			try {
+				sweep.disconnect();
+				sweepGain.disconnect();
+				shimmer.disconnect();
+				shimmerGain.disconnect();
+			} catch (_e) {}
+		};
+
+		sweep.start(now);
+		shimmer.start(now);
+		sweep.stop(now + duration);
+		shimmer.stop(now + duration);
+	}
+
 	playGatePass() {
 		const now = this.ctx.currentTime;
 		const gain = this.ctx.createGain();

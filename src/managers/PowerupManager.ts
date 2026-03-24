@@ -17,6 +17,8 @@ export class PowerupManager implements IPowerupManager {
 	nextMagnetSpawn: number;
 	radius: number;
 	emeraldImg: HTMLImageElement;
+	featherImg: HTMLImageElement;
+	nextPteroSpawn: number;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -24,9 +26,11 @@ export class PowerupManager implements IPowerupManager {
 		this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
 		this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
+		this.nextPteroSpawn = this.calculateNextPteroSpawn(0);
 		this.radius = CONFIG.POWERUP_RADIUS;
 
 		this.emeraldImg = loadImage(spritePath("emerald.webp"));
+		this.featherImg = loadImage(spritePath("feather.webp"));
 	}
 
 	calculateNextBoneSpawn(currentScore: number): number {
@@ -48,6 +52,13 @@ export class PowerupManager implements IPowerupManager {
 		return currentScore + Math.floor(Math.random() * 50) + 25;
 	}
 
+	calculateNextPteroSpawn(currentScore: number): number {
+		return (
+			Math.max(currentScore, CONFIG.PTERO_THRESHOLD) +
+			Math.floor(Math.random() * CONFIG.PTERO_SPAWN_INTERVAL)
+		);
+	}
+
 	checkSpawn(currentScore: number) {
 		if (currentScore >= this.nextBoneSpawn) {
 			this.spawn("BONE");
@@ -63,6 +74,16 @@ export class PowerupManager implements IPowerupManager {
 		if (currentScore >= this.nextMagnetSpawn) {
 			this.spawn("MAGNET");
 			this.nextMagnetSpawn += CONFIG.MAGNET_THRESHOLD;
+		}
+
+		// Don't spawn ptero during super mode or active ptero ride
+		if (
+			currentScore >= this.nextPteroSpawn &&
+			this.game.timers.superMode <= 0 &&
+			this.game.timers.pteroRide <= 0
+		) {
+			this.spawn("PTERODACTYL");
+			this.nextPteroSpawn = currentScore + CONFIG.PTERO_SPAWN_INTERVAL;
 		}
 	}
 
@@ -113,6 +134,7 @@ export class PowerupManager implements IPowerupManager {
 			else if (p.type === "DIAMOND") this.drawDiamond(ctx, p.x, p.y);
 			else if (p.type === "EMERALD") this.drawEmerald(ctx, p.x, p.y);
 			else if (p.type === "MAGNET") this.drawMagnet(ctx, p.x, p.y);
+			else if (p.type === "PTERODACTYL") this.drawFeather(ctx, p.x, p.y);
 		});
 	}
 
@@ -141,6 +163,18 @@ export class PowerupManager implements IPowerupManager {
 		ctx.fillText("🧲", x, y);
 	}
 
+	drawFeather(ctx: CanvasRenderingContext2D, x: number, y: number) {
+		if (this.featherImg.complete && this.featherImg.naturalWidth > 0) {
+			const s = CONFIG.PTERO_FEATHER_SIZE;
+			// Gentle floating bob
+			const bob = Math.sin(this.game.time * 0.003) * 5;
+			ctx.drawImage(this.featherImg, x - s / 2, y - s / 2 + bob, s, s);
+		} else {
+			ctx.font = "40px serif";
+			ctx.fillText("🪶", x, y);
+		}
+	}
+
 	checkCollision(dino: IDino): PowerupType | null {
 		const dx_center = dino.x + dino.width / 2;
 		const dy_center = dino.y + dino.height / 2;
@@ -148,7 +182,10 @@ export class PowerupManager implements IPowerupManager {
 		for (const p of this.powerups) {
 			const dist = distance(dx_center, dy_center, p.x, p.y);
 			const r =
-				p.type === "DIAMOND" || p.type === "EMERALD" || p.type === "MAGNET"
+				p.type === "DIAMOND" ||
+				p.type === "EMERALD" ||
+				p.type === "MAGNET" ||
+				p.type === "PTERODACTYL"
 					? CONFIG.POWERUP_LARGE_RADIUS
 					: CONFIG.POWERUP_RADIUS;
 			if (dist < dino.radius + r) {
@@ -164,5 +201,6 @@ export class PowerupManager implements IPowerupManager {
 		this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
 		this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
+		this.nextPteroSpawn = this.calculateNextPteroSpawn(0);
 	}
 }

@@ -3,7 +3,12 @@ import type { ITimerManager } from "./core/TimerManager";
 
 export type GameState = "START" | "PLAYING" | "PAUSED" | "GAME_OVER";
 
-export type PowerupType = "BONE" | "DIAMOND" | "EMERALD" | "MAGNET";
+export type PowerupType =
+	| "BONE"
+	| "DIAMOND"
+	| "EMERALD"
+	| "MAGNET"
+	| "PTERODACTYL";
 
 export interface ComboStage {
 	threshold: number;
@@ -42,7 +47,10 @@ export interface IDino {
 	isSuper: boolean;
 	superType: "trex" | "spino" | null;
 	invulnerable: boolean;
+	invulnerableTimer: number;
+	isPteroRiding: boolean;
 	velocity: number;
+	displayX: number;
 	update(deltaTime: number): void;
 	draw(ctx: CanvasRenderingContext2D): void;
 	drawGroundShadow(ctx: CanvasRenderingContext2D): void;
@@ -130,6 +138,7 @@ export interface IAudioManager {
 	playGatePass(): void;
 	playMeteorRumble(): void;
 	playMeteorImpact(): void;
+	playPteroPickup(): void;
 	setSfxMuted(muted: boolean): void;
 	startMusic(): void;
 	stopMusic(): void;
@@ -211,6 +220,7 @@ export interface IPowerupManager {
 }
 
 export interface ICoinManager {
+	coins: Array<{ x: number; y: number; collected: boolean }>;
 	update(deltaTime: number, speed: number): void;
 	draw(ctx: CanvasRenderingContext2D): void;
 	checkCollision(dino: IDino): boolean;
