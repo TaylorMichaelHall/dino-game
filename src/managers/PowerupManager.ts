@@ -151,7 +151,11 @@ export class PowerupManager implements IPowerupManager {
 	drawEmerald(ctx: CanvasRenderingContext2D, x: number, y: number) {
 		if (this.emeraldImg.complete && this.emeraldImg.naturalWidth > 0) {
 			const s = CONFIG.EMERALD_SIZE;
-			ctx.drawImage(this.emeraldImg, x - s / 2, y - s / 2, s, s);
+			const aspect =
+				this.emeraldImg.naturalHeight / this.emeraldImg.naturalWidth;
+			const w = aspect > 1 ? s / aspect : s;
+			const h = aspect > 1 ? s : s * aspect;
+			ctx.drawImage(this.emeraldImg, x - w / 2, y - h / 2, w, h);
 		} else {
 			ctx.font = "40px serif";
 			ctx.fillText("💚", x, y); // Fallback emoji
@@ -164,14 +168,27 @@ export class PowerupManager implements IPowerupManager {
 	}
 
 	drawFeather(ctx: CanvasRenderingContext2D, x: number, y: number) {
+		const bob = Math.sin(this.game.time * 0.003) * 5;
+		const pulse = 0.12 + Math.sin(this.game.time * 0.005) * 0.06;
+		const by = y + bob;
+
+		// Pulsing glow
+		ctx.save();
+		const grad = ctx.createRadialGradient(x, by, 5, x, by, 40);
+		grad.addColorStop(0, `rgba(125, 211, 252, ${pulse})`);
+		grad.addColorStop(1, "rgba(125, 211, 252, 0)");
+		ctx.fillStyle = grad;
+		ctx.beginPath();
+		ctx.arc(x, by, 40, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.restore();
+
 		if (this.featherImg.complete && this.featherImg.naturalWidth > 0) {
 			const s = CONFIG.PTERO_FEATHER_SIZE;
-			// Gentle floating bob
-			const bob = Math.sin(this.game.time * 0.003) * 5;
-			ctx.drawImage(this.featherImg, x - s / 2, y - s / 2 + bob, s, s);
+			ctx.drawImage(this.featherImg, x - s / 2, by - s / 2, s, s);
 		} else {
 			ctx.font = "40px serif";
-			ctx.fillText("🪶", x, y);
+			ctx.fillText("🪶", x, by);
 		}
 	}
 
