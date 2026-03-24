@@ -5,6 +5,7 @@ export interface LeaderboardEntry {
 	initials: string;
 	score: number;
 	date: string;
+	glow?: boolean;
 }
 
 export interface ILeaderboardService {
