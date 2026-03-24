@@ -47,6 +47,7 @@ export class Dino implements IDino {
 	primaryX: number;
 	displayX: number;
 	flyingOffSprite: FlyingOffSprite | null;
+	isPteroRiding: boolean;
 	isBackflipping: boolean;
 	backflipRotation: number;
 	backflipDuration: number;
@@ -86,6 +87,9 @@ export class Dino implements IDino {
 		this.displayX = CONFIG.DINO_START_X;
 		this.flyingOffSprite = null;
 
+		// Ptero ride state
+		this.isPteroRiding = false;
+
 		// Backflip state
 		this.isBackflipping = false;
 		this.backflipRotation = 0;
@@ -111,23 +115,27 @@ export class Dino implements IDino {
 	}
 
 	update(deltaTime: number) {
-		this.velocity += this.gravity * deltaTime;
-		if (this.velocity > this.maxVelocity) this.velocity = this.maxVelocity;
-		this.y += this.velocity * deltaTime;
+		if (this.isPteroRiding) {
+			// During ptero ride, PteroRideManager controls Y directly
+			this.velocity = 0;
+		} else {
+			this.velocity += this.gravity * deltaTime;
+			if (this.velocity > this.maxVelocity) this.velocity = this.maxVelocity;
+			this.y += this.velocity * deltaTime;
 
-		// Boundary collision
-		if (this.y + this.height * CONFIG.DINO_HITBOX_FACTOR > this.game.height) {
-			this.y = this.game.height - this.height * CONFIG.DINO_HITBOX_FACTOR;
-			this.velocity = 0;
-		}
-		if (this.y < 0) {
-			this.y = 0;
-			this.velocity = 0;
+			// Boundary collision
+			if (this.y + this.height * CONFIG.DINO_HITBOX_FACTOR > this.game.height) {
+				this.y = this.game.height - this.height * CONFIG.DINO_HITBOX_FACTOR;
+				this.velocity = 0;
+			}
+			if (this.y < 0) {
+				this.y = 0;
+				this.velocity = 0;
+			}
 		}
 
 		// Invulnerability Logic
-		if (this.invulnerable && !this.isSuper) {
-			// Super mode is inherently invulnerable in Game.js
+		if (this.invulnerable && !this.isSuper && !this.isPteroRiding) {
 			this.invulnerableTimer -= deltaTime;
 			this.timeSinceLastFlash += deltaTime;
 			if (this.timeSinceLastFlash >= this.flashSpeed) {
@@ -191,8 +199,12 @@ export class Dino implements IDino {
 			}
 		}
 
-		// Trail effect when fast or super
-		if (this.game.timers.speedBoost > 0 || (this.isSuper && this.superType)) {
+		// Trail effect when fast, super, or ptero riding
+		if (
+			this.game.timers.speedBoost > 0 ||
+			(this.isSuper && this.superType) ||
+			this.isPteroRiding
+		) {
 			const dinoConfig = this.isSuper
 				? SUPER_DINOS[this.superType as keyof typeof SUPER_DINOS]
 				: DINOS[this.level];
@@ -401,6 +413,7 @@ export class Dino implements IDino {
 		this.superType = null;
 		this.history = [];
 		this.flyingOffSprite = null;
+		this.isPteroRiding = false;
 		this.isBackflipping = false;
 		this.backflipRotation = 0;
 	}

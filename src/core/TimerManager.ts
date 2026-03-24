@@ -5,6 +5,7 @@ export interface TimerEvents {
 	superModeExpired: boolean;
 	magnetExpired: boolean;
 	comboExpired: boolean;
+	pteroRideExpired: boolean;
 }
 
 export interface ITimerManager {
@@ -16,6 +17,7 @@ export interface ITimerManager {
 	combo: number;
 	shake: number;
 	shakeIntensity: number;
+	pteroRide: number;
 	update(dt: number, superModeActive: boolean): TimerEvents;
 	triggerShake(intensity?: number): void;
 	reset(): void;
@@ -34,6 +36,7 @@ export class TimerManager implements ITimerManager {
 	combo: number = 0;
 	shake: number = 0;
 	shakeIntensity: number = 0;
+	pteroRide: number = 0;
 
 	update(dt: number, superModeActive: boolean): TimerEvents {
 		const events: TimerEvents = {
@@ -41,6 +44,7 @@ export class TimerManager implements ITimerManager {
 			superModeExpired: false,
 			magnetExpired: false,
 			comboExpired: false,
+			pteroRideExpired: false,
 		};
 
 		// Speed boost timer
@@ -64,6 +68,14 @@ export class TimerManager implements ITimerManager {
 			this.magnet -= dt;
 			if (this.magnet <= 0) {
 				events.magnetExpired = true;
+			}
+		}
+
+		// Ptero ride timer
+		if (this.pteroRide > 0) {
+			this.pteroRide -= dt;
+			if (this.pteroRide <= 0) {
+				events.pteroRideExpired = true;
 			}
 		}
 
@@ -105,5 +117,6 @@ export class TimerManager implements ITimerManager {
 		this.combo = 0;
 		this.shake = 0;
 		this.shakeIntensity = 0;
+		this.pteroRide = 0;
 	}
 }

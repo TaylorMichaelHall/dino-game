@@ -306,6 +306,14 @@ export class UIManager {
 				icon: "🧲",
 			});
 		}
+		if (stats.powerups.PTERODACTYL && stats.powerups.PTERODACTYL > 0) {
+			items.push({
+				name: "Ptero Rides",
+				count: stats.powerups.PTERODACTYL,
+				icon: "feather.webp",
+				isImg: true,
+			});
+		}
 		if (stats.powerups.COIN && stats.powerups.COIN > 0) {
 			items.push({
 				name: "Coins",

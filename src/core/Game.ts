@@ -10,6 +10,7 @@ import { MeteorShowerManager } from "../managers/MeteorShowerManager";
 import { ObstacleManager } from "../managers/ObstacleManager";
 import { ParallaxManager } from "../managers/ParallaxManager";
 import { PowerupManager } from "../managers/PowerupManager";
+import { PteroRideManager } from "../managers/PteroRideManager";
 import { TitleManager } from "../managers/TitleManager";
 import { UIManager } from "../managers/UIManager";
 import type {
@@ -42,6 +43,7 @@ export class Game implements IGame {
 	input: InputManager;
 	effects: EffectManager;
 	meteorShower: MeteorShowerManager;
+	pteroRide: PteroRideManager;
 	musicEnabled: boolean;
 	sfxEnabled: boolean;
 	hearts: number;
@@ -78,6 +80,7 @@ export class Game implements IGame {
 		this.input = new InputManager(this);
 		this.effects = new EffectManager(this);
 		this.meteorShower = new MeteorShowerManager(this);
+		this.pteroRide = new PteroRideManager(this);
 
 		this.musicEnabled = true;
 		this.sfxEnabled = true;
@@ -113,6 +116,7 @@ export class Game implements IGame {
 				DIAMOND: 0,
 				EMERALD: 0,
 				MAGNET: 0,
+				PTERODACTYL: 0,
 				COIN: 0,
 			},
 		};
@@ -122,6 +126,7 @@ export class Game implements IGame {
 		if (this.state === GAME_STATE.START) {
 			this.startGame();
 		} else if (this.state === GAME_STATE.PLAYING) {
+			if (this.pteroRide.active) return;
 			this.dino.jump();
 			this.audio.playJump();
 		}
@@ -150,6 +155,7 @@ export class Game implements IGame {
 		this.powerups.reset();
 		this.coins.reset();
 		this.meteorShower.reset();
+		this.pteroRide.reset();
 		this.stats = this.initStats();
 		this.ui.updateCombo(0);
 
@@ -253,6 +259,16 @@ export class Game implements IGame {
 			this.ui.showMessage("Magnet Deactivated");
 		}
 
+		if (this.timers.pteroRide > 0) {
+			this.ui.updatePowerupTimer(this.timers.pteroRide);
+		}
+
+		if (timerEvents.pteroRideExpired) {
+			this.ui.updatePowerupTimer(0);
+			this.pteroRide.deactivate();
+			this.ui.showMessage("Pterodactyl Departed!");
+		}
+
 		if (timerEvents.comboExpired) {
 			this.scoring.combo = 0;
 			this.ui.updateCombo(0);
@@ -270,6 +286,7 @@ export class Game implements IGame {
 		this.obstacles.update(deltaTime, speedMultiplier);
 		this.powerups.update(deltaTime, obstacleSpeed);
 		this.coins.update(deltaTime, obstacleSpeed);
+		this.pteroRide.update(deltaTime);
 
 		this.checkCollisions();
 		this.handleScoring();
@@ -297,6 +314,7 @@ export class Game implements IGame {
 		else if (pType === "DIAMOND") this.activateSuperMode("trex");
 		else if (pType === "EMERALD") this.activateSuperMode("spino");
 		else if (pType === "MAGNET") this.collectMagnet();
+		else if (pType === "PTERODACTYL") this.activatePteroRide();
 
 		// Coins
 		if (this.coins.checkCollision(this.dino)) {
@@ -309,7 +327,7 @@ export class Game implements IGame {
 		if (this.obstacles.checkCollision(this.dino)) {
 			if (this.dino.isSuper) {
 				this.handleSuperSmash();
-			} else if (!this.dino.invulnerable) {
+			} else if (!this.dino.invulnerable && !this.pteroRide.active) {
 				this.takeDamage();
 			}
 		}
@@ -376,6 +394,14 @@ export class Game implements IGame {
 
 		if (type === "trex") this.stats.powerups.DIAMOND++;
 		else if (type === "spino") this.stats.powerups.EMERALD++;
+	}
+
+	activatePteroRide() {
+		this.audio.playPteroPickup();
+		this.timers.pteroRide = CONFIG.PTERO_DURATION + CONFIG.PTERO_ENTER_DURATION;
+		this.pteroRide.activate();
+		this.ui.showMessage("🦅 PTERODACTYL RIDE! 🦅");
+		this.stats.powerups.PTERODACTYL++;
 	}
 
 	collectMagnet() {
@@ -503,6 +529,7 @@ export class Game implements IGame {
 		this.powerups.draw(this.ctx);
 		this.coins.draw(this.ctx);
 		this.dino.draw(this.ctx);
+		this.pteroRide.draw(this.ctx);
 	}
 
 	toggleDebugMenu(show: boolean = !this.debugActive) {
@@ -538,6 +565,9 @@ export class Game implements IGame {
 			case "METEOR":
 				this.meteorShower.trigger();
 				this.ui.showMessage("METEOR SHOWER!");
+				break;
+			case "PTERO":
+				this.activatePteroRide();
 				break;
 		}
 		this.toggleDebugMenu(false);

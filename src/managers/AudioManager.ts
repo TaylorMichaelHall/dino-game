@@ -125,6 +125,12 @@ export class AudioManager implements IAudioManager {
 			this.sfx.playMeteorImpact();
 		}
 	}
+	playPteroPickup() {
+		if (!this.sfxMuted) {
+			this.resumeContext();
+			this.sfx.playPteroPickup();
+		}
+	}
 
 	setSfxMuted(muted: boolean) {
 		this.sfxMuted = muted;
