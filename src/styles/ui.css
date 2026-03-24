@@ -491,6 +491,25 @@ button:active {
 	object-fit: contain;
 }
 
+.stat-next-btn {
+	cursor: pointer;
+	background: rgba(255, 215, 0, 0.15);
+	border: 2px solid rgba(255, 215, 0, 0.4);
+	padding: 8px 20px;
+	border-radius: 8px;
+	box-shadow: 0 0 8px rgba(255, 215, 0, 0.2);
+}
+
+.stat-next-btn:hover {
+	background: rgba(255, 215, 0, 0.25);
+	transform: scale(1.05);
+}
+
+.stat-next-btn .stat-icon {
+	font-size: 1.8rem;
+	color: #ffd700;
+}
+
 /* Game Over Pages */
 #game-over-stats,
 #game-over-actions {
@@ -498,20 +517,8 @@ button:active {
 	flex-direction: column;
 	align-items: center;
 	gap: 15px;
-}
-
-.next-btn {
-	font-size: 2rem;
-	padding: 0.5rem 1.5rem;
-	border-radius: 50px;
-	background: rgba(255, 255, 255, 0.1);
-	border: 1px solid rgba(255, 255, 255, 0.3);
-	color: #fff;
-	box-shadow: none;
-}
-
-.next-btn:hover {
-	background: rgba(255, 255, 255, 0.2);
+	width: 100%;
+	overflow: hidden;
 }
 
 /* Initials Input */

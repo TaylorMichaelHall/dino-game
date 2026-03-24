@@ -286,7 +286,7 @@ export class Game implements IGame {
 
 		this.dino.update(deltaTime);
 		this.parallax.update(deltaTime, obstacleSpeed);
-		this.groundPlane.update(deltaTime, obstacleSpeed);
+		this.groundPlane.update(deltaTime, CONFIG.BASE_SPEED);
 		this.obstacles.update(deltaTime, speedMultiplier);
 		this.powerups.update(deltaTime, obstacleSpeed);
 		this.coins.update(deltaTime, obstacleSpeed);
