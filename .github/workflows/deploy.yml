@@ -29,6 +29,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          VITE_LEADERBOARD_URL: ${{ secrets.VITE_LEADERBOARD_URL }}
 
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -40,6 +42,15 @@ jobs:
       - name: Deploy to S3
         run: |
           aws s3 sync ./dist s3://taylormichaelhall.com/dino --delete
+
+      - name: Deploy Lambda
+        run: |
+          cd lambda && zip -j leaderboard.zip leaderboard.mjs
+          aws lambda update-function-code \
+            --function-name dino-leaderboard \
+            --zip-file fileb://leaderboard.zip \
+            --region us-east-1
+          rm leaderboard.zip
 
       - name: Create CloudFront Invalidation
         run: |

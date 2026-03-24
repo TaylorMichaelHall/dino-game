@@ -13,11 +13,13 @@ import { PowerupManager } from "../managers/PowerupManager";
 import { PteroRideManager } from "../managers/PteroRideManager";
 import { TitleManager } from "../managers/TitleManager";
 import { UIManager } from "../managers/UIManager";
+import { LeaderboardService } from "../services/LeaderboardService";
 import type {
 	GameState,
 	IAudioManager,
 	IDino,
 	IGame,
+	ILeaderboardService,
 	IUIManager,
 } from "../types";
 import { type IScoreManager, ScoreManager } from "./ScoreManager";
@@ -56,6 +58,7 @@ export class Game implements IGame {
 		dinos: Record<string, number>;
 		powerups: Record<string, number>;
 	};
+	leaderboard: ILeaderboardService;
 	debugActive: boolean;
 	lastBorderTime: number = 0;
 
@@ -92,6 +95,7 @@ export class Game implements IGame {
 		this.timers = new TimerManager();
 		this.scoring = new ScoreManager();
 
+		this.leaderboard = new LeaderboardService();
 		this.stats = this.initStats();
 		this.debugActive = false;
 
@@ -505,13 +509,36 @@ export class Game implements IGame {
 		this.ui.updateHUD(this.scoring.score, this.hearts, this.scoring.highScore);
 	}
 
-	gameOver() {
+	async gameOver() {
 		this.state = GAME_STATE.GAME_OVER as GameState;
 		this.audio.playGameOver();
 		this.audio.stopMusic();
+		const isNewBest = this.scoring.score > this.scoring.highScore;
 		this.scoring.saveHighScore();
 		this.updateUI();
 		this.ui.setScreen(this.state);
+
+		if (this.leaderboard.isAvailable()) {
+			this.leaderboard.recordPlay();
+			if (isNewBest) {
+				await this.leaderboard.fetchLeaderboard();
+				if (this.leaderboard.qualifies(this.scoring.score)) {
+					this.ui.showInitialsInput(true);
+				}
+			}
+		}
+	}
+
+	async submitLeaderboardScore(initials: string) {
+		this.leaderboard.saveInitials(initials);
+		const entries = await this.leaderboard.submitScore(
+			initials,
+			this.scoring.score,
+		);
+		this.ui.showInitialsInput(false);
+		if (entries.length > 0) {
+			this.ui.showLeaderboard(entries);
+		}
 	}
 
 	draw() {
