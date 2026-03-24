@@ -17,6 +17,7 @@ Dodge DNA obstacles, evolve through different dinosaurs as you score, collect po
 - Multiple dino evolutions per run
 - Power-ups and temporary “super” modes
 - Local high scores in the browser
+- Global leaderboard (top 20)
 
 ---
 
@@ -34,3 +35,17 @@ npm run dev
 ```
 
 `npm run build` outputs a static site to `dist/`.
+
+The leaderboard is optional — without `VITE_LEADERBOARD_URL` set, the game works fully offline with local high scores only.
+
+---
+
+## Leaderboard Infrastructure
+
+The global leaderboard runs on AWS (all within always-free tiers):
+
+- **DynamoDB table** `dino-leaderboard` — partition key `playerId` (String), provisioned 1 RCU / 1 WCU
+- **Lambda function** `dino-leaderboard` — Node.js 24.x, handler `leaderboard.handler`, source in `lambda/leaderboard.mjs`
+- **Lambda Function URL** — auth type NONE, CORS configured for the game's domain
+
+The deploy workflow (`.github/workflows/deploy.yml`) updates the Lambda code on each push to `main`. The `VITE_LEADERBOARD_URL` GitHub secret is passed to the Vite build so the client knows the API endpoint.

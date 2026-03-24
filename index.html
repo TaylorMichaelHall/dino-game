@@ -38,15 +38,28 @@
           <button id="reset-high-score-btn" class="secondary-btn">Reset High Score</button>
         </div>
         <div id="game-over-screen" class="hidden screen">
-          <h1>Extinct!</h1>
-          <div id="final-stats" class="stats-container">
-            <p>Score: <span id="final-score">0</span></p>
-            <p>High Score: <span id="high-score">0</span></p>
+          <div id="game-over-stats">
+            <h1>Extinct!</h1>
+            <div id="final-stats" class="stats-container">
+              <p>Score: <span id="final-score">0</span></p>
+              <p>High Score: <span id="high-score">0</span></p>
+            </div>
+            <div id="game-stats-list" class="game-stats-list hidden">
+              <!-- Dynamically populated -->
+            </div>
+            <button id="game-over-next-btn" class="next-btn hidden">&rarr;</button>
           </div>
-          <div id="game-stats-list" class="game-stats-list hidden">
-            <!-- Dynamically populated -->
+          <div id="game-over-actions" class="hidden">
+            <div id="initials-input" class="hidden">
+              <p class="initials-prompt">Top Score! Enter your initials:</p>
+              <div class="initials-row">
+                <input type="text" class="initial-char" maxlength="1" inputmode="text" autocomplete="off" />
+                <input type="text" class="initial-char" maxlength="1" inputmode="text" autocomplete="off" />
+                <input type="text" class="initial-char" maxlength="1" inputmode="text" autocomplete="off" />
+              </div>
+            </div>
+            <button id="restart-btn">Try Again</button>
           </div>
-          <button id="restart-btn">Try Again</button>
         </div>
         <div id="pause-screen" class="hidden screen">
           <h1>Paused</h1>
@@ -89,6 +102,15 @@
               </div>
             </div>
             <button id="close-debug-btn" class="secondary-btn">Close</button>
+          </div>
+        </div>
+        <div id="leaderboard-screen" class="hidden screen">
+          <div class="leaderboard-content">
+            <h1>Leaderboard</h1>
+            <div id="leaderboard-list" class="leaderboard-list">
+              <!-- Dynamically populated -->
+            </div>
+            <button id="close-leaderboard-btn" class="close-top-btn" aria-label="Close leaderboard">&times;</button>
           </div>
         </div>
         <div id="help-screen" class="hidden screen">
@@ -151,7 +173,10 @@
         <button id="music-toggle" class="audio-toggle">Music: On</button>
         <button id="sfx-toggle" class="audio-toggle">SFX: On</button>
       </div>
+      <div class="footer-btn-row">
       <button id="pause-btn" class="footer-pause-btn" type="button" aria-label="Pause Game">Pause Game</button>
+      <button id="leaderboard-btn" class="footer-pause-btn" type="button" aria-label="Leaderboard">Leaderboard</button>
+    </div>
     </footer>
   </div> <!-- Closes game-wrapper -->
   <script type="module" src="/src/main.ts"></script>

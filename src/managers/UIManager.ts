@@ -1,5 +1,11 @@
 import { CONFIG } from "../config/Constants";
-import type { ComboStage, DinoConfig, IGame, UIElements } from "../types";
+import type {
+	ComboStage,
+	DinoConfig,
+	IGame,
+	LeaderboardEntry,
+	UIElements,
+} from "../types";
 import { spritePath } from "../utils/helpers";
 
 /**
@@ -10,6 +16,7 @@ export class UIManager {
 	game: IGame;
 	container: HTMLElement;
 	elements: UIElements;
+	initialCharInputs: NodeListOf<HTMLInputElement> | undefined;
 	lastBorderTime: number = 0;
 
 	constructor(game: IGame) {
@@ -58,17 +65,71 @@ export class UIManager {
 			displayedHighScore: get("displayed-high-score"),
 			combo: get("combo"),
 			powerupTimerFill: get("powerup-timer-fill"),
+			gameOverStats: get("game-over-stats"),
+			gameOverActions: get("game-over-actions"),
+			gameOverNextBtn: get("game-over-next-btn"),
+			leaderboardScreen: get("leaderboard-screen"),
+			leaderboardList: get("leaderboard-list"),
+			closeLeaderboardBtn: get("close-leaderboard-btn"),
+			initialsInput: get("initials-input"),
+			leaderboardBtn: get("leaderboard-btn"),
 		};
+
+		this.initialCharInputs = this.elements.initialsInput?.querySelectorAll(
+			".initial-char",
+		) as NodeListOf<HTMLInputElement> | undefined;
 
 		this.bindMobileEvents();
 	}
 
 	private bindMobileEvents() {
-		const { closeHelpBtnTop } = this.elements;
+		const { closeHelpBtnTop, closeLeaderboardBtn, leaderboardScreen } =
+			this.elements;
 
 		if (closeHelpBtnTop) {
 			closeHelpBtnTop.onclick = () => this.toggleHelp(false);
 		}
+
+		if (closeLeaderboardBtn) {
+			closeLeaderboardBtn.onclick = () => this.toggleLeaderboard(false);
+		}
+
+		// Close leaderboard on backdrop click
+		if (leaderboardScreen) {
+			leaderboardScreen.onclick = (e) => {
+				if (e.target === leaderboardScreen) this.toggleLeaderboard(false);
+			};
+		}
+
+		// Game over → button: transition from stats to actions page
+		const { gameOverNextBtn } = this.elements;
+		if (gameOverNextBtn) {
+			gameOverNextBtn.onclick = () => this.showGameOverActions();
+		}
+
+		// Auto-advance initials inputs
+		this.initialCharInputs?.forEach((input, index) => {
+			input.addEventListener("input", () => {
+				input.value = input.value.toUpperCase().replace(/[^A-Z]/g, "");
+				if (
+					input.value &&
+					this.initialCharInputs &&
+					index < this.initialCharInputs.length - 1
+				) {
+					this.initialCharInputs[index + 1].focus();
+				}
+			});
+			input.addEventListener("keydown", (e) => {
+				if (
+					e.key === "Backspace" &&
+					!input.value &&
+					index > 0 &&
+					this.initialCharInputs
+				) {
+					this.initialCharInputs[index - 1].focus();
+				}
+			});
+		});
 	}
 
 	setScreen(state: string) {
@@ -78,6 +139,11 @@ export class UIManager {
 		hud?.classList.toggle("hidden", state !== "PLAYING");
 		pause?.classList.toggle("hidden", state !== "PAUSED");
 
+		// Reset game over pages to initial state
+		this.elements.gameOverStats?.classList.remove("hidden");
+		this.elements.gameOverActions?.classList.add("hidden");
+		this.elements.gameOverNextBtn?.classList.add("hidden");
+
 		if (state === "GAME_OVER") {
 			this.showStatsAnimation(this.game.stats, this.game.scoring.maxCombo);
 		} else {
@@ -85,6 +151,10 @@ export class UIManager {
 				gameStatsList.classList.add("hidden");
 				gameStatsList.innerHTML = "";
 			}
+			this.showInitialsInput(false);
+			this.initialCharInputs?.forEach((i) => {
+				i.value = "";
+			});
 		}
 
 		// Ensure combo container is hidden when not playing
@@ -246,6 +316,85 @@ export class UIManager {
 		if (theme) this.container.classList.add(theme);
 	}
 
+	showGameOverActions() {
+		this.elements.gameOverStats?.classList.add("hidden");
+		this.elements.gameOverActions?.classList.remove("hidden");
+		if (!this.elements.initialsInput?.classList.contains("hidden")) {
+			setTimeout(() => this.initialCharInputs?.[0]?.focus(), 100);
+		}
+	}
+
+	showInitialsInput(show: boolean) {
+		this.elements.initialsInput?.classList.toggle("hidden", !show);
+		if (this.elements.restartBtn) {
+			this.elements.restartBtn.textContent = show ? "Submit" : "Try Again";
+		}
+		if (show) {
+			const saved = this.game.leaderboard.getSavedInitials();
+			this.initialCharInputs?.forEach((input, i) => {
+				input.value = saved[i] || "";
+			});
+		}
+	}
+
+	isInitialsInputVisible(): boolean {
+		return !this.elements.initialsInput?.classList.contains("hidden");
+	}
+
+	getInitials(): string {
+		if (!this.initialCharInputs) return "";
+		return Array.from(this.initialCharInputs)
+			.map((i) => i.value.toUpperCase())
+			.join("");
+	}
+
+	showLeaderboard(entries: LeaderboardEntry[]) {
+		const list = this.elements.leaderboardList;
+		if (!list) return;
+		list.innerHTML = "";
+
+		if (entries.length === 0) {
+			const empty = document.createElement("p");
+			empty.className = "leaderboard-empty";
+			empty.textContent = "No scores yet. Be the first!";
+			list.appendChild(empty);
+		} else {
+			for (let i = 0; i < entries.length; i++) {
+				const entry = entries[i];
+				const row = document.createElement("div");
+				row.className = "leaderboard-row";
+				if (i < 3) row.classList.add(`leaderboard-rank-${i + 1}`);
+
+				const rank = document.createElement("span");
+				rank.className = "leaderboard-rank";
+				rank.textContent = `${i + 1}`;
+
+				const initials = document.createElement("span");
+				initials.className = "leaderboard-initials";
+				initials.textContent = entry.initials;
+
+				const score = document.createElement("span");
+				score.className = "leaderboard-score";
+				score.textContent = entry.score.toString();
+
+				row.appendChild(rank);
+				row.appendChild(initials);
+				row.appendChild(score);
+				list.appendChild(row);
+			}
+		}
+
+		this.toggleLeaderboard(true);
+	}
+
+	toggleLeaderboard(show: boolean) {
+		this.elements.leaderboardScreen?.classList.toggle("hidden", !show);
+	}
+
+	isLeaderboardOpen(): boolean {
+		return !this.elements.leaderboardScreen?.classList.contains("hidden");
+	}
+
 	clearBorderEffect() {
 		this.container.style.removeProperty("--glow-color");
 		this.container.style.removeProperty("--glow-blur");
@@ -331,6 +480,9 @@ export class UIManager {
 		for (const item of items) {
 			await this.animateStatItem(item);
 		}
+
+		// Show → button after stats finish animating
+		this.elements.gameOverNextBtn?.classList.remove("hidden");
 	}
 
 	async animateStatItem(item: {

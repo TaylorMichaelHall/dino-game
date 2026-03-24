@@ -27,9 +27,17 @@ export class InputManager implements IInputManager {
 			if (this.game.state === GAME_STATE.START) this.game.startGame();
 		});
 
-		ui.restartBtn?.addEventListener("click", (e: MouseEvent) => {
+		ui.restartBtn?.addEventListener("click", async (e: MouseEvent) => {
 			e.stopPropagation();
-			if (this.game.state === GAME_STATE.GAME_OVER) this.game.resetGame();
+			if (this.game.state !== GAME_STATE.GAME_OVER) return;
+			// Submit initials if the input is showing
+			if (this.game.ui.isInitialsInputVisible()) {
+				const initials = this.game.ui.getInitials();
+				if (initials.length === 3) {
+					await this.game.submitLeaderboardScore(initials);
+				}
+			}
+			this.game.resetGame();
 		});
 
 		ui.resetHighScoreBtn?.addEventListener("click", (e: MouseEvent) => {
@@ -78,10 +86,23 @@ export class InputManager implements IInputManager {
 				if (powerup) this.game.debugGivePowerup(powerup);
 			});
 		});
+
+		// Leaderboard button
+		ui.leaderboardBtn?.addEventListener("click", async (e: MouseEvent) => {
+			e.stopPropagation();
+			if (this.game.leaderboard.isAvailable()) {
+				const entries = await this.game.leaderboard.fetchLeaderboard();
+				this.game.ui.showLeaderboard(entries);
+			}
+		});
 	}
 
 	initInputListeners() {
 		window.addEventListener("keydown", (e: KeyboardEvent) => {
+			// Don't handle game keys while entering initials or viewing leaderboard
+			if (this.game.ui.isInitialsInputVisible()) return;
+			if (this.game.ui.isLeaderboardOpen()) return;
+
 			if (e.code === "Space") this.game.handleInput();
 			if (e.key.toLowerCase() === "r") this.game.resetGame();
 			if (e.key.toLowerCase() === "p") this.game.togglePause();
@@ -98,7 +119,10 @@ export class InputManager implements IInputManager {
 
 		window.addEventListener("mousedown", (e: MouseEvent) => {
 			if ((e.target as HTMLElement).closest("button")) return;
+			if ((e.target as HTMLElement).closest("input")) return;
 			if (this.game.ui.isHelpOpen()) return;
+			if (this.game.ui.isLeaderboardOpen()) return;
+			if (this.game.ui.isInitialsInputVisible()) return;
 			this.game.handleInput();
 		});
 
@@ -107,6 +131,9 @@ export class InputManager implements IInputManager {
 			(e: TouchEvent) => {
 				const target = e.target as HTMLElement;
 				if (this.game.ui.isHelpOpen()) return;
+				if (this.game.ui.isLeaderboardOpen()) return;
+				if (this.game.ui.isInitialsInputVisible()) return;
+				if (target.closest("input")) return;
 				if (target.closest("#game-container") && !target.closest("button")) {
 					this.game.handleInput();
 					if (this.game.state === GAME_STATE.PLAYING) e.preventDefault();

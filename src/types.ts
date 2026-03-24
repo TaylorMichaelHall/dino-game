@@ -1,6 +1,22 @@
 import type { IScoreManager } from "./core/ScoreManager";
 import type { ITimerManager } from "./core/TimerManager";
 
+export interface LeaderboardEntry {
+	initials: string;
+	score: number;
+	date: string;
+}
+
+export interface ILeaderboardService {
+	isAvailable(): boolean;
+	fetchLeaderboard(): Promise<LeaderboardEntry[]>;
+	submitScore(initials: string, score: number): Promise<LeaderboardEntry[]>;
+	recordPlay(): Promise<void>;
+	qualifies(score: number): boolean;
+	getSavedInitials(): string;
+	saveInitials(initials: string): void;
+}
+
 export type GameState = "START" | "PLAYING" | "PAUSED" | "GAME_OVER";
 
 export type PowerupType =
@@ -99,6 +115,14 @@ export interface UIElements {
 	helpScreen: HTMLElement | null;
 	closeHelpBtnTop: HTMLElement | null;
 	helpContent: HTMLElement | null;
+	gameOverStats: HTMLElement | null;
+	gameOverActions: HTMLElement | null;
+	gameOverNextBtn: HTMLElement | null;
+	leaderboardScreen: HTMLElement | null;
+	leaderboardList: HTMLElement | null;
+	closeLeaderboardBtn: HTMLElement | null;
+	initialsInput: HTMLElement | null;
+	leaderboardBtn: HTMLElement | null;
 }
 
 export interface IUIManager {
@@ -120,6 +144,12 @@ export interface IUIManager {
 		currentLevel: number,
 		onSelect: (index: number) => void,
 	): void;
+	showInitialsInput(show: boolean): void;
+	isInitialsInputVisible(): boolean;
+	getInitials(): string;
+	showLeaderboard(entries: LeaderboardEntry[]): void;
+	toggleLeaderboard(show: boolean): void;
+	isLeaderboardOpen(): boolean;
 }
 
 export interface IAudioManager {
@@ -265,6 +295,9 @@ export interface IGame {
 		powerups: Record<string, number>;
 	};
 
+	// Leaderboard
+	leaderboard: ILeaderboardService;
+
 	// Methods
 	updateUI(): void;
 	startGame(): void;
@@ -279,4 +312,5 @@ export interface IGame {
 	debugGivePowerup(type: string): void;
 	handleInput(): void;
 	heal(): void;
+	submitLeaderboardScore(initials: string): Promise<void>;
 }
