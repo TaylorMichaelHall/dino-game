@@ -117,7 +117,6 @@ export interface UIElements {
 	helpContent: HTMLElement | null;
 	gameOverStats: HTMLElement | null;
 	gameOverActions: HTMLElement | null;
-	gameOverNextBtn: HTMLElement | null;
 	leaderboardScreen: HTMLElement | null;
 	leaderboardList: HTMLElement | null;
 	closeLeaderboardBtn: HTMLElement | null;

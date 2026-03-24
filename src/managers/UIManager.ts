@@ -67,7 +67,6 @@ export class UIManager {
 			powerupTimerFill: get("powerup-timer-fill"),
 			gameOverStats: get("game-over-stats"),
 			gameOverActions: get("game-over-actions"),
-			gameOverNextBtn: get("game-over-next-btn"),
 			leaderboardScreen: get("leaderboard-screen"),
 			leaderboardList: get("leaderboard-list"),
 			closeLeaderboardBtn: get("close-leaderboard-btn"),
@@ -99,12 +98,6 @@ export class UIManager {
 			leaderboardScreen.onclick = (e) => {
 				if (e.target === leaderboardScreen) this.toggleLeaderboard(false);
 			};
-		}
-
-		// Game over → button: transition from stats to actions page
-		const { gameOverNextBtn } = this.elements;
-		if (gameOverNextBtn) {
-			gameOverNextBtn.onclick = () => this.showGameOverActions();
 		}
 
 		// Auto-advance initials inputs
@@ -142,7 +135,6 @@ export class UIManager {
 		// Reset game over pages to initial state
 		this.elements.gameOverStats?.classList.remove("hidden");
 		this.elements.gameOverActions?.classList.add("hidden");
-		this.elements.gameOverNextBtn?.classList.add("hidden");
 
 		if (state === "GAME_OVER") {
 			this.showStatsAnimation(this.game.stats, this.game.scoring.maxCombo);
@@ -481,8 +473,17 @@ export class UIManager {
 			await this.animateStatItem(item);
 		}
 
-		// Show → button after stats finish animating
-		this.elements.gameOverNextBtn?.classList.remove("hidden");
+		// Append → as the last item in the stats row
+		const nextBtn = document.createElement("button");
+		nextBtn.className = "stat-item stat-next-btn";
+		nextBtn.innerHTML = '<span class="stat-icon">&rarr;</span>';
+		nextBtn.onclick = () => this.showGameOverActions();
+		list.appendChild(nextBtn);
+		nextBtn.scrollIntoView({
+			behavior: "smooth",
+			block: "nearest",
+			inline: "center",
+		});
 	}
 
 	async animateStatItem(item: {
