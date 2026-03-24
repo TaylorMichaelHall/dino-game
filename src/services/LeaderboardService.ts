@@ -16,6 +16,13 @@ export class LeaderboardService implements ILeaderboardService {
 
 	constructor() {
 		this.apiUrl = import.meta.env.VITE_LEADERBOARD_URL;
+		// Pre-existing players have a high score but no playerId — reset so they start fresh
+		if (
+			!localStorage.getItem(PLAYER_ID_KEY) &&
+			localStorage.getItem("jurassicEscapeHighScore")
+		) {
+			localStorage.removeItem("jurassicEscapeHighScore");
+		}
 		this.playerId = this.getOrCreatePlayerId();
 	}
 
