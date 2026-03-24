@@ -356,6 +356,7 @@ export class UIManager {
 				const row = document.createElement("div");
 				row.className = "leaderboard-row";
 				if (i < 3) row.classList.add(`leaderboard-rank-${i + 1}`);
+				if (entry.glow) row.classList.add("leaderboard-glow");
 
 				const rank = document.createElement("span");
 				rank.className = "leaderboard-rank";

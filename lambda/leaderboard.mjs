@@ -45,6 +45,7 @@ async function getLeaderboard() {
 				initials: item.initials.S,
 				score: Number(item.score.N),
 				date: item.date.S,
+				...(item.glow?.BOOL && { glow: true }),
 			});
 		}
 	}
