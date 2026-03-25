@@ -5,17 +5,24 @@ export interface LeaderboardEntry {
 	initials: string;
 	score: number;
 	date: string;
+	dino?: string;
 	glow?: boolean;
 }
 
 export interface ILeaderboardService {
 	isAvailable(): boolean;
 	fetchLeaderboard(): Promise<LeaderboardEntry[]>;
-	submitScore(initials: string, score: number): Promise<LeaderboardEntry[]>;
+	submitScore(
+		initials: string,
+		score: number,
+		dino: string,
+	): Promise<LeaderboardEntry[]>;
 	recordPlay(): Promise<void>;
 	qualifies(score: number): boolean;
 	getSavedInitials(): string;
 	saveInitials(initials: string): void;
+	getSavedDino(): string;
+	saveDino(dino: string): void;
 }
 
 export type GameState = "START" | "PLAYING" | "PAUSED" | "GAME_OVER";
@@ -122,6 +129,8 @@ export interface UIElements {
 	leaderboardList: HTMLElement | null;
 	closeLeaderboardBtn: HTMLElement | null;
 	initialsInput: HTMLElement | null;
+	dinoPicker: HTMLElement | null;
+	dinoPickerImg: HTMLImageElement | null;
 	leaderboardBtn: HTMLElement | null;
 }
 
@@ -147,6 +156,7 @@ export interface IUIManager {
 	showInitialsInput(show: boolean): void;
 	isInitialsInputVisible(): boolean;
 	getInitials(): string;
+	getSelectedDino(): string;
 	showLeaderboard(entries: LeaderboardEntry[]): void;
 	toggleLeaderboard(show: boolean): void;
 	isLeaderboardOpen(): boolean;

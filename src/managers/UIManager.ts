@@ -1,4 +1,5 @@
 import { CONFIG } from "../config/Constants";
+import { DINOS } from "../config/DinoConfig";
 import type {
 	ComboStage,
 	DinoConfig,
@@ -17,6 +18,7 @@ export class UIManager {
 	container: HTMLElement;
 	elements: UIElements;
 	initialCharInputs: NodeListOf<HTMLInputElement> | undefined;
+	dinoPickerIndex = 0;
 	lastBorderTime: number = 0;
 
 	constructor(game: IGame) {
@@ -71,6 +73,10 @@ export class UIManager {
 			leaderboardList: get("leaderboard-list"),
 			closeLeaderboardBtn: get("close-leaderboard-btn"),
 			initialsInput: get("initials-input"),
+			dinoPicker: get("dino-picker"),
+			dinoPickerImg: document.getElementById(
+				"dino-picker-img",
+			) as HTMLImageElement | null,
 			leaderboardBtn: get("leaderboard-btn"),
 		};
 
@@ -99,6 +105,13 @@ export class UIManager {
 				if (e.target === leaderboardScreen) this.toggleLeaderboard(false);
 			};
 		}
+
+		// Dino picker: cycle through dinos on tap
+		this.elements.dinoPicker?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			this.dinoPickerIndex = (this.dinoPickerIndex + 1) % DINOS.length;
+			this.updateDinoPickerImg();
+		});
 
 		// Auto-advance initials inputs
 		this.initialCharInputs?.forEach((input, index) => {
@@ -316,6 +329,18 @@ export class UIManager {
 		}
 	}
 
+	private updateDinoPickerImg() {
+		if (this.elements.dinoPickerImg) {
+			this.elements.dinoPickerImg.src = spritePath(
+				DINOS[this.dinoPickerIndex].sprite,
+			);
+		}
+	}
+
+	getSelectedDino(): string {
+		return DINOS[this.dinoPickerIndex].id;
+	}
+
 	showInitialsInput(show: boolean) {
 		this.elements.initialsInput?.classList.toggle("hidden", !show);
 		if (this.elements.restartBtn) {
@@ -326,6 +351,13 @@ export class UIManager {
 			this.initialCharInputs?.forEach((input, i) => {
 				input.value = saved[i] || "";
 			});
+			// Set dino picker to saved dino
+			const savedDino = this.game.leaderboard.getSavedDino();
+			this.dinoPickerIndex = Math.max(
+				0,
+				DINOS.findIndex((d) => d.id === savedDino),
+			);
+			this.updateDinoPickerImg();
 		}
 	}
 
@@ -361,6 +393,17 @@ export class UIManager {
 				const rank = document.createElement("span");
 				rank.className = "leaderboard-rank";
 				rank.textContent = `${i + 1}`;
+				row.appendChild(rank);
+
+				if (entry.dino) {
+					const dinoConfig = DINOS.find((d) => d.id === entry.dino);
+					if (dinoConfig) {
+						const dinoImg = document.createElement("img");
+						dinoImg.className = "leaderboard-dino";
+						dinoImg.src = spritePath(dinoConfig.sprite);
+						row.appendChild(dinoImg);
+					}
+				}
 
 				const initials = document.createElement("span");
 				initials.className = "leaderboard-initials";
@@ -370,7 +413,6 @@ export class UIManager {
 				score.className = "leaderboard-score";
 				score.textContent = entry.score.toString();
 
-				row.appendChild(rank);
 				row.appendChild(initials);
 				row.appendChild(score);
 				list.appendChild(row);
@@ -411,8 +453,7 @@ export class UIManager {
 		}
 		const items: StatItem[] = [];
 
-		const { DINOS: DINOS_CONFIG } = await import("../config/DinoConfig");
-		DINOS_CONFIG.forEach((dino) => {
+		DINOS.forEach((dino) => {
 			const count = stats.dinos[dino.id] || 0;
 			if (count > 0) {
 				items.push({

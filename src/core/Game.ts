@@ -530,10 +530,13 @@ export class Game implements IGame {
 	}
 
 	async submitLeaderboardScore(initials: string) {
+		const dino = this.ui.getSelectedDino();
 		this.leaderboard.saveInitials(initials);
+		this.leaderboard.saveDino(dino);
 		const entries = await this.leaderboard.submitScore(
 			initials,
 			this.scoring.score,
+			dino,
 		);
 		this.ui.showInitialsInput(false);
 		if (entries.length > 0) {
