@@ -8,6 +8,7 @@ const dynamo = new DynamoDBClient({});
 const TABLE_NAME = "dino-leaderboard";
 const MAX_ENTRIES = 20;
 const MAX_PLAUSIBLE_SCORE = 50000;
+const VALID_DINOS = ["raptor", "quetzal", "trex", "spino", "mosa", "allo"];
 
 const ALLOWED_ORIGINS = [
 	"https://taylormichaelhall.com",
@@ -45,6 +46,7 @@ async function getLeaderboard() {
 				initials: item.initials.S,
 				score: Number(item.score.N),
 				date: item.date.S,
+				...(item.dino?.S && { dino: item.dino.S }),
 				...(item.glow?.BOOL && { glow: true }),
 			});
 		}
@@ -74,7 +76,7 @@ export async function handler(event) {
 			return response(400, { error: "Invalid JSON" }, event);
 		}
 
-		const { initials, score, playerId } = body;
+		const { initials, score, playerId, dino } = body;
 
 		if (typeof playerId !== "string" || playerId.length === 0 || playerId.length > 64) {
 			return response(400, { error: "Invalid playerId" }, event);
@@ -103,13 +105,14 @@ export async function handler(event) {
 					new UpdateItemCommand({
 						TableName: TABLE_NAME,
 						Key: { playerId: { S: playerId } },
-						UpdateExpression: "SET score = :score, initials = :initials, #d = :date ADD plays :one",
+						UpdateExpression: "SET score = :score, initials = :initials, #d = :date, dino = :dino ADD plays :one",
 						ConditionExpression: "attribute_not_exists(score) OR score < :score",
 						ExpressionAttributeNames: { "#d": "date" },
 						ExpressionAttributeValues: {
 							":score": { N: String(score) },
 							":initials": { S: initials },
 							":date": { S: new Date().toISOString() },
+							":dino": { S: VALID_DINOS.includes(dino) ? dino : "raptor" },
 							":one": { N: "1" },
 						},
 					}),

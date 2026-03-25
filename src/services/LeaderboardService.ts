@@ -2,6 +2,7 @@ import type { ILeaderboardService, LeaderboardEntry } from "../types";
 
 const PLAYER_ID_KEY = "jurassicEscapePlayerId";
 const INITIALS_KEY = "jurassicEscapeInitials";
+const DINO_KEY = "jurassicEscapeDino";
 const TIMEOUT_MS = 5000;
 
 interface LeaderboardResponse {
@@ -73,10 +74,12 @@ export class LeaderboardService implements ILeaderboardService {
 	async submitScore(
 		initials: string,
 		score: number,
+		dino: string,
 	): Promise<LeaderboardEntry[]> {
 		const data = await this.request("POST", {
 			initials: initials.toUpperCase(),
 			score,
+			dino,
 			playerId: this.playerId,
 		});
 		if (data) this.cache = data.entries;
@@ -89,6 +92,14 @@ export class LeaderboardService implements ILeaderboardService {
 
 	saveInitials(initials: string): void {
 		localStorage.setItem(INITIALS_KEY, initials.toUpperCase());
+	}
+
+	getSavedDino(): string {
+		return localStorage.getItem(DINO_KEY) || "raptor";
+	}
+
+	saveDino(dino: string): void {
+		localStorage.setItem(DINO_KEY, dino);
 	}
 
 	qualifies(score: number): boolean {

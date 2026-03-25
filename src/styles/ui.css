@@ -540,6 +540,38 @@ button:active {
 .initials-row {
 	display: flex;
 	gap: 8px;
+	align-items: center;
+}
+
+.dino-picker {
+	width: 52px;
+	height: 60px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.1);
+	border: 2px dashed rgba(255, 215, 0, 0.5);
+	border-radius: 10px;
+	cursor: pointer;
+	padding: 4px;
+	transition:
+		border-color 0.2s,
+		transform 0.15s;
+}
+
+.dino-picker:hover {
+	border-color: #ffd700;
+	transform: scale(1.05);
+}
+
+.dino-picker:active {
+	transform: scale(0.95);
+}
+
+.dino-picker-img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
 }
 
 .initial-char {
@@ -625,6 +657,12 @@ button:active {
 .leaderboard-rank-1 {
 	background: rgba(255, 215, 0, 0.1);
 	border: 1px solid rgba(255, 215, 0, 0.2);
+}
+
+.leaderboard-dino {
+	width: 28px;
+	height: 28px;
+	object-fit: contain;
 }
 
 .leaderboard-initials {
@@ -763,9 +801,13 @@ button:active {
 		height: 24px;
 	}
 
-	.initial-char {
+	.initial-char,
+	.dino-picker {
 		width: 44px;
 		height: 52px;
+	}
+
+	.initial-char {
 		font-size: 1.6rem;
 	}
 
