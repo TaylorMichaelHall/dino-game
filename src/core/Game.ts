@@ -10,6 +10,7 @@ import { MeteorShowerManager } from "../managers/MeteorShowerManager";
 import { ObstacleManager } from "../managers/ObstacleManager";
 import { ParallaxManager } from "../managers/ParallaxManager";
 import { PowerupManager } from "../managers/PowerupManager";
+import { PteroFlockManager } from "../managers/PteroFlockManager";
 import { PteroRideManager } from "../managers/PteroRideManager";
 import { TitleManager } from "../managers/TitleManager";
 import { UIManager } from "../managers/UIManager";
@@ -46,6 +47,7 @@ export class Game implements IGame {
 	effects: EffectManager;
 	meteorShower: MeteorShowerManager;
 	pteroRide: PteroRideManager;
+	pteroFlock: PteroFlockManager;
 	musicEnabled: boolean;
 	sfxEnabled: boolean;
 	hearts: number;
@@ -84,6 +86,8 @@ export class Game implements IGame {
 		this.effects = new EffectManager(this);
 		this.meteorShower = new MeteorShowerManager(this);
 		this.pteroRide = new PteroRideManager(this);
+		this.pteroFlock = new PteroFlockManager(this);
+		this.parallax.flockManager = this.pteroFlock;
 
 		this.musicEnabled = true;
 		this.sfxEnabled = true;
@@ -160,6 +164,7 @@ export class Game implements IGame {
 		this.coins.reset();
 		this.meteorShower.reset();
 		this.pteroRide.reset();
+		this.pteroFlock.reset();
 		this.stats = this.initStats();
 		this.ui.updateCombo(0);
 
@@ -297,6 +302,7 @@ export class Game implements IGame {
 		this.effects.update(deltaTime);
 		this.meteorShower.checkSpawn(this.scoring.score);
 		this.meteorShower.update(deltaTime);
+		this.pteroFlock.update(deltaTime);
 	}
 
 	updateBorderEffect() {

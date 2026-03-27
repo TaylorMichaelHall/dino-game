@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import type { IGame } from "../types";
+import type { PteroFlockManager } from "./PteroFlockManager";
 
 interface ParallaxLayer {
 	id: string;
@@ -13,6 +14,7 @@ interface ParallaxLayer {
 export class ParallaxManager {
 	game: IGame;
 	layers: ParallaxLayer[];
+	flockManager: PteroFlockManager | null = null;
 	private readonly WORLD_WIDTH = 2400; // Large enough to cover screen twice
 
 	constructor(game: IGame) {
@@ -137,17 +139,98 @@ export class ParallaxManager {
 		ctx.beginPath();
 		ctx.rect(0, 0, this.game.width, CONFIG.HORIZON_Y);
 		ctx.clip();
-		this.layers.forEach((layer, index) => {
-			// Depth-of-field: blur the farthest layer
-			if (index === 0) {
-				ctx.filter = "blur(2px)";
-			} else {
-				ctx.filter = "none";
-			}
-			this.drawLayer(ctx, layer, 0);
-			this.drawLayer(ctx, layer, this.WORLD_WIDTH);
-		});
+
+		// Sun behind all mountain layers
+		this.drawSun(ctx, cycleFactor);
+
+		// Layer 0: far mountains (blurred)
+		ctx.filter = "blur(2px)";
+		this.drawLayer(ctx, this.layers[0], 0);
+		this.drawLayer(ctx, this.layers[0], this.WORLD_WIDTH);
 		ctx.filter = "none";
+
+		// Pterodactyl flock between far and near mountains
+		this.flockManager?.draw(ctx);
+
+		// Layer 1: near mountains
+		this.drawLayer(ctx, this.layers[1], 0);
+		this.drawLayer(ctx, this.layers[1], this.WORLD_WIDTH);
+
+		// Layer 2: trees
+		this.drawLayer(ctx, this.layers[2], 0);
+		this.drawLayer(ctx, this.layers[2], this.WORLD_WIDTH);
+
+		ctx.filter = "none";
+		ctx.restore();
+	}
+
+	private drawSun(ctx: CanvasRenderingContext2D, cycleFactor: number) {
+		// Alpha by time of day: invisible at night
+		const sunAlpha = this.getCycleColor(cycleFactor, [
+			[0], // Night
+			[1.0], // Dawn
+			[0.85], // Day
+			[1.0], // Dusk
+		])[0];
+
+		if (sunAlpha < 0.01) return;
+
+		const x = CONFIG.SUN_X;
+		const y = CONFIG.SUN_Y;
+		const r = CONFIG.SUN_CORE_RADIUS;
+		const glowR = CONFIG.SUN_GLOW_RADIUS;
+
+		ctx.save();
+		ctx.globalAlpha = sunAlpha;
+
+		// Outer atmospheric glow (additive)
+		const prevComp = ctx.globalCompositeOperation;
+		ctx.globalCompositeOperation = "lighter";
+		const glowGrad = ctx.createRadialGradient(x, y, r * 0.5, x, y, glowR);
+		glowGrad.addColorStop(0, "rgba(255, 60, 120, 0.3)");
+		glowGrad.addColorStop(0.4, "rgba(255, 100, 50, 0.12)");
+		glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
+		ctx.fillStyle = glowGrad;
+		ctx.fillRect(x - glowR, y - glowR, glowR * 2, glowR * 2);
+		ctx.globalCompositeOperation = prevComp;
+
+		// Sun disc - clip to circle
+		ctx.save();
+		ctx.beginPath();
+		ctx.arc(x, y, r, 0, Math.PI * 2);
+		ctx.clip();
+
+		// Outrun gradient: yellow top → orange middle → hot pink/magenta bottom
+		const discGrad = ctx.createLinearGradient(x, y - r, x, y + r);
+		discGrad.addColorStop(0, "#fcee09");
+		discGrad.addColorStop(0.35, "#ff6b2b");
+		discGrad.addColorStop(0.65, "#ee3168");
+		discGrad.addColorStop(1, "#d11583");
+		ctx.fillStyle = discGrad;
+		ctx.fillRect(x - r, y - r, r * 2, r * 2);
+
+		// Horizontal stripe cutouts (classic outrun look)
+		// Stripes get wider toward the bottom
+		ctx.globalCompositeOperation = "destination-out";
+		const stripeCount = 7;
+		const stripeRegionTop = y - r * 0.1;
+		const stripeRegionBottom = y + r;
+		const regionHeight = stripeRegionBottom - stripeRegionTop;
+
+		for (let i = 0; i < stripeCount; i++) {
+			const t = i / stripeCount;
+			const stripeY = stripeRegionTop + t * regionHeight;
+			const thickness = 1.5 + t * 4;
+			const gap = regionHeight / stripeCount;
+			// Only draw if within disc
+			if (stripeY + thickness > y - r && stripeY < y + r) {
+				ctx.fillStyle = "rgba(0, 0, 0, 1)";
+				ctx.fillRect(x - r, stripeY + gap * 0.5, r * 2, thickness);
+			}
+		}
+
+		ctx.restore(); // end clip
+
 		ctx.restore();
 	}
 
