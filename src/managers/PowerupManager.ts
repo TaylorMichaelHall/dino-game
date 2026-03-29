@@ -18,7 +18,7 @@ export class PowerupManager implements IPowerupManager {
 	radius: number;
 	emeraldImg: HTMLImageElement;
 	featherImg: HTMLImageElement;
-	nextPteroSpawn: number;
+	nextQuetzSpawn: number;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -26,7 +26,7 @@ export class PowerupManager implements IPowerupManager {
 		this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
 		this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
-		this.nextPteroSpawn = this.calculateNextPteroSpawn(0);
+		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
 		this.radius = CONFIG.POWERUP_RADIUS;
 
 		this.emeraldImg = loadImage(spritePath("emerald.webp"));
@@ -52,10 +52,10 @@ export class PowerupManager implements IPowerupManager {
 		return currentScore + Math.floor(Math.random() * 50) + 25;
 	}
 
-	calculateNextPteroSpawn(currentScore: number): number {
+	calculateNextQuetzSpawn(currentScore: number): number {
 		return (
-			Math.max(currentScore, CONFIG.PTERO_THRESHOLD) +
-			Math.floor(Math.random() * CONFIG.PTERO_SPAWN_INTERVAL)
+			Math.max(currentScore, CONFIG.QUETZ_THRESHOLD) +
+			Math.floor(Math.random() * CONFIG.QUETZ_SPAWN_INTERVAL)
 		);
 	}
 
@@ -76,14 +76,14 @@ export class PowerupManager implements IPowerupManager {
 			this.nextMagnetSpawn += CONFIG.MAGNET_THRESHOLD;
 		}
 
-		// Don't spawn ptero during super mode or active ptero ride
+		// Don't spawn quetz during super mode or active quetz ride
 		if (
-			currentScore >= this.nextPteroSpawn &&
+			currentScore >= this.nextQuetzSpawn &&
 			this.game.timers.superMode <= 0 &&
-			this.game.timers.pteroRide <= 0
+			this.game.timers.quetzRide <= 0
 		) {
-			this.spawn("PTERODACTYL");
-			this.nextPteroSpawn = currentScore + CONFIG.PTERO_SPAWN_INTERVAL;
+			this.spawn("QUETZAL");
+			this.nextQuetzSpawn = currentScore + CONFIG.QUETZ_SPAWN_INTERVAL;
 		}
 	}
 
@@ -134,7 +134,7 @@ export class PowerupManager implements IPowerupManager {
 			else if (p.type === "DIAMOND") this.drawDiamond(ctx, p.x, p.y);
 			else if (p.type === "EMERALD") this.drawEmerald(ctx, p.x, p.y);
 			else if (p.type === "MAGNET") this.drawMagnet(ctx, p.x, p.y);
-			else if (p.type === "PTERODACTYL") this.drawFeather(ctx, p.x, p.y);
+			else if (p.type === "QUETZAL") this.drawFeather(ctx, p.x, p.y);
 		});
 	}
 
@@ -184,7 +184,7 @@ export class PowerupManager implements IPowerupManager {
 		ctx.restore();
 
 		if (this.featherImg.complete && this.featherImg.naturalWidth > 0) {
-			const s = CONFIG.PTERO_FEATHER_SIZE;
+			const s = CONFIG.QUETZ_FEATHER_SIZE;
 			ctx.drawImage(this.featherImg, x - s / 2, by - s / 2, s, s);
 		} else {
 			ctx.font = "40px serif";
@@ -202,7 +202,7 @@ export class PowerupManager implements IPowerupManager {
 				p.type === "DIAMOND" ||
 				p.type === "EMERALD" ||
 				p.type === "MAGNET" ||
-				p.type === "PTERODACTYL"
+				p.type === "QUETZAL"
 					? CONFIG.POWERUP_LARGE_RADIUS
 					: CONFIG.POWERUP_RADIUS;
 			if (dist < dino.radius + r) {
@@ -218,6 +218,6 @@ export class PowerupManager implements IPowerupManager {
 		this.nextBoneSpawn = this.calculateNextBoneSpawn(0);
 		this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
-		this.nextPteroSpawn = this.calculateNextPteroSpawn(0);
+		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
 	}
 }

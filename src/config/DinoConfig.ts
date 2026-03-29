@@ -14,9 +14,9 @@ export const DINOS: DinoConfig[] = [
 		ambientSize: 60,
 	},
 	{
-		id: "quetzal",
-		name: "Quetzalcoatlus",
-		sprite: "quetz.webp",
+		id: "ptero",
+		name: "Pterodactyl",
+		sprite: "pterodactyl.webp",
 		width: 130,
 		radius: 20,
 		ambientSize: 70,

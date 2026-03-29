@@ -11,7 +11,7 @@ import { ObstacleManager } from "../managers/ObstacleManager";
 import { ParallaxManager } from "../managers/ParallaxManager";
 import { PowerupManager } from "../managers/PowerupManager";
 import { PteroFlockManager } from "../managers/PteroFlockManager";
-import { PteroRideManager } from "../managers/PteroRideManager";
+import { QuetzRideManager } from "../managers/QuetzRideManager";
 import { TitleManager } from "../managers/TitleManager";
 import { UIManager } from "../managers/UIManager";
 import { LeaderboardService } from "../services/LeaderboardService";
@@ -46,7 +46,7 @@ export class Game implements IGame {
 	input: InputManager;
 	effects: EffectManager;
 	meteorShower: MeteorShowerManager;
-	pteroRide: PteroRideManager;
+	quetzRide: QuetzRideManager;
 	pteroFlock: PteroFlockManager;
 	musicEnabled: boolean;
 	sfxEnabled: boolean;
@@ -85,7 +85,7 @@ export class Game implements IGame {
 		this.input = new InputManager(this);
 		this.effects = new EffectManager(this);
 		this.meteorShower = new MeteorShowerManager(this);
-		this.pteroRide = new PteroRideManager(this);
+		this.quetzRide = new QuetzRideManager(this);
 		this.pteroFlock = new PteroFlockManager(this);
 		this.parallax.flockManager = this.pteroFlock;
 
@@ -124,7 +124,7 @@ export class Game implements IGame {
 				DIAMOND: 0,
 				EMERALD: 0,
 				MAGNET: 0,
-				PTERODACTYL: 0,
+				QUETZAL: 0,
 				COIN: 0,
 			},
 		};
@@ -134,7 +134,7 @@ export class Game implements IGame {
 		if (this.state === GAME_STATE.START) {
 			this.startGame();
 		} else if (this.state === GAME_STATE.PLAYING) {
-			if (this.pteroRide.active) return;
+			if (this.quetzRide.active) return;
 			this.dino.jump();
 			this.audio.playJump();
 		}
@@ -163,7 +163,7 @@ export class Game implements IGame {
 		this.powerups.reset();
 		this.coins.reset();
 		this.meteorShower.reset();
-		this.pteroRide.reset();
+		this.quetzRide.reset();
 		this.pteroFlock.reset();
 		this.stats = this.initStats();
 		this.ui.updateCombo(0);
@@ -268,14 +268,14 @@ export class Game implements IGame {
 			this.ui.showMessage("Magnet Deactivated");
 		}
 
-		if (this.timers.pteroRide > 0) {
-			this.ui.updatePowerupTimer(this.timers.pteroRide);
+		if (this.timers.quetzRide > 0) {
+			this.ui.updatePowerupTimer(this.timers.quetzRide);
 		}
 
-		if (timerEvents.pteroRideExpired) {
+		if (timerEvents.quetzRideExpired) {
 			this.ui.updatePowerupTimer(0);
-			this.pteroRide.deactivate();
-			this.ui.showMessage("Pterodactyl Departed!");
+			this.quetzRide.deactivate();
+			this.ui.showMessage("Quetzalcoatlus Departed!");
 		}
 
 		if (timerEvents.comboExpired) {
@@ -295,7 +295,7 @@ export class Game implements IGame {
 		this.obstacles.update(deltaTime, speedMultiplier);
 		this.powerups.update(deltaTime, obstacleSpeed);
 		this.coins.update(deltaTime, obstacleSpeed);
-		this.pteroRide.update(deltaTime);
+		this.quetzRide.update(deltaTime);
 
 		this.checkCollisions();
 		this.handleScoring();
@@ -324,7 +324,7 @@ export class Game implements IGame {
 		else if (pType === "DIAMOND") this.activateSuperMode("trex");
 		else if (pType === "EMERALD") this.activateSuperMode("spino");
 		else if (pType === "MAGNET") this.collectMagnet();
-		else if (pType === "PTERODACTYL") this.activatePteroRide();
+		else if (pType === "QUETZAL") this.activateQuetzRide();
 
 		// Coins
 		if (this.coins.checkCollision(this.dino)) {
@@ -337,7 +337,7 @@ export class Game implements IGame {
 		if (this.obstacles.checkCollision(this.dino)) {
 			if (this.dino.isSuper) {
 				this.handleSuperSmash();
-			} else if (!this.dino.invulnerable && !this.pteroRide.active) {
+			} else if (!this.dino.invulnerable && !this.quetzRide.active) {
 				this.takeDamage();
 			}
 		}
@@ -406,12 +406,12 @@ export class Game implements IGame {
 		else if (type === "spino") this.stats.powerups.EMERALD++;
 	}
 
-	activatePteroRide() {
-		this.audio.playPteroPickup();
-		this.timers.pteroRide = CONFIG.PTERO_DURATION + CONFIG.PTERO_ENTER_DURATION;
-		this.pteroRide.activate();
-		this.ui.showMessage("🦅 PTERODACTYL RIDE! 🦅");
-		this.stats.powerups.PTERODACTYL++;
+	activateQuetzRide() {
+		this.audio.playQuetzPickup();
+		this.timers.quetzRide = CONFIG.QUETZ_DURATION + CONFIG.QUETZ_ENTER_DURATION;
+		this.quetzRide.activate();
+		this.ui.showMessage("🦅 QUETZALCOATLUS RIDE! 🦅");
+		this.stats.powerups.QUETZAL++;
 	}
 
 	collectMagnet() {
@@ -565,7 +565,7 @@ export class Game implements IGame {
 		this.powerups.draw(this.ctx);
 		this.coins.draw(this.ctx);
 		this.dino.draw(this.ctx);
-		this.pteroRide.draw(this.ctx);
+		this.quetzRide.draw(this.ctx);
 	}
 
 	toggleDebugMenu(show: boolean = !this.debugActive) {
@@ -602,8 +602,8 @@ export class Game implements IGame {
 				this.meteorShower.trigger();
 				this.ui.showMessage("METEOR SHOWER!");
 				break;
-			case "PTERO":
-				this.activatePteroRide();
+			case "QUETZ":
+				this.activateQuetzRide();
 				break;
 		}
 		this.toggleDebugMenu(false);

@@ -27,12 +27,7 @@ export interface ILeaderboardService {
 
 export type GameState = "START" | "PLAYING" | "PAUSED" | "GAME_OVER";
 
-export type PowerupType =
-	| "BONE"
-	| "DIAMOND"
-	| "EMERALD"
-	| "MAGNET"
-	| "PTERODACTYL";
+export type PowerupType = "BONE" | "DIAMOND" | "EMERALD" | "MAGNET" | "QUETZAL";
 
 export interface ComboStage {
 	threshold: number;
@@ -72,7 +67,7 @@ export interface IDino {
 	superType: "trex" | "spino" | null;
 	invulnerable: boolean;
 	invulnerableTimer: number;
-	isPteroRiding: boolean;
+	isQuetzRiding: boolean;
 	velocity: number;
 	displayX: number;
 	update(deltaTime: number): void;
@@ -178,7 +173,7 @@ export interface IAudioManager {
 	playGatePass(): void;
 	playMeteorRumble(): void;
 	playMeteorImpact(): void;
-	playPteroPickup(): void;
+	playQuetzPickup(): void;
 	setSfxMuted(muted: boolean): void;
 	startMusic(): void;
 	stopMusic(): void;

@@ -125,10 +125,10 @@ export class AudioManager implements IAudioManager {
 			this.sfx.playMeteorImpact();
 		}
 	}
-	playPteroPickup() {
+	playQuetzPickup() {
 		if (!this.sfxMuted) {
 			this.resumeContext();
-			this.sfx.playPteroPickup();
+			this.sfx.playQuetzPickup();
 		}
 	}
 

@@ -5,7 +5,7 @@ export interface TimerEvents {
 	superModeExpired: boolean;
 	magnetExpired: boolean;
 	comboExpired: boolean;
-	pteroRideExpired: boolean;
+	quetzRideExpired: boolean;
 }
 
 export interface ITimerManager {
@@ -17,7 +17,7 @@ export interface ITimerManager {
 	combo: number;
 	shake: number;
 	shakeIntensity: number;
-	pteroRide: number;
+	quetzRide: number;
 	update(dt: number, superModeActive: boolean): TimerEvents;
 	triggerShake(intensity?: number): void;
 	reset(): void;
@@ -36,7 +36,7 @@ export class TimerManager implements ITimerManager {
 	combo: number = 0;
 	shake: number = 0;
 	shakeIntensity: number = 0;
-	pteroRide: number = 0;
+	quetzRide: number = 0;
 
 	update(dt: number, superModeActive: boolean): TimerEvents {
 		const events: TimerEvents = {
@@ -44,7 +44,7 @@ export class TimerManager implements ITimerManager {
 			superModeExpired: false,
 			magnetExpired: false,
 			comboExpired: false,
-			pteroRideExpired: false,
+			quetzRideExpired: false,
 		};
 
 		// Speed boost timer
@@ -71,11 +71,11 @@ export class TimerManager implements ITimerManager {
 			}
 		}
 
-		// Ptero ride timer
-		if (this.pteroRide > 0) {
-			this.pteroRide -= dt;
-			if (this.pteroRide <= 0) {
-				events.pteroRideExpired = true;
+		// Quetz ride timer
+		if (this.quetzRide > 0) {
+			this.quetzRide -= dt;
+			if (this.quetzRide <= 0) {
+				events.quetzRideExpired = true;
 			}
 		}
 
@@ -117,6 +117,6 @@ export class TimerManager implements ITimerManager {
 		this.combo = 0;
 		this.shake = 0;
 		this.shakeIntensity = 0;
-		this.pteroRide = 0;
+		this.quetzRide = 0;
 	}
 }
