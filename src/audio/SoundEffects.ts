@@ -363,7 +363,7 @@ export class SoundEffects {
 		thud.stop(now + duration);
 	}
 
-	playPteroPickup() {
+	playQuetzPickup() {
 		const now = this.ctx.currentTime;
 		const duration = 0.6;
 

@@ -13,13 +13,13 @@ interface WindParticle {
 	width: number;
 }
 
-export class PteroRideManager {
+export class QuetzRideManager {
 	game: IGame;
 	phase: Phase;
 	phaseTimer: number;
-	pteroSprite: HTMLImageElement;
-	pteroX: number;
-	pteroY: number;
+	quetzSprite: HTMLImageElement;
+	quetzX: number;
+	quetzY: number;
 	exitVx: number;
 	exitVy: number;
 	wingTimer: number;
@@ -36,9 +36,9 @@ export class PteroRideManager {
 		this.game = game;
 		this.phase = "idle";
 		this.phaseTimer = 0;
-		this.pteroSprite = loadImage(spritePath("pterodactyl.webp"));
-		this.pteroX = 0;
-		this.pteroY = 0;
+		this.quetzSprite = loadImage(spritePath("quetz.webp"));
+		this.quetzX = 0;
+		this.quetzY = 0;
 		this.exitVx = 0;
 		this.exitVy = 0;
 		this.wingTimer = 0;
@@ -51,14 +51,14 @@ export class PteroRideManager {
 	activate() {
 		this.phase = "entering";
 		this.phaseTimer = 0;
-		this.pteroX = this.game.width + 100;
-		this.pteroY = this.game.dino.y;
+		this.quetzX = this.game.width + 100;
+		this.quetzY = this.game.dino.y;
 		this.targetY = this.game.dino.y;
 		this.wingTimer = 0;
 		this.bobPhase = 0;
 		this.trailTimer = 0;
 		this.windParticles = [];
-		this.game.dino.isPteroRiding = true;
+		this.game.dino.isQuetzRiding = true;
 	}
 
 	deactivate() {
@@ -67,7 +67,7 @@ export class PteroRideManager {
 		this.phaseTimer = 0;
 		this.exitVx = 800;
 		this.exitVy = -400;
-		this.game.dino.isPteroRiding = false;
+		this.game.dino.isQuetzRiding = false;
 		// Brief invulnerability so player can react after ride ends
 		this.game.dino.invulnerable = true;
 		this.game.dino.invulnerableTimer = CONFIG.INVULNERABLE_DURATION;
@@ -90,19 +90,19 @@ export class PteroRideManager {
 	}
 
 	updateEntering(deltaTime: number) {
-		const t = Math.min(1, this.phaseTimer / CONFIG.PTERO_ENTER_DURATION);
+		const t = Math.min(1, this.phaseTimer / CONFIG.QUETZ_ENTER_DURATION);
 		// Ease-out cubic
 		const ease = 1 - (1 - t) * (1 - t) * (1 - t);
 
 		const startX = this.game.width + 100;
 		const targetX = this.game.dino.displayX;
-		this.pteroX = startX + (targetX - startX) * ease;
-		this.pteroY = this.game.dino.y;
+		this.quetzX = startX + (targetX - startX) * ease;
+		this.quetzY = this.game.dino.y;
 
 		this.game.dino.velocity = 0;
 		this.spawnWindParticle(deltaTime);
 
-		if (this.phaseTimer >= CONFIG.PTERO_ENTER_DURATION) {
+		if (this.phaseTimer >= CONFIG.QUETZ_ENTER_DURATION) {
 			this.phase = "riding";
 			this.phaseTimer = 0;
 		}
@@ -113,32 +113,32 @@ export class PteroRideManager {
 
 		const dino = this.game.dino;
 		const deltaY = this.targetY - dino.y;
-		const maxMove = CONFIG.PTERO_STEER_SPEED * deltaTime;
+		const maxMove = CONFIG.QUETZ_STEER_SPEED * deltaTime;
 		dino.y += Math.sign(deltaY) * Math.min(Math.abs(deltaY), maxMove);
 
 		this.bobPhase += deltaTime;
 		const bob =
-			Math.sin(this.bobPhase * CONFIG.PTERO_BOB_FREQUENCY * Math.PI * 2) *
-			CONFIG.PTERO_BOB_AMPLITUDE;
-		dino.y += bob * deltaTime * CONFIG.PTERO_BOB_FREQUENCY;
+			Math.sin(this.bobPhase * CONFIG.QUETZ_BOB_FREQUENCY * Math.PI * 2) *
+			CONFIG.QUETZ_BOB_AMPLITUDE;
+		dino.y += bob * deltaTime * CONFIG.QUETZ_BOB_FREQUENCY;
 
 		dino.y = Math.max(
 			dino.height,
 			Math.min(this.game.height - dino.height, dino.y),
 		);
 
-		this.pteroX = dino.displayX;
-		this.pteroY = dino.y;
+		this.quetzX = dino.displayX;
+		this.quetzY = dino.y;
 
 		this.spawnWindParticle(deltaTime);
 	}
 
 	updateExiting(deltaTime: number) {
-		this.pteroX += this.exitVx * deltaTime;
-		this.pteroY += this.exitVy * deltaTime;
+		this.quetzX += this.exitVx * deltaTime;
+		this.quetzY += this.exitVy * deltaTime;
 		this.exitVy += 500 * deltaTime;
 
-		if (this.phaseTimer >= CONFIG.PTERO_EXIT_DURATION) {
+		if (this.phaseTimer >= CONFIG.QUETZ_EXIT_DURATION) {
 			this.phase = "idle";
 		}
 	}
@@ -147,7 +147,7 @@ export class PteroRideManager {
 		const dino = this.game.dino;
 		const obstacles = this.game.obstacles.obstacles;
 		const coins = this.game.coins.coins;
-		const lookAhead = CONFIG.PTERO_LOOK_AHEAD;
+		const lookAhead = CONFIG.QUETZ_LOOK_AHEAD;
 		const dinoX = dino.x + dino.width / 2;
 		const obstWidth = this.game.obstacles.obstacleWidth;
 		const gapSize = this.game.obstacles.gapSize;
@@ -165,7 +165,7 @@ export class PteroRideManager {
 
 			const urgency = Math.max(0, 1.0 - dist / lookAhead);
 			const gapCenter = obs.topHeight + gapSize / 2;
-			const weight = CONFIG.PTERO_AVOID_WEIGHT * urgency * urgency;
+			const weight = CONFIG.QUETZ_AVOID_WEIGHT * urgency * urgency;
 
 			weightedY += gapCenter * weight;
 			totalWeight += weight;
@@ -181,7 +181,7 @@ export class PteroRideManager {
 			if (dist < -20 || dist > lookAhead) continue;
 
 			const proximity = 1.0 - dist / lookAhead;
-			const weight = CONFIG.PTERO_COIN_WEIGHT * proximity;
+			const weight = CONFIG.QUETZ_COIN_WEIGHT * proximity;
 
 			weightedY += coin.y * weight;
 			totalWeight += weight;
@@ -192,9 +192,9 @@ export class PteroRideManager {
 		}
 
 		if (imminentObs) {
-			const gapTop = imminentObs.topHeight + CONFIG.PTERO_SAFE_MARGIN;
+			const gapTop = imminentObs.topHeight + CONFIG.QUETZ_SAFE_MARGIN;
 			const gapBottom =
-				imminentObs.topHeight + gapSize - CONFIG.PTERO_SAFE_MARGIN;
+				imminentObs.topHeight + gapSize - CONFIG.QUETZ_SAFE_MARGIN;
 			targetY = Math.max(gapTop, Math.min(gapBottom, targetY));
 		}
 
@@ -208,8 +208,8 @@ export class PteroRideManager {
 
 	spawnWindParticle(deltaTime: number) {
 		this.trailTimer += deltaTime;
-		if (this.trailTimer >= CONFIG.PTERO_TRAIL_RATE) {
-			this.trailTimer -= CONFIG.PTERO_TRAIL_RATE;
+		if (this.trailTimer >= CONFIG.QUETZ_TRAIL_RATE) {
+			this.trailTimer -= CONFIG.QUETZ_TRAIL_RATE;
 			const dino = this.game.dino;
 			this.windParticles.push({
 				x: dino.displayX + dino.width / 2,
@@ -235,7 +235,7 @@ export class PteroRideManager {
 
 		this.drawWindTrail(ctx);
 		this.drawGlow(ctx);
-		this.drawPterodactyl(ctx);
+		this.drawQuetz(ctx);
 	}
 
 	drawGlow(ctx: CanvasRenderingContext2D) {
@@ -255,31 +255,31 @@ export class PteroRideManager {
 		ctx.restore();
 	}
 
-	drawPterodactyl(ctx: CanvasRenderingContext2D) {
-		if (!this.pteroSprite.complete || this.pteroSprite.naturalWidth === 0)
+	drawQuetz(ctx: CanvasRenderingContext2D) {
+		if (!this.quetzSprite.complete || this.quetzSprite.naturalWidth === 0)
 			return;
 
-		const size = CONFIG.PTERO_SPRITE_SIZE;
+		const size = CONFIG.QUETZ_SPRITE_SIZE;
 		const aspect =
-			this.pteroSprite.naturalHeight / this.pteroSprite.naturalWidth;
+			this.quetzSprite.naturalHeight / this.quetzSprite.naturalWidth;
 		const w = size;
 		const h = size * aspect;
 
-		const cx = this.pteroX + this.game.dino.width / 2;
-		const cy = this.pteroY - h * 0.2;
+		const cx = this.quetzX + this.game.dino.width / 2;
+		const cy = this.quetzY - h * 0.2;
 
 		ctx.save();
 		ctx.translate(cx, cy);
 
 		// Wing flap via squash/stretch
-		const flapT = this.wingTimer / CONFIG.PTERO_WING_FLAP_INTERVAL;
+		const flapT = this.wingTimer / CONFIG.QUETZ_WING_FLAP_INTERVAL;
 		const flapAmount = Math.sin(flapT * Math.PI) * 0.1;
 		ctx.scale(1.0 - flapAmount, 1.0 + flapAmount);
 
-		const tilt = (this.targetY - this.pteroY) * 0.001;
+		const tilt = (this.targetY - this.quetzY) * 0.001;
 		ctx.rotate(Math.max(-0.2, Math.min(0.2, tilt)));
 
-		ctx.drawImage(this.pteroSprite, -w / 2, -h / 2, w, h);
+		ctx.drawImage(this.quetzSprite, -w / 2, -h / 2, w, h);
 		ctx.restore();
 	}
 

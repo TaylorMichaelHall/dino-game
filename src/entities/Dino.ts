@@ -47,7 +47,7 @@ export class Dino implements IDino {
 	primaryX: number;
 	displayX: number;
 	flyingOffSprite: FlyingOffSprite | null;
-	isPteroRiding: boolean;
+	isQuetzRiding: boolean;
 	isBackflipping: boolean;
 	backflipRotation: number;
 	backflipDuration: number;
@@ -87,8 +87,8 @@ export class Dino implements IDino {
 		this.displayX = CONFIG.DINO_START_X;
 		this.flyingOffSprite = null;
 
-		// Ptero ride state
-		this.isPteroRiding = false;
+		// Quetz ride state
+		this.isQuetzRiding = false;
 
 		// Backflip state
 		this.isBackflipping = false;
@@ -115,8 +115,8 @@ export class Dino implements IDino {
 	}
 
 	update(deltaTime: number) {
-		if (this.isPteroRiding) {
-			// During ptero ride, PteroRideManager controls Y directly
+		if (this.isQuetzRiding) {
+			// During quetz ride, QuetzRideManager controls Y directly
 			this.velocity = 0;
 		} else {
 			this.velocity += this.gravity * deltaTime;
@@ -135,7 +135,7 @@ export class Dino implements IDino {
 		}
 
 		// Invulnerability Logic
-		if (this.invulnerable && !this.isSuper && !this.isPteroRiding) {
+		if (this.invulnerable && !this.isSuper && !this.isQuetzRiding) {
 			this.invulnerableTimer -= deltaTime;
 			this.timeSinceLastFlash += deltaTime;
 			if (this.timeSinceLastFlash >= this.flashSpeed) {
@@ -199,11 +199,11 @@ export class Dino implements IDino {
 			}
 		}
 
-		// Trail effect when fast, super, or ptero riding
+		// Trail effect when fast, super, or quetz riding
 		if (
 			this.game.timers.speedBoost > 0 ||
 			(this.isSuper && this.superType) ||
-			this.isPteroRiding
+			this.isQuetzRiding
 		) {
 			const dinoConfig = this.isSuper
 				? SUPER_DINOS[this.superType as keyof typeof SUPER_DINOS]
@@ -413,7 +413,7 @@ export class Dino implements IDino {
 		this.superType = null;
 		this.history = [];
 		this.flyingOffSprite = null;
-		this.isPteroRiding = false;
+		this.isQuetzRiding = false;
 		this.isBackflipping = false;
 		this.backflipRotation = 0;
 	}

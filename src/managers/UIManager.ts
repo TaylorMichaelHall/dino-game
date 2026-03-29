@@ -489,10 +489,10 @@ export class UIManager {
 				icon: "🧲",
 			});
 		}
-		if (stats.powerups.PTERODACTYL && stats.powerups.PTERODACTYL > 0) {
+		if (stats.powerups.QUETZAL && stats.powerups.QUETZAL > 0) {
 			items.push({
-				name: "Ptero Rides",
-				count: stats.powerups.PTERODACTYL,
+				name: "Quetz Rides",
+				count: stats.powerups.QUETZAL,
 				icon: "feather.webp",
 				isImg: true,
 			});
