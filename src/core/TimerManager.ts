@@ -6,6 +6,7 @@ export interface TimerEvents {
 	magnetExpired: boolean;
 	comboExpired: boolean;
 	quetzRideExpired: boolean;
+	gravityFlipExpired: boolean;
 }
 
 export interface ITimerManager {
@@ -18,6 +19,7 @@ export interface ITimerManager {
 	shake: number;
 	shakeIntensity: number;
 	quetzRide: number;
+	gravityFlip: number;
 	update(dt: number, superModeActive: boolean): TimerEvents;
 	triggerShake(intensity?: number): void;
 	reset(): void;
@@ -37,6 +39,7 @@ export class TimerManager implements ITimerManager {
 	shake: number = 0;
 	shakeIntensity: number = 0;
 	quetzRide: number = 0;
+	gravityFlip: number = 0;
 
 	update(dt: number, superModeActive: boolean): TimerEvents {
 		const events: TimerEvents = {
@@ -45,6 +48,7 @@ export class TimerManager implements ITimerManager {
 			magnetExpired: false,
 			comboExpired: false,
 			quetzRideExpired: false,
+			gravityFlipExpired: false,
 		};
 
 		// Speed boost timer
@@ -76,6 +80,14 @@ export class TimerManager implements ITimerManager {
 			this.quetzRide -= dt;
 			if (this.quetzRide <= 0) {
 				events.quetzRideExpired = true;
+			}
+		}
+
+		// Gravity flip timer
+		if (this.gravityFlip > 0) {
+			this.gravityFlip -= dt;
+			if (this.gravityFlip <= 0) {
+				events.gravityFlipExpired = true;
 			}
 		}
 
@@ -118,5 +130,6 @@ export class TimerManager implements ITimerManager {
 		this.shake = 0;
 		this.shakeIntensity = 0;
 		this.quetzRide = 0;
+		this.gravityFlip = 0;
 	}
 }

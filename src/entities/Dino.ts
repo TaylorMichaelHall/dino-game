@@ -48,6 +48,7 @@ export class Dino implements IDino {
 	displayX: number;
 	flyingOffSprite: FlyingOffSprite | null;
 	isQuetzRiding: boolean;
+	isGravityFlipped: boolean;
 	isBackflipping: boolean;
 	backflipRotation: number;
 	backflipDuration: number;
@@ -90,6 +91,9 @@ export class Dino implements IDino {
 		// Quetz ride state
 		this.isQuetzRiding = false;
 
+		// Gravity flip state
+		this.isGravityFlipped = false;
+
 		// Backflip state
 		this.isBackflipping = false;
 		this.backflipRotation = 0;
@@ -120,7 +124,12 @@ export class Dino implements IDino {
 			this.velocity = 0;
 		} else {
 			this.velocity += this.gravity * deltaTime;
-			if (this.velocity > this.maxVelocity) this.velocity = this.maxVelocity;
+			if (this.isGravityFlipped) {
+				if (this.velocity < -this.maxVelocity)
+					this.velocity = -this.maxVelocity;
+			} else {
+				if (this.velocity > this.maxVelocity) this.velocity = this.maxVelocity;
+			}
 			this.y += this.velocity * deltaTime;
 
 			// Boundary collision
@@ -220,24 +229,32 @@ export class Dino implements IDino {
 
 	drawGroundShadow(ctx: CanvasRenderingContext2D) {
 		if (!this.visible) return;
-		const groundY = CONFIG.HORIZON_Y;
+		const centerX = this.displayX + this.width / 2;
 		const centerY = this.y + this.height / 2;
 
-		const centerX = this.displayX + this.width / 2;
+		let dist: number;
+		let maxDist: number;
+		let baseAlpha: number;
+		let shadowY: number;
 
-		// If Dino is above horizon, distance is positive.
-		// If below horizon, treat distance as 0 (skimming the ground plane).
-		const distFromGround = Math.max(0, groundY - centerY);
-		const maxDist = groundY;
+		if (this.isGravityFlipped) {
+			const ceilingY = 20;
+			dist = Math.max(0, centerY - ceilingY);
+			maxDist = this.game.height;
+			baseAlpha = 0.25;
+			shadowY = Math.min(ceilingY, centerY - 8);
+		} else {
+			const groundY = CONFIG.HORIZON_Y;
+			dist = Math.max(0, groundY - centerY);
+			maxDist = groundY;
+			baseAlpha = 0.35;
+			shadowY = Math.max(groundY + 8, centerY + 8);
+		}
 
-		// Shadow gets larger and fainter the higher the dino is
-		const t = Math.min(1, distFromGround / maxDist);
+		const t = Math.min(1, dist / maxDist);
 		const shadowWidth = 25 + t * 35;
 		const shadowHeight = 6 + t * 4;
-		const shadowAlpha = 0.35 * (1 - t * 0.8);
-
-		// Keep shadow at horizon if flying high, otherwise follow Dino's feet
-		const shadowY = Math.max(groundY + 8, centerY + 8);
+		const shadowAlpha = baseAlpha * (1 - t * 0.8);
 
 		ctx.save();
 		ctx.fillStyle = `rgba(0, 0, 0, ${shadowAlpha})`;
@@ -283,6 +300,10 @@ export class Dino implements IDino {
 		ctx.save();
 		ctx.translate(this.displayX + this.width / 2, this.y + this.height / 2);
 
+		if (this.isGravityFlipped) {
+			ctx.scale(1, -1);
+		}
+
 		let rotation = Math.min(
 			CONFIG.DINO_MAX_ROTATION,
 			Math.max(
@@ -291,9 +312,9 @@ export class Dino implements IDino {
 			),
 		);
 
-		// Subtract backflip rotation if active (counterclockwise)
+		// Backflip rotation: reverse direction when gravity is flipped
 		if (this.isBackflipping) {
-			rotation -= this.backflipRotation;
+			rotation += (this.isGravityFlipped ? 1 : -1) * this.backflipRotation;
 		}
 
 		ctx.rotate(rotation);
@@ -310,12 +331,17 @@ export class Dino implements IDino {
 	}
 
 	jump() {
-		// Trigger backflip if jumping while moving upward and not already flipping
-		if (this.velocity < 0 && !this.isBackflipping) {
+		// Trigger backflip if jumping while moving in the "natural up" direction
+		const movingUp = this.isGravityFlipped
+			? this.velocity > 0
+			: this.velocity < 0;
+		if (movingUp && !this.isBackflipping) {
 			this.isBackflipping = true;
 			this.backflipRotation = 0;
 		}
-		this.velocity = this.jumpStrength;
+		this.velocity = this.isGravityFlipped
+			? -this.jumpStrength
+			: this.jumpStrength;
 	}
 
 	upgrade() {
@@ -346,6 +372,12 @@ export class Dino implements IDino {
 			// End of powerup: Super sprite flies off, normal dino takes over
 			this.finishSuper();
 		}
+	}
+
+	setGravityFlipped(flipped: boolean) {
+		this.isGravityFlipped = flipped;
+		this.gravity = flipped ? -CONFIG.GRAVITY : CONFIG.GRAVITY;
+		this.velocity = flipped ? -100 : 100;
 	}
 
 	finishSuper() {
@@ -414,6 +446,8 @@ export class Dino implements IDino {
 		this.history = [];
 		this.flyingOffSprite = null;
 		this.isQuetzRiding = false;
+		this.isGravityFlipped = false;
+		this.gravity = CONFIG.GRAVITY;
 		this.isBackflipping = false;
 		this.backflipRotation = 0;
 	}
