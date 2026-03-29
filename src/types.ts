@@ -27,7 +27,13 @@ export interface ILeaderboardService {
 
 export type GameState = "START" | "PLAYING" | "PAUSED" | "GAME_OVER";
 
-export type PowerupType = "BONE" | "DIAMOND" | "EMERALD" | "MAGNET" | "QUETZAL";
+export type PowerupType =
+	| "BONE"
+	| "DIAMOND"
+	| "EMERALD"
+	| "MAGNET"
+	| "QUETZAL"
+	| "GRAVITY_FLIP";
 
 export interface ComboStage {
 	threshold: number;
@@ -68,6 +74,7 @@ export interface IDino {
 	invulnerable: boolean;
 	invulnerableTimer: number;
 	isQuetzRiding: boolean;
+	isGravityFlipped: boolean;
 	velocity: number;
 	displayX: number;
 	update(deltaTime: number): void;
@@ -78,6 +85,7 @@ export interface IDino {
 	getDinoName(): string;
 	takeDamage(): void;
 	setSuper(active: boolean, type?: "trex" | "spino"): void;
+	setGravityFlipped(flipped: boolean): void;
 	reset(): void;
 }
 

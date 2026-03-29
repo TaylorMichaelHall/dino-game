@@ -125,6 +125,7 @@ export class Game implements IGame {
 				EMERALD: 0,
 				MAGNET: 0,
 				QUETZAL: 0,
+				GRAVITY_FLIP: 0,
 				COIN: 0,
 			},
 		};
@@ -278,6 +279,16 @@ export class Game implements IGame {
 			this.ui.showMessage("Quetzalcoatlus Departed!");
 		}
 
+		if (this.timers.gravityFlip > 0) {
+			this.ui.updatePowerupTimer(this.timers.gravityFlip);
+		}
+
+		if (timerEvents.gravityFlipExpired) {
+			this.ui.updatePowerupTimer(0);
+			this.dino.setGravityFlipped(false);
+			this.ui.showMessage("Gravity Restored!");
+		}
+
 		if (timerEvents.comboExpired) {
 			this.scoring.combo = 0;
 			this.ui.updateCombo(0);
@@ -325,6 +336,7 @@ export class Game implements IGame {
 		else if (pType === "EMERALD") this.activateSuperMode("spino");
 		else if (pType === "MAGNET") this.collectMagnet();
 		else if (pType === "QUETZAL") this.activateQuetzRide();
+		else if (pType === "GRAVITY_FLIP") this.activateGravityFlip();
 
 		// Coins
 		if (this.coins.checkCollision(this.dino)) {
@@ -419,6 +431,22 @@ export class Game implements IGame {
 		this.timers.magnet = CONFIG.MAGNET_DURATION;
 		this.ui.showMessage("🧲 COIN MAGNET ACTIVATED 🧲");
 		this.stats.powerups.MAGNET++;
+	}
+
+	activateGravityFlip() {
+		this.audio.playPowerup();
+		this.timers.gravityFlip = CONFIG.GRAVITY_FLIP_DURATION;
+		this.dino.setGravityFlipped(true);
+		this.ui.showMessage("🙃 GRAVITY FLIP! 🙃");
+		this.stats.powerups.GRAVITY_FLIP++;
+		this.effects.spawnParticles(
+			this.dino.x + this.dino.width / 2,
+			this.dino.y + this.dino.height / 2,
+			"#a855f6",
+			15,
+			200,
+			0.8,
+		);
 	}
 
 	incrementScore(amount: number = 1, fromSmash: boolean = false) {
@@ -604,6 +632,9 @@ export class Game implements IGame {
 				break;
 			case "QUETZ":
 				this.activateQuetzRide();
+				break;
+			case "GRAVITY_FLIP":
+				this.activateGravityFlip();
 				break;
 		}
 		this.toggleDebugMenu(false);

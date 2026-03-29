@@ -19,6 +19,7 @@ export class PowerupManager implements IPowerupManager {
 	emeraldImg: HTMLImageElement;
 	featherImg: HTMLImageElement;
 	nextQuetzSpawn: number;
+	nextGravityFlipSpawn: number;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -27,6 +28,7 @@ export class PowerupManager implements IPowerupManager {
 		this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
 		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
+		this.nextGravityFlipSpawn = this.calculateNextGravityFlipSpawn(0);
 		this.radius = CONFIG.POWERUP_RADIUS;
 
 		this.emeraldImg = loadImage(spritePath("emerald.webp"));
@@ -59,6 +61,17 @@ export class PowerupManager implements IPowerupManager {
 		);
 	}
 
+	calculateNextGravityFlipSpawn(currentScore: number): number {
+		return (
+			Math.max(currentScore, CONFIG.GRAVITY_FLIP_THRESHOLD) +
+			Math.floor(
+				Math.random() *
+					(CONFIG.GRAVITY_FLIP_SPAWN_MAX - CONFIG.GRAVITY_FLIP_SPAWN_MIN),
+			) +
+			CONFIG.GRAVITY_FLIP_SPAWN_MIN
+		);
+	}
+
 	checkSpawn(currentScore: number) {
 		if (currentScore >= this.nextBoneSpawn) {
 			this.spawn("BONE");
@@ -76,14 +89,27 @@ export class PowerupManager implements IPowerupManager {
 			this.nextMagnetSpawn += CONFIG.MAGNET_THRESHOLD;
 		}
 
-		// Don't spawn quetz during super mode or active quetz ride
+		// Don't spawn quetz during super mode, active quetz ride, or gravity flip
 		if (
 			currentScore >= this.nextQuetzSpawn &&
 			this.game.timers.superMode <= 0 &&
-			this.game.timers.quetzRide <= 0
+			this.game.timers.quetzRide <= 0 &&
+			this.game.timers.gravityFlip <= 0
 		) {
 			this.spawn("QUETZAL");
 			this.nextQuetzSpawn = currentScore + CONFIG.QUETZ_SPAWN_INTERVAL;
+		}
+
+		// Don't spawn gravity flip during super mode, quetz ride, or active gravity flip
+		if (
+			currentScore >= this.nextGravityFlipSpawn &&
+			this.game.timers.superMode <= 0 &&
+			this.game.timers.quetzRide <= 0 &&
+			this.game.timers.gravityFlip <= 0
+		) {
+			this.spawn("GRAVITY_FLIP");
+			this.nextGravityFlipSpawn =
+				this.calculateNextGravityFlipSpawn(currentScore);
 		}
 	}
 
@@ -135,6 +161,7 @@ export class PowerupManager implements IPowerupManager {
 			else if (p.type === "EMERALD") this.drawEmerald(ctx, p.x, p.y);
 			else if (p.type === "MAGNET") this.drawMagnet(ctx, p.x, p.y);
 			else if (p.type === "QUETZAL") this.drawFeather(ctx, p.x, p.y);
+			else if (p.type === "GRAVITY_FLIP") this.drawGravityFlip(ctx, p.x, p.y);
 		});
 	}
 
@@ -160,6 +187,12 @@ export class PowerupManager implements IPowerupManager {
 			ctx.font = "40px serif";
 			ctx.fillText("💚", x, y); // Fallback emoji
 		}
+	}
+
+	drawGravityFlip(ctx: CanvasRenderingContext2D, x: number, y: number) {
+		const bob = Math.sin(this.game.time * 0.004) * 4;
+		ctx.font = "36px serif";
+		ctx.fillText("🙃", x, y + bob);
 	}
 
 	drawMagnet(ctx: CanvasRenderingContext2D, x: number, y: number) {
@@ -202,7 +235,8 @@ export class PowerupManager implements IPowerupManager {
 				p.type === "DIAMOND" ||
 				p.type === "EMERALD" ||
 				p.type === "MAGNET" ||
-				p.type === "QUETZAL"
+				p.type === "QUETZAL" ||
+				p.type === "GRAVITY_FLIP"
 					? CONFIG.POWERUP_LARGE_RADIUS
 					: CONFIG.POWERUP_RADIUS;
 			if (dist < dino.radius + r) {
@@ -219,5 +253,6 @@ export class PowerupManager implements IPowerupManager {
 		this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
 		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
+		this.nextGravityFlipSpawn = this.calculateNextGravityFlipSpawn(0);
 	}
 }
