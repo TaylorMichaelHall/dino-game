@@ -135,7 +135,7 @@ export class Game implements IGame {
 		if (this.state === GAME_STATE.START) {
 			this.startGame();
 		} else if (this.state === GAME_STATE.PLAYING) {
-			if (this.quetzRide.active) return;
+			if (this.dino.isQuetzRiding) return;
 			this.dino.jump();
 			this.audio.playJump();
 		}
