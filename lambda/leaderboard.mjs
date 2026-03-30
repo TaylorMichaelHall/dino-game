@@ -8,7 +8,7 @@ const dynamo = new DynamoDBClient({});
 const TABLE_NAME = "dino-leaderboard";
 const MAX_ENTRIES = 20;
 const MAX_PLAUSIBLE_SCORE = 50000;
-const VALID_DINOS = ["raptor", "quetzal", "trex", "spino", "mosa", "allo"];
+const VALID_DINOS = ["raptor", "ptero", "trex", "spino", "mosa", "allo"];
 
 const ALLOWED_ORIGINS = [
 	"https://taylormichaelhall.com",
