@@ -62,6 +62,7 @@ export class Game implements IGame {
 	};
 	leaderboard: ILeaderboardService;
 	debugActive: boolean;
+	debugUsed: boolean;
 	lastBorderTime: number = 0;
 
 	constructor(canvas: HTMLCanvasElement) {
@@ -102,6 +103,7 @@ export class Game implements IGame {
 		this.leaderboard = new LeaderboardService();
 		this.stats = this.initStats();
 		this.debugActive = false;
+		this.debugUsed = false;
 
 		this.input.bindUIEvents();
 		this.ui.updateAudioButtons(this.musicEnabled, this.sfxEnabled);
@@ -167,6 +169,7 @@ export class Game implements IGame {
 		this.quetzRide.reset();
 		this.pteroFlock.reset();
 		this.stats = this.initStats();
+		this.debugUsed = false;
 		this.ui.updateCombo(0);
 
 		this.state = GAME_STATE.START as GameState;
@@ -549,11 +552,13 @@ export class Game implements IGame {
 		this.audio.playGameOver();
 		this.audio.stopMusic();
 		const isNewBest = this.scoring.score > this.scoring.highScore;
-		this.scoring.saveHighScore();
+		if (!this.debugUsed) {
+			this.scoring.saveHighScore();
+		}
 		this.updateUI();
 		this.ui.setScreen(this.state);
 
-		if (this.leaderboard.isAvailable()) {
+		if (!this.debugUsed && this.leaderboard.isAvailable()) {
 			this.leaderboard.recordPlay();
 			if (isNewBest) {
 				await this.leaderboard.fetchLeaderboard();
@@ -599,6 +604,7 @@ export class Game implements IGame {
 
 	toggleDebugMenu(show: boolean = !this.debugActive) {
 		this.debugActive = show;
+		if (show) this.debugUsed = true;
 		this.ui.toggleDebugMenu(show);
 		if (show) {
 			this.ui.populateDebugDinoList(DINOS, this.dino.level, (index: number) => {
