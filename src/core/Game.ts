@@ -286,7 +286,8 @@ export class Game implements IGame {
 		if (timerEvents.gravityFlipExpired) {
 			this.ui.updatePowerupTimer(0);
 			this.dino.setGravityFlipped(false);
-			this.ui.showMessage("Gravity Restored!");
+			this.incrementScore(CONFIG.GRAVITY_FLIP_BONUS);
+			this.ui.showMessage("Gravity Restored! +50");
 		}
 
 		if (timerEvents.comboExpired) {
