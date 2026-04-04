@@ -72,6 +72,9 @@ export class ObstacleManager implements IObstacleManager {
 		const shadowOffsetY = 4;
 
 		this.obstacles.forEach((obs) => {
+			// Skip obstacles fully off-screen
+			if (obs.x + this.obstacleWidth < 0 || obs.x > this.game.width) return;
+
 			const topPipeBottomY = obs.topHeight;
 			const bottomPipeTopY = obs.topHeight + this.gapSize;
 
@@ -159,17 +162,20 @@ export class ObstacleManager implements IObstacleManager {
 		ctx.fill(dotPath);
 		ctx.restore();
 
-		// Glow effects
+		// Glow border — layered strokes instead of shadowBlur
 		ctx.save();
 		ctx.strokeStyle = drawColor;
-		ctx.lineWidth = 6;
-		ctx.shadowBlur = 10 + Math.random() * 8;
-		ctx.shadowColor = drawColor;
+		ctx.globalAlpha = 0.15;
+		ctx.lineWidth = 14;
 		ctx.strokeRect(x, startY, width, height);
-
+		ctx.globalAlpha = 0.3;
+		ctx.lineWidth = 8;
+		ctx.strokeRect(x, startY, width, height);
+		ctx.globalAlpha = 1;
+		ctx.lineWidth = 4;
+		ctx.strokeRect(x, startY, width, height);
 		ctx.strokeStyle = "#ffffff";
 		ctx.lineWidth = 2;
-		ctx.shadowBlur = 0;
 		ctx.strokeRect(x, startY, width, height);
 		ctx.restore();
 	}
