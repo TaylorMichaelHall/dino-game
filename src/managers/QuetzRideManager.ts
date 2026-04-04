@@ -1,6 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import type { IGame } from "../types";
-import { loadImage, spritePath } from "../utils/helpers";
+import { compactInPlace, loadImage, spritePath } from "../utils/helpers";
 
 type Phase = "idle" | "entering" | "riding" | "exiting";
 
@@ -227,7 +227,7 @@ export class QuetzRideManager {
 			p.x += p.vx * deltaTime;
 			p.life -= deltaTime;
 		}
-		this.windParticles = this.windParticles.filter((p) => p.life > 0);
+		compactInPlace(this.windParticles, (p) => p.life > 0);
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {

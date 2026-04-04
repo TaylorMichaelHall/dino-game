@@ -41,7 +41,9 @@ export class Dino implements IDino {
 	visible: boolean;
 	isSuper: boolean;
 	superType: "trex" | "spino" | null;
-	history: HistoryPoint[];
+	historyBuffer: HistoryPoint[];
+	historyHead: number;
+	historyLen: number;
 	historyMax: number;
 	followerX: number;
 	primaryX: number;
@@ -80,9 +82,11 @@ export class Dino implements IDino {
 		this.isSuper = false;
 		this.superType = null;
 
-		// Follower / Transition states
-		this.history = [];
+		// Follower / Transition states (circular buffer)
 		this.historyMax = CONFIG.DINO_HISTORY_MAX;
+		this.historyBuffer = new Array<HistoryPoint>(this.historyMax);
+		this.historyHead = 0;
+		this.historyLen = 0;
 		this.followerX = CONFIG.DINO_FOLLOWER_X;
 		this.primaryX = CONFIG.DINO_START_X;
 		this.displayX = CONFIG.DINO_START_X;
@@ -101,6 +105,24 @@ export class Dino implements IDino {
 
 		this.sprites = {};
 		this.initSprites();
+	}
+
+	private historyPush(point: HistoryPoint): void {
+		this.historyBuffer[this.historyHead] = point;
+		this.historyHead = (this.historyHead + 1) % this.historyMax;
+		if (this.historyLen < this.historyMax) this.historyLen++;
+	}
+
+	private historyOldest(): HistoryPoint | undefined {
+		if (this.historyLen === 0) return undefined;
+		return this.historyBuffer[
+			(this.historyHead - this.historyLen + this.historyMax) % this.historyMax
+		];
+	}
+
+	private historyClear(): void {
+		this.historyHead = 0;
+		this.historyLen = 0;
 	}
 
 	initSprites() {
@@ -160,7 +182,7 @@ export class Dino implements IDino {
 		// Super Follower Logic
 		if (this.isSuper) {
 			// Track history for the follower
-			this.history.push({
+			this.historyPush({
 				y: this.y,
 				rotation: Math.min(
 					CONFIG.DINO_MAX_ROTATION,
@@ -170,9 +192,6 @@ export class Dino implements IDino {
 					),
 				),
 			});
-			if (this.history.length > this.historyMax) {
-				this.history.shift();
-			}
 
 			// Move player to primary position if not there
 			if (this.displayX < this.primaryX) {
@@ -185,7 +204,7 @@ export class Dino implements IDino {
 				this.displayX += deltaTime * 100;
 				if (this.displayX > this.primaryX) this.displayX = this.primaryX;
 			}
-			this.history = [];
+			this.historyClear();
 		}
 
 		// Flying off sprite animation
@@ -268,8 +287,8 @@ export class Dino implements IDino {
 		if (!this.visible) return;
 
 		// Draw Follower if in Super mode
-		if (this.isSuper && this.history.length > 0) {
-			const followerData = this.history[0];
+		if (this.isSuper && this.historyLen > 0) {
+			const followerData = this.historyOldest();
 			if (!followerData) return;
 			ctx.save();
 			ctx.translate(
@@ -391,14 +410,14 @@ export class Dino implements IDino {
 
 		// Smoothly transition state: normal dino was at followerX, history[0].y
 		// We make it the primary at its current lagging position
-		if (this.history.length > 0) {
-			this.y = this.history[0]?.y;
+		if (this.historyLen > 0) {
+			this.y = this.historyOldest()?.y ?? this.y;
 			// velocity is approximated or we could store it in history
 		}
 		this.displayX = this.followerX;
 		this.isSuper = false;
 		this.superType = null;
-		this.history = [];
+		this.historyClear();
 	}
 
 	drawNormalDino(ctx: CanvasRenderingContext2D) {
@@ -443,7 +462,7 @@ export class Dino implements IDino {
 		this.visible = true;
 		this.isSuper = false;
 		this.superType = null;
-		this.history = [];
+		this.historyClear();
 		this.flyingOffSprite = null;
 		this.isQuetzRiding = false;
 		this.isGravityFlipped = false;

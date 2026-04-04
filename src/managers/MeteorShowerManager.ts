@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import type { IGame } from "../types";
+import { compactInPlace } from "../utils/helpers";
 
 interface TrailParticle {
 	x: number;
@@ -214,19 +215,17 @@ export class MeteorShowerManager {
 				p.y += p.vy * dt;
 				p.life -= dt;
 			}
-			m.trail = m.trail.filter((p) => p.life > 0);
+			compactInPlace(m.trail, (p) => p.life > 0);
 		}
 
 		// Update ground impacts
 		for (const imp of this.impacts) {
 			imp.life -= dt;
 		}
-		this.impacts = this.impacts.filter((imp) => imp.life > 0);
+		compactInPlace(this.impacts, (imp) => imp.life > 0);
 
 		// Remove dead meteors (impacted and trail gone)
-		this.meteors = this.meteors.filter(
-			(m) => !m.impacted || m.trail.length > 0,
-		);
+		compactInPlace(this.meteors, (m) => !m.impacted || m.trail.length > 0);
 	}
 
 	spawnMeteor() {
