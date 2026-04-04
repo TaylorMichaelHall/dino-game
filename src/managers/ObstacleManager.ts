@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import type { IDino, IGame, IObstacleManager } from "../types";
+import { compactInPlace } from "../utils/helpers";
 
 interface Obstacle {
 	x: number;
@@ -45,9 +46,7 @@ export class ObstacleManager implements IObstacleManager {
 		});
 
 		// Cleanup off-screen
-		this.obstacles = this.obstacles.filter(
-			(obs) => obs.x + this.obstacleWidth > -100,
-		);
+		compactInPlace(this.obstacles, (obs) => obs.x + this.obstacleWidth > -100);
 	}
 
 	spawn() {

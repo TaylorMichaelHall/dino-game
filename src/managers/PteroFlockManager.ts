@@ -1,6 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import type { IGame } from "../types";
-import { loadImage, spritePath } from "../utils/helpers";
+import { compactInPlace, loadImage, spritePath } from "../utils/helpers";
 
 interface FlockBird {
 	offsetX: number;
@@ -56,7 +56,7 @@ export class PteroFlockManager {
 		// Remove flocks that are fully off-screen left
 		const margin =
 			CONFIG.FLOCK_SPRITE_SIZE + CONFIG.FLOCK_SPREAD_X * CONFIG.FLOCK_SIZE_MAX;
-		this.flocks = this.flocks.filter((f) => f.baseX > -margin);
+		compactInPlace(this.flocks, (f) => f.baseX > -margin);
 	}
 
 	private spawnFlock() {

@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import type { IGame } from "../types";
+import { compactInPlace } from "../utils/helpers";
 
 interface SpeedLine {
 	x: number;
@@ -212,7 +213,7 @@ export class EffectManager {
 			p.vy += CONFIG.PARTICLE_GRAVITY * deltaTime;
 			p.life -= deltaTime;
 		});
-		this.particles = this.particles.filter((p) => p.life > 0);
+		compactInPlace(this.particles, (p) => p.life > 0);
 
 		// Shatter Particles
 		this.shatterParticles.forEach((p) => {
@@ -222,13 +223,13 @@ export class EffectManager {
 			p.rot += p.vrot * deltaTime;
 			p.life -= deltaTime;
 		});
-		this.shatterParticles = this.shatterParticles.filter((p) => p.life > 0);
+		compactInPlace(this.shatterParticles, (p) => p.life > 0);
 
 		// Trails
 		this.trails.forEach((t) => {
 			t.life -= deltaTime;
 		});
-		this.trails = this.trails.filter((t) => t.life > 0);
+		compactInPlace(this.trails, (t) => t.life > 0);
 
 		// FCT
 		this.fct.forEach((f) => {
@@ -236,7 +237,7 @@ export class EffectManager {
 			f.vy += CONFIG.FCT_GRAVITY * deltaTime;
 			f.life -= deltaTime;
 		});
-		this.fct = this.fct.filter((f) => f.life > 0);
+		compactInPlace(this.fct, (f) => f.life > 0);
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {

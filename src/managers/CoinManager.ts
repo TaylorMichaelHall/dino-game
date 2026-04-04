@@ -1,6 +1,12 @@
 import { CONFIG } from "../config/Constants";
 import type { ICoinManager, IDino, IGame } from "../types";
-import { distance, loadImage, overlapsDNA, spritePath } from "../utils/helpers";
+import {
+	compactInPlace,
+	distance,
+	loadImage,
+	overlapsDNA,
+	spritePath,
+} from "../utils/helpers";
 
 interface Coin {
 	x: number;
@@ -191,7 +197,7 @@ export class CoinManager implements ICoinManager {
 		// OPTIMIZATION: Removed per-frame overlap check. Objects move at same speed.
 
 		// Cleanup off-screen
-		this.coins = this.coins.filter((coin) => !coin.collected && coin.x > -50);
+		compactInPlace(this.coins, (coin) => !coin.collected && coin.x > -50);
 
 		// Improved Spawn logic: Higher probability overall
 		const spawnProb =

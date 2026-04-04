@@ -1,6 +1,12 @@
 import { CONFIG } from "../config/Constants";
 import type { IDino, IGame, IPowerupManager, PowerupType } from "../types";
-import { distance, loadImage, overlapsDNA, spritePath } from "../utils/helpers";
+import {
+	compactInPlace,
+	distance,
+	loadImage,
+	overlapsDNA,
+	spritePath,
+} from "../utils/helpers";
 
 interface Powerup {
 	type: PowerupType;
@@ -143,13 +149,11 @@ export class PowerupManager implements IPowerupManager {
 			p.x -= speed * deltaTime;
 		});
 
-		// Dynamic Filtering: Remove powerups that overlap with DNA
-		this.powerups = this.powerups.filter(
-			(p) => !this.overlapsDNACheck(p.x, p.y),
+		// Remove collected, off-screen, and DNA-overlapping powerups in one pass
+		compactInPlace(
+			this.powerups,
+			(p) => !p.collected && p.x > -100 && !this.overlapsDNACheck(p.x, p.y),
 		);
-
-		// Cleanup off-screen
-		this.powerups = this.powerups.filter((p) => !p.collected && p.x > -100);
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {

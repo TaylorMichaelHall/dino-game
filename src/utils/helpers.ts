@@ -32,6 +32,21 @@ export function distance(
 }
 
 /**
+ * Remove elements from an array in-place without allocating a new array.
+ * Retains elements where `keep` returns true; order is preserved.
+ */
+export function compactInPlace<T>(arr: T[], keep: (item: T) => boolean): void {
+	let write = 0;
+	for (let read = 0; read < arr.length; read++) {
+		if (keep(arr[read])) {
+			if (write !== read) arr[write] = arr[read];
+			write++;
+		}
+	}
+	arr.length = write;
+}
+
+/**
  * Check if a point overlaps with DNA obstacles
  */
 export function overlapsDNA(
