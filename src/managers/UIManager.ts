@@ -497,6 +497,13 @@ export class UIManager {
 				isImg: true,
 			});
 		}
+		if (stats.powerups.TOXIC_WASTE && stats.powerups.TOXIC_WASTE > 0) {
+			items.push({
+				name: "Toxic Waste",
+				count: stats.powerups.TOXIC_WASTE,
+				icon: "☢️",
+			});
+		}
 		if (stats.powerups.COIN && stats.powerups.COIN > 0) {
 			items.push({
 				name: "Coins",
