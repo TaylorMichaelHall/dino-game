@@ -2,6 +2,13 @@
  * Shared utility functions for the dino game
  */
 
+import { CONFIG } from "../config/Constants";
+
+export function toxicFilter(gameTime: number): string {
+	const pulse = 8 + Math.sin(gameTime * 0.008) * 4;
+	return `drop-shadow(0 0 ${pulse}px ${CONFIG.TOXIC_COLOR_BRIGHT}) hue-rotate(80deg) saturate(1.8) brightness(1.15)`;
+}
+
 /**
  * Load an image from a source URL
  */

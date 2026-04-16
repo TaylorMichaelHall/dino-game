@@ -7,6 +7,7 @@ export interface TimerEvents {
 	comboExpired: boolean;
 	quetzRideExpired: boolean;
 	gravityFlipExpired: boolean;
+	toxicWasteExpired: boolean;
 }
 
 export interface ITimerManager {
@@ -20,6 +21,7 @@ export interface ITimerManager {
 	shakeIntensity: number;
 	quetzRide: number;
 	gravityFlip: number;
+	toxicWaste: number;
 	update(dt: number, superModeActive: boolean): TimerEvents;
 	triggerShake(intensity?: number): void;
 	reset(): void;
@@ -40,6 +42,7 @@ export class TimerManager implements ITimerManager {
 	shakeIntensity: number = 0;
 	quetzRide: number = 0;
 	gravityFlip: number = 0;
+	toxicWaste: number = 0;
 
 	update(dt: number, superModeActive: boolean): TimerEvents {
 		const events: TimerEvents = {
@@ -49,6 +52,7 @@ export class TimerManager implements ITimerManager {
 			comboExpired: false,
 			quetzRideExpired: false,
 			gravityFlipExpired: false,
+			toxicWasteExpired: false,
 		};
 
 		// Speed boost timer
@@ -88,6 +92,14 @@ export class TimerManager implements ITimerManager {
 			this.gravityFlip -= dt;
 			if (this.gravityFlip <= 0) {
 				events.gravityFlipExpired = true;
+			}
+		}
+
+		// Toxic waste timer (cosmetic)
+		if (this.toxicWaste > 0) {
+			this.toxicWaste -= dt;
+			if (this.toxicWaste <= 0) {
+				events.toxicWasteExpired = true;
 			}
 		}
 
@@ -131,5 +143,6 @@ export class TimerManager implements ITimerManager {
 		this.shakeIntensity = 0;
 		this.quetzRide = 0;
 		this.gravityFlip = 0;
+		this.toxicWaste = 0;
 	}
 }

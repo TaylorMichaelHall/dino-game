@@ -1,7 +1,7 @@
 import { CONFIG } from "../config/Constants";
 import { DINOS, SUPER_DINOS } from "../config/DinoConfig";
 import type { DinoConfig, IDino, IGame } from "../types";
-import { loadImage, spritePath } from "../utils/helpers";
+import { loadImage, spritePath, toxicFilter } from "../utils/helpers";
 
 interface HistoryPoint {
 	y: number;
@@ -286,6 +286,9 @@ export class Dino implements IDino {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (!this.visible) return;
 
+		const filter =
+			this.game.timers.toxicWaste > 0 ? toxicFilter(this.game.time) : null;
+
 		// Draw Follower if in Super mode
 		if (this.isSuper && this.historyLen > 0) {
 			const followerData = this.historyOldest();
@@ -298,6 +301,7 @@ export class Dino implements IDino {
 			ctx.rotate(followerData.rotation);
 			ctx.scale(0.8, 0.8);
 			ctx.globalAlpha = 0.8;
+			if (filter) ctx.filter = filter;
 			this.drawNormalDino(ctx); // Helper for choosing correct current level sprite
 			ctx.restore();
 		}
@@ -311,6 +315,7 @@ export class Dino implements IDino {
 			);
 			ctx.rotate(-0.2); // Slighting angle up
 			ctx.scale(0.8, 0.8);
+			if (filter) ctx.filter = filter;
 			this.drawSuper(ctx, this.flyingOffSprite.type);
 			ctx.restore();
 		}
@@ -339,6 +344,8 @@ export class Dino implements IDino {
 		ctx.rotate(rotation);
 
 		ctx.scale(0.8, 0.8);
+
+		if (filter) ctx.filter = filter;
 
 		if (this.isSuper) {
 			this.drawSuper(ctx);

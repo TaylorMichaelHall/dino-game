@@ -64,6 +64,7 @@ export class Game implements IGame {
 	debugActive: boolean;
 	debugUsed: boolean;
 	lastBorderTime: number = 0;
+	toxicDripAccum: number = 0;
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
@@ -128,6 +129,7 @@ export class Game implements IGame {
 				MAGNET: 0,
 				QUETZAL: 0,
 				GRAVITY_FLIP: 0,
+				TOXIC_WASTE: 0,
 				COIN: 0,
 			},
 		};
@@ -293,6 +295,25 @@ export class Game implements IGame {
 			this.ui.showMessage("Gravity Restored! +50");
 		}
 
+		if (this.timers.toxicWaste > 0) {
+			this.toxicDripAccum += deltaTime;
+			while (this.toxicDripAccum >= CONFIG.TOXIC_DRIP_INTERVAL) {
+				this.toxicDripAccum -= CONFIG.TOXIC_DRIP_INTERVAL;
+				const dripY = this.dino.isGravityFlipped
+					? this.dino.y + this.dino.height * 0.2
+					: this.dino.y + this.dino.height * 0.7;
+				this.effects.spawnDrips(
+					this.dino.displayX + this.dino.width / 2,
+					dripY,
+				);
+			}
+		}
+
+		if (timerEvents.toxicWasteExpired) {
+			this.toxicDripAccum = 0;
+			this.ui.showMessage("Toxicity Cleared");
+		}
+
 		if (timerEvents.comboExpired) {
 			this.scoring.combo = 0;
 			this.ui.updateCombo(0);
@@ -341,6 +362,7 @@ export class Game implements IGame {
 		else if (pType === "MAGNET") this.collectMagnet();
 		else if (pType === "QUETZAL") this.activateQuetzRide();
 		else if (pType === "GRAVITY_FLIP") this.activateGravityFlip();
+		else if (pType === "TOXIC_WASTE") this.collectToxicWaste();
 
 		// Coins
 		if (this.coins.checkCollision(this.dino)) {
@@ -448,6 +470,23 @@ export class Game implements IGame {
 			this.dino.y + this.dino.height / 2,
 			"#a855f6",
 			15,
+			200,
+			0.8,
+		);
+	}
+
+	collectToxicWaste() {
+		this.audio.playPowerup();
+		this.timers.toxicWaste = CONFIG.TOXIC_WASTE_DURATION;
+		this.toxicDripAccum = 0;
+		this.incrementScore(CONFIG.TOXIC_WASTE_BONUS);
+		this.ui.showMessage("☢️ TOXIC WASTE ☢️");
+		this.stats.powerups.TOXIC_WASTE++;
+		this.effects.spawnParticles(
+			this.dino.x + this.dino.width / 2,
+			this.dino.y + this.dino.height / 2,
+			CONFIG.TOXIC_COLOR_BRIGHT,
+			20,
 			200,
 			0.8,
 		);
@@ -642,6 +681,9 @@ export class Game implements IGame {
 				break;
 			case "GRAVITY_FLIP":
 				this.activateGravityFlip();
+				break;
+			case "TOXIC_WASTE":
+				this.collectToxicWaste();
 				break;
 		}
 		this.toggleDebugMenu(false);

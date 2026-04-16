@@ -168,6 +168,23 @@ export class EffectManager {
 		}
 	}
 
+	spawnDrips(x: number, y: number) {
+		const count = 2 + Math.floor(Math.random() * 2);
+		for (let i = 0; i < count; i++) {
+			const bright = Math.random() < 0.6;
+			this.particles.push({
+				x: x + (Math.random() - 0.5) * 24,
+				y: y + (Math.random() - 0.5) * 10,
+				vx: (Math.random() - 0.5) * 60,
+				vy: 20 + Math.random() * 60,
+				life: 0.7,
+				maxLife: 0.7,
+				color: bright ? CONFIG.TOXIC_COLOR_BRIGHT : CONFIG.TOXIC_COLOR_DARK,
+				size: 3 + Math.random() * 4,
+			});
+		}
+	}
+
 	spawnTrail(x: number, y: number, w: number, h: number, sprite: string) {
 		// Pre-warm the cache when spawning trails
 		this.getCachedImage(sprite);

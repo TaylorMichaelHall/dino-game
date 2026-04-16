@@ -33,7 +33,8 @@ export type PowerupType =
 	| "EMERALD"
 	| "MAGNET"
 	| "QUETZAL"
-	| "GRAVITY_FLIP";
+	| "GRAVITY_FLIP"
+	| "TOXIC_WASTE";
 
 export interface ComboStage {
 	threshold: number;
@@ -230,6 +231,7 @@ export interface IEffectManager {
 	): void;
 	spawnTrail(x: number, y: number, w: number, h: number, sprite: string): void;
 	spawnFCT(x: number, y: number, text: string, color?: string): void;
+	spawnDrips(x: number, y: number): void;
 }
 
 export interface IObstacle {

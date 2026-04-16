@@ -26,6 +26,7 @@ export class PowerupManager implements IPowerupManager {
 	featherImg: HTMLImageElement;
 	nextQuetzSpawn: number;
 	nextGravityFlipSpawn: number;
+	nextToxicWasteSpawn: number;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -35,6 +36,7 @@ export class PowerupManager implements IPowerupManager {
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
 		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
 		this.nextGravityFlipSpawn = this.calculateNextGravityFlipSpawn(0);
+		this.nextToxicWasteSpawn = this.calculateNextToxicWasteSpawn(0);
 		this.radius = CONFIG.POWERUP_RADIUS;
 
 		this.emeraldImg = loadImage(spritePath("emerald.webp"));
@@ -78,6 +80,17 @@ export class PowerupManager implements IPowerupManager {
 		);
 	}
 
+	calculateNextToxicWasteSpawn(currentScore: number): number {
+		return (
+			currentScore +
+			Math.floor(
+				Math.random() *
+					(CONFIG.TOXIC_WASTE_SPAWN_MAX - CONFIG.TOXIC_WASTE_SPAWN_MIN),
+			) +
+			CONFIG.TOXIC_WASTE_SPAWN_MIN
+		);
+	}
+
 	checkSpawn(currentScore: number) {
 		if (currentScore >= this.nextBoneSpawn) {
 			this.spawn("BONE");
@@ -116,6 +129,12 @@ export class PowerupManager implements IPowerupManager {
 			this.spawn("GRAVITY_FLIP");
 			this.nextGravityFlipSpawn =
 				this.calculateNextGravityFlipSpawn(currentScore);
+		}
+
+		if (currentScore >= this.nextToxicWasteSpawn) {
+			this.spawn("TOXIC_WASTE");
+			this.nextToxicWasteSpawn =
+				this.calculateNextToxicWasteSpawn(currentScore);
 		}
 	}
 
@@ -166,7 +185,27 @@ export class PowerupManager implements IPowerupManager {
 			else if (p.type === "MAGNET") this.drawMagnet(ctx, p.x, p.y);
 			else if (p.type === "QUETZAL") this.drawFeather(ctx, p.x, p.y);
 			else if (p.type === "GRAVITY_FLIP") this.drawGravityFlip(ctx, p.x, p.y);
+			else if (p.type === "TOXIC_WASTE") this.drawToxicWaste(ctx, p.x, p.y);
 		});
+	}
+
+	drawToxicWaste(ctx: CanvasRenderingContext2D, x: number, y: number) {
+		const bob = Math.sin(this.game.time * 0.004) * 4;
+		const by = y + bob;
+		const pulse = 0.18 + Math.sin(this.game.time * 0.006) * 0.1;
+
+		ctx.save();
+		const grad = ctx.createRadialGradient(x, by, 4, x, by, 36);
+		grad.addColorStop(0, `rgba(${CONFIG.TOXIC_COLOR_BRIGHT_RGB}, ${pulse})`);
+		grad.addColorStop(1, `rgba(${CONFIG.TOXIC_COLOR_BRIGHT_RGB}, 0)`);
+		ctx.fillStyle = grad;
+		ctx.beginPath();
+		ctx.arc(x, by, 36, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.restore();
+
+		ctx.font = "34px serif";
+		ctx.fillText("☢️", x, by);
 	}
 
 	drawBone(ctx: CanvasRenderingContext2D, x: number, y: number) {
@@ -240,7 +279,8 @@ export class PowerupManager implements IPowerupManager {
 				p.type === "EMERALD" ||
 				p.type === "MAGNET" ||
 				p.type === "QUETZAL" ||
-				p.type === "GRAVITY_FLIP"
+				p.type === "GRAVITY_FLIP" ||
+				p.type === "TOXIC_WASTE"
 					? CONFIG.POWERUP_LARGE_RADIUS
 					: CONFIG.POWERUP_RADIUS;
 			if (dist < dino.radius + r) {
@@ -258,5 +298,6 @@ export class PowerupManager implements IPowerupManager {
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
 		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
 		this.nextGravityFlipSpawn = this.calculateNextGravityFlipSpawn(0);
+		this.nextToxicWasteSpawn = this.calculateNextToxicWasteSpawn(0);
 	}
 }
