@@ -1,4 +1,9 @@
 import { CONFIG } from "../config/Constants";
+import {
+	ELEMENTAL_KEYS,
+	ELEMENTALS,
+	type ElementalKey,
+} from "../config/ElementalConfig";
 import type { IDino, IGame, IPowerupManager, PowerupType } from "../types";
 import {
 	compactInPlace,
@@ -26,7 +31,7 @@ export class PowerupManager implements IPowerupManager {
 	featherImg: HTMLImageElement;
 	nextQuetzSpawn: number;
 	nextGravityFlipSpawn: number;
-	nextToxicWasteSpawn: number;
+	nextElementalSpawn: number;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -36,7 +41,7 @@ export class PowerupManager implements IPowerupManager {
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
 		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
 		this.nextGravityFlipSpawn = this.calculateNextGravityFlipSpawn(0);
-		this.nextToxicWasteSpawn = this.calculateNextToxicWasteSpawn(0);
+		this.nextElementalSpawn = this.calculateNextElementalSpawn(0);
 		this.radius = CONFIG.POWERUP_RADIUS;
 
 		this.emeraldImg = loadImage(spritePath("emerald.webp"));
@@ -80,14 +85,14 @@ export class PowerupManager implements IPowerupManager {
 		);
 	}
 
-	calculateNextToxicWasteSpawn(currentScore: number): number {
+	calculateNextElementalSpawn(currentScore: number): number {
 		return (
 			currentScore +
 			Math.floor(
 				Math.random() *
-					(CONFIG.TOXIC_WASTE_SPAWN_MAX - CONFIG.TOXIC_WASTE_SPAWN_MIN),
+					(CONFIG.ELEMENTAL_SPAWN_MAX - CONFIG.ELEMENTAL_SPAWN_MIN),
 			) +
-			CONFIG.TOXIC_WASTE_SPAWN_MIN
+			CONFIG.ELEMENTAL_SPAWN_MIN
 		);
 	}
 
@@ -131,10 +136,11 @@ export class PowerupManager implements IPowerupManager {
 				this.calculateNextGravityFlipSpawn(currentScore);
 		}
 
-		if (currentScore >= this.nextToxicWasteSpawn) {
-			this.spawn(Math.random() < 0.5 ? "TOXIC_WASTE" : "BURNING");
-			this.nextToxicWasteSpawn =
-				this.calculateNextToxicWasteSpawn(currentScore);
+		if (currentScore >= this.nextElementalSpawn) {
+			const key =
+				ELEMENTAL_KEYS[Math.floor(Math.random() * ELEMENTAL_KEYS.length)];
+			this.spawn(key);
+			this.nextElementalSpawn = this.calculateNextElementalSpawn(currentScore);
 		}
 	}
 
@@ -185,22 +191,10 @@ export class PowerupManager implements IPowerupManager {
 			else if (p.type === "MAGNET") this.drawMagnet(ctx, p.x, p.y);
 			else if (p.type === "QUETZAL") this.drawFeather(ctx, p.x, p.y);
 			else if (p.type === "GRAVITY_FLIP") this.drawGravityFlip(ctx, p.x, p.y);
-			else if (p.type === "TOXIC_WASTE")
-				this.drawPulsingEmoji(
-					ctx,
-					p.x,
-					p.y,
-					"☢️",
-					CONFIG.TOXIC_COLOR_BRIGHT_RGB,
-				);
-			else if (p.type === "BURNING")
-				this.drawPulsingEmoji(
-					ctx,
-					p.x,
-					p.y,
-					"🌋",
-					CONFIG.BURNING_COLOR_BRIGHT_RGB,
-				);
+			else if (p.type in ELEMENTALS) {
+				const e = ELEMENTALS[p.type as ElementalKey];
+				this.drawPulsingEmoji(ctx, p.x, p.y, e.emoji, e.colorBrightRgb);
+			}
 		});
 	}
 
@@ -301,8 +295,7 @@ export class PowerupManager implements IPowerupManager {
 				p.type === "MAGNET" ||
 				p.type === "QUETZAL" ||
 				p.type === "GRAVITY_FLIP" ||
-				p.type === "TOXIC_WASTE" ||
-				p.type === "BURNING"
+				p.type in ELEMENTALS
 					? CONFIG.POWERUP_LARGE_RADIUS
 					: CONFIG.POWERUP_RADIUS;
 			if (dist < dino.radius + r) {
@@ -320,6 +313,6 @@ export class PowerupManager implements IPowerupManager {
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
 		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
 		this.nextGravityFlipSpawn = this.calculateNextGravityFlipSpawn(0);
-		this.nextToxicWasteSpawn = this.calculateNextToxicWasteSpawn(0);
+		this.nextElementalSpawn = this.calculateNextElementalSpawn(0);
 	}
 }

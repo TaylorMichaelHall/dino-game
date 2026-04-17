@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import { DINOS } from "../config/DinoConfig";
+import { ELEMENTAL_KEYS, ELEMENTALS } from "../config/ElementalConfig";
 import type {
 	ComboStage,
 	DinoConfig,
@@ -497,19 +498,12 @@ export class UIManager {
 				isImg: true,
 			});
 		}
-		if (stats.powerups.TOXIC_WASTE && stats.powerups.TOXIC_WASTE > 0) {
-			items.push({
-				name: "Toxic Waste",
-				count: stats.powerups.TOXIC_WASTE,
-				icon: "☢️",
-			});
-		}
-		if (stats.powerups.BURNING && stats.powerups.BURNING > 0) {
-			items.push({
-				name: "Burning",
-				count: stats.powerups.BURNING,
-				icon: "🌋",
-			});
+		for (const key of ELEMENTAL_KEYS) {
+			const count = stats.powerups[key];
+			if (count && count > 0) {
+				const e = ELEMENTALS[key];
+				items.push({ name: e.statsLabel, count, icon: e.statsIcon });
+			}
 		}
 		if (stats.powerups.COIN && stats.powerups.COIN > 0) {
 			items.push({

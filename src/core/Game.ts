@@ -1,5 +1,12 @@
 import { CONFIG, GAME_STATE } from "../config/Constants";
 import { DINOS } from "../config/DinoConfig";
+import {
+	ELEMENTAL_KEYS,
+	ELEMENTALS,
+	type ElementalKey,
+	type ElementalTickState,
+	makeElementalRecord,
+} from "../config/ElementalConfig";
 import { Dino } from "../entities/Dino";
 import { AudioManager } from "../managers/AudioManager";
 import { CoinManager } from "../managers/CoinManager";
@@ -64,8 +71,7 @@ export class Game implements IGame {
 	debugActive: boolean;
 	debugUsed: boolean;
 	lastBorderTime: number = 0;
-	toxicDripAccum: number = 0;
-	burningFlameAccum: number = 0;
+	elementalTick: Record<ElementalKey, ElementalTickState>;
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
@@ -104,6 +110,9 @@ export class Game implements IGame {
 
 		this.leaderboard = new LeaderboardService();
 		this.stats = this.initStats();
+		this.elementalTick = makeElementalRecord<ElementalTickState>(() => ({
+			accum: 0,
+		}));
 		this.debugActive = false;
 		this.debugUsed = false;
 
@@ -132,6 +141,7 @@ export class Game implements IGame {
 				GRAVITY_FLIP: 0,
 				TOXIC_WASTE: 0,
 				BURNING: 0,
+				LIGHTNING: 0,
 				COIN: 0,
 			},
 		};
@@ -297,42 +307,15 @@ export class Game implements IGame {
 			this.ui.showMessage("Gravity Restored! +50");
 		}
 
-		if (this.timers.toxicWaste > 0) {
-			this.toxicDripAccum += deltaTime;
-			while (this.toxicDripAccum >= CONFIG.TOXIC_DRIP_INTERVAL) {
-				this.toxicDripAccum -= CONFIG.TOXIC_DRIP_INTERVAL;
-				const dripY = this.dino.isGravityFlipped
-					? this.dino.y + this.dino.height * 0.2
-					: this.dino.y + this.dino.height * 0.7;
-				this.effects.spawnDrips(
-					this.dino.displayX + this.dino.width / 2,
-					dripY,
-				);
+		for (const key of ELEMENTAL_KEYS) {
+			const e = ELEMENTALS[key];
+			if (this.timers.elemental[key] > 0) {
+				e.onTick?.(this, deltaTime, this.elementalTick[key]);
 			}
-		}
-
-		if (timerEvents.toxicWasteExpired) {
-			this.toxicDripAccum = 0;
-			this.ui.showMessage("Toxicity Cleared");
-		}
-
-		if (this.timers.burning > 0) {
-			this.burningFlameAccum += deltaTime;
-			while (this.burningFlameAccum >= CONFIG.BURNING_FLAME_INTERVAL) {
-				this.burningFlameAccum -= CONFIG.BURNING_FLAME_INTERVAL;
-				const flameY = this.dino.isGravityFlipped
-					? this.dino.y + this.dino.height * 0.7
-					: this.dino.y + this.dino.height * 0.2;
-				this.effects.spawnFlames(
-					this.dino.displayX + this.dino.width / 2,
-					flameY,
-				);
+			if (timerEvents.elementalExpired[key]) {
+				this.elementalTick[key].accum = 0;
+				this.ui.showMessage(e.expireMessage);
 			}
-		}
-
-		if (timerEvents.burningExpired) {
-			this.burningFlameAccum = 0;
-			this.ui.showMessage("Flames Extinguished");
 		}
 
 		if (timerEvents.comboExpired) {
@@ -383,8 +366,8 @@ export class Game implements IGame {
 		else if (pType === "MAGNET") this.collectMagnet();
 		else if (pType === "QUETZAL") this.activateQuetzRide();
 		else if (pType === "GRAVITY_FLIP") this.activateGravityFlip();
-		else if (pType === "TOXIC_WASTE") this.collectToxicWaste();
-		else if (pType === "BURNING") this.collectBurning();
+		else if (pType && pType in ELEMENTALS)
+			this.collectElemental(pType as ElementalKey);
 
 		// Coins
 		if (this.coins.checkCollision(this.dino)) {
@@ -497,41 +480,18 @@ export class Game implements IGame {
 		);
 	}
 
-	collectToxicWaste() {
+	collectElemental(key: ElementalKey) {
+		const e = ELEMENTALS[key];
 		this.audio.playPowerup();
-		this.timers.toxicWaste = CONFIG.TOXIC_WASTE_DURATION;
-		this.toxicDripAccum = 0;
-		this.incrementScore(CONFIG.TOXIC_WASTE_BONUS);
-		this.ui.showMessage("☢️ TOXIC WASTE ☢️");
-		this.stats.powerups.TOXIC_WASTE++;
-		this.effects.spawnParticles(
-			this.dino.x + this.dino.width / 2,
-			this.dino.y + this.dino.height / 2,
-			CONFIG.TOXIC_COLOR_BRIGHT,
-			20,
-			200,
-			0.8,
-		);
-	}
-
-	collectBurning() {
-		this.audio.playPowerup();
-		this.timers.burning = CONFIG.BURNING_DURATION;
-		this.burningFlameAccum = 0;
-		this.incrementScore(CONFIG.BURNING_BONUS);
-		this.ui.showMessage("🌋 BURNING 🌋");
-		this.stats.powerups.BURNING++;
+		this.timers.elemental[key] = e.duration;
+		this.elementalTick[key].accum = 0;
+		this.incrementScore(e.bonus);
+		this.ui.showMessage(e.pickupMessage);
+		this.stats.powerups[key]++;
 		const cx = this.dino.x + this.dino.width / 2;
 		const cy = this.dino.y + this.dino.height / 2;
-		this.effects.spawnParticles(
-			cx,
-			cy,
-			CONFIG.BURNING_COLOR_BRIGHT,
-			20,
-			200,
-			0.8,
-		);
-		this.meteorShower.spawnMeteorRing(cx, cy);
+		this.effects.spawnParticles(cx, cy, e.colorBright, 20, 200, 0.8);
+		e.onPickupExtra?.(this);
 	}
 
 	incrementScore(amount: number = 1, fromSmash: boolean = false) {
@@ -725,10 +685,9 @@ export class Game implements IGame {
 				this.activateGravityFlip();
 				break;
 			case "TOXIC_WASTE":
-				this.collectToxicWaste();
-				break;
 			case "BURNING":
-				this.collectBurning();
+			case "LIGHTNING":
+				this.collectElemental(type as ElementalKey);
 				break;
 		}
 		this.toggleDebugMenu(false);
