@@ -185,6 +185,23 @@ export class EffectManager {
 		}
 	}
 
+	spawnFlames(x: number, y: number) {
+		const count = 2 + Math.floor(Math.random() * 2);
+		for (let i = 0; i < count; i++) {
+			const bright = Math.random() < 0.6;
+			this.particles.push({
+				x: x + (Math.random() - 0.5) * 24,
+				y: y + (Math.random() - 0.5) * 10,
+				vx: (Math.random() - 0.5) * 40,
+				vy: -(40 + Math.random() * 80),
+				life: 0.6,
+				maxLife: 0.6,
+				color: bright ? CONFIG.BURNING_COLOR_BRIGHT : CONFIG.BURNING_COLOR_DARK,
+				size: 3 + Math.random() * 4,
+			});
+		}
+	}
+
 	spawnTrail(x: number, y: number, w: number, h: number, sprite: string) {
 		// Pre-warm the cache when spawning trails
 		this.getCachedImage(sprite);

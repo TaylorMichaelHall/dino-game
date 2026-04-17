@@ -1,7 +1,12 @@
 import { CONFIG } from "../config/Constants";
 import { DINOS, SUPER_DINOS } from "../config/DinoConfig";
 import type { DinoConfig, IDino, IGame } from "../types";
-import { loadImage, spritePath, toxicFilter } from "../utils/helpers";
+import {
+	burningFilter,
+	loadImage,
+	spritePath,
+	toxicFilter,
+} from "../utils/helpers";
 
 interface HistoryPoint {
 	y: number;
@@ -287,7 +292,11 @@ export class Dino implements IDino {
 		if (!this.visible) return;
 
 		const filter =
-			this.game.timers.toxicWaste > 0 ? toxicFilter(this.game.time) : null;
+			this.game.timers.burning > 0
+				? burningFilter(this.game.time)
+				: this.game.timers.toxicWaste > 0
+					? toxicFilter(this.game.time)
+					: null;
 
 		// Draw Follower if in Super mode
 		if (this.isSuper && this.historyLen > 0) {

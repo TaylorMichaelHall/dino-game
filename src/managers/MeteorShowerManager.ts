@@ -36,6 +36,15 @@ interface GroundImpact {
 
 type EventPhase = "idle" | "darkening" | "meteors" | "fading";
 
+interface RingState {
+	centerX: number;
+	centerY: number;
+	remaining: number;
+	angleStep: number;
+	currentAngle: number;
+	spawnTimer: number;
+}
+
 export class MeteorShowerManager {
 	game: IGame;
 	active: boolean;
@@ -48,6 +57,7 @@ export class MeteorShowerManager {
 	meteorSpawnTimer: number;
 	meteorsSpawned: number;
 	rumblePlayed: boolean;
+	rings: RingState[];
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -61,6 +71,7 @@ export class MeteorShowerManager {
 		this.meteorSpawnTimer = 0;
 		this.meteorsSpawned = 0;
 		this.rumblePlayed = false;
+		this.rings = [];
 	}
 
 	reset() {
@@ -74,6 +85,40 @@ export class MeteorShowerManager {
 		this.meteorSpawnTimer = 0;
 		this.meteorsSpawned = 0;
 		this.rumblePlayed = false;
+		this.rings = [];
+	}
+
+	spawnMeteorRing(centerX: number, centerY: number) {
+		const angleStep = (Math.PI * 2) / CONFIG.BURNING_METEOR_COUNT;
+		const ringDuration =
+			CONFIG.BURNING_METEOR_COUNT * CONFIG.BURNING_METEOR_SPAWN_INTERVAL;
+		for (let i = 0; i < CONFIG.BURNING_RING_COUNT; i++) {
+			this.rings.push({
+				centerX,
+				centerY,
+				remaining: CONFIG.BURNING_METEOR_COUNT,
+				angleStep,
+				currentAngle: -Math.PI / 2,
+				spawnTimer: -i * ringDuration,
+			});
+		}
+		this.game.audio.playMeteorImpact();
+	}
+
+	spawnRingMeteor(centerX: number, centerY: number, angle: number) {
+		const speed = CONFIG.BURNING_METEOR_SPEED;
+		this.meteors.push({
+			x: centerX,
+			y: centerY,
+			vx: Math.cos(angle) * speed,
+			vy: Math.sin(angle) * speed,
+			life: CONFIG.BURNING_METEOR_LIFE,
+			maxLife: CONFIG.BURNING_METEOR_LIFE,
+			size: 4 + Math.random() * 3,
+			trail: [],
+			impacted: false,
+			trailAccum: 0,
+		});
 	}
 
 	trigger() {
@@ -103,6 +148,8 @@ export class MeteorShowerManager {
 	}
 
 	update(dt: number) {
+		this.updateRings(dt);
+
 		if (!this.active && this.meteors.length === 0 && this.impacts.length === 0)
 			return;
 
@@ -163,14 +210,33 @@ export class MeteorShowerManager {
 		this.updateMeteors(dt);
 	}
 
+	updateRings(dt: number) {
+		if (this.rings.length === 0) return;
+		for (const ring of this.rings) {
+			ring.spawnTimer += dt;
+			while (
+				ring.remaining > 0 &&
+				ring.spawnTimer >= CONFIG.BURNING_METEOR_SPAWN_INTERVAL
+			) {
+				ring.spawnTimer -= CONFIG.BURNING_METEOR_SPAWN_INTERVAL;
+				this.spawnRingMeteor(ring.centerX, ring.centerY, ring.currentAngle);
+				ring.currentAngle += ring.angleStep;
+				ring.remaining--;
+			}
+		}
+		compactInPlace(this.rings, (r) => r.remaining > 0);
+	}
+
 	updateMeteors(dt: number) {
 		// Update meteors
 		for (const m of this.meteors) {
 			if (m.impacted) continue;
 
+			m.life -= dt;
+			if (m.life <= 0) continue;
+
 			m.x += m.vx * dt;
 			m.y += m.vy * dt;
-			m.life -= dt;
 
 			// Spawn trail particles
 			m.trailAccum += dt;
@@ -224,8 +290,11 @@ export class MeteorShowerManager {
 		}
 		compactInPlace(this.impacts, (imp) => imp.life > 0);
 
-		// Remove dead meteors (impacted and trail gone)
-		compactInPlace(this.meteors, (m) => !m.impacted || m.trail.length > 0);
+		// Remove dead meteors (impacted/expired and trail gone)
+		compactInPlace(
+			this.meteors,
+			(m) => (!m.impacted && m.life > 0) || m.trail.length > 0,
+		);
 	}
 
 	spawnMeteor() {
@@ -300,8 +369,8 @@ export class MeteorShowerManager {
 			}
 			ctx.globalAlpha = 1;
 
-			// Draw meteor head (if not impacted)
-			if (!m.impacted) {
+			// Draw meteor head (if not impacted or expired)
+			if (!m.impacted && m.life > 0) {
 				const savedComposite = ctx.globalCompositeOperation;
 				ctx.globalCompositeOperation = "lighter";
 

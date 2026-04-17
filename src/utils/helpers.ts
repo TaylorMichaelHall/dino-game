@@ -9,6 +9,12 @@ export function toxicFilter(gameTime: number): string {
 	return `drop-shadow(0 0 ${pulse}px ${CONFIG.TOXIC_COLOR_BRIGHT}) hue-rotate(80deg) saturate(1.8) brightness(1.15)`;
 }
 
+export function burningFilter(gameTime: number): string {
+	const pulse = 14 + Math.sin(gameTime * 0.015) * 6;
+	const flicker = 16 + Math.sin(gameTime * 0.035) * 8;
+	return `drop-shadow(0 -2px ${flicker}px #ff2200) drop-shadow(0 0 ${pulse}px ${CONFIG.BURNING_COLOR_DARK}) hue-rotate(-35deg) saturate(2.4) brightness(1.25) contrast(1.2)`;
+}
+
 /**
  * Load an image from a source URL
  */
