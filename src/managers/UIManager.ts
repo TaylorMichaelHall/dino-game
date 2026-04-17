@@ -504,6 +504,13 @@ export class UIManager {
 				icon: "☢️",
 			});
 		}
+		if (stats.powerups.BURNING && stats.powerups.BURNING > 0) {
+			items.push({
+				name: "Burning",
+				count: stats.powerups.BURNING,
+				icon: "🌋",
+			});
+		}
 		if (stats.powerups.COIN && stats.powerups.COIN > 0) {
 			items.push({
 				name: "Coins",

@@ -8,6 +8,7 @@ export interface TimerEvents {
 	quetzRideExpired: boolean;
 	gravityFlipExpired: boolean;
 	toxicWasteExpired: boolean;
+	burningExpired: boolean;
 }
 
 export interface ITimerManager {
@@ -22,6 +23,7 @@ export interface ITimerManager {
 	quetzRide: number;
 	gravityFlip: number;
 	toxicWaste: number;
+	burning: number;
 	update(dt: number, superModeActive: boolean): TimerEvents;
 	triggerShake(intensity?: number): void;
 	reset(): void;
@@ -43,6 +45,7 @@ export class TimerManager implements ITimerManager {
 	quetzRide: number = 0;
 	gravityFlip: number = 0;
 	toxicWaste: number = 0;
+	burning: number = 0;
 
 	update(dt: number, superModeActive: boolean): TimerEvents {
 		const events: TimerEvents = {
@@ -53,6 +56,7 @@ export class TimerManager implements ITimerManager {
 			quetzRideExpired: false,
 			gravityFlipExpired: false,
 			toxicWasteExpired: false,
+			burningExpired: false,
 		};
 
 		// Speed boost timer
@@ -103,6 +107,14 @@ export class TimerManager implements ITimerManager {
 			}
 		}
 
+		// Burning timer (cosmetic)
+		if (this.burning > 0) {
+			this.burning -= dt;
+			if (this.burning <= 0) {
+				events.burningExpired = true;
+			}
+		}
+
 		// Hit flash timer
 		if (this.hitFlash > 0) {
 			this.hitFlash -= dt;
@@ -144,5 +156,6 @@ export class TimerManager implements ITimerManager {
 		this.quetzRide = 0;
 		this.gravityFlip = 0;
 		this.toxicWaste = 0;
+		this.burning = 0;
 	}
 }

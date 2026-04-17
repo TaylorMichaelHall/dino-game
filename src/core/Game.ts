@@ -65,6 +65,7 @@ export class Game implements IGame {
 	debugUsed: boolean;
 	lastBorderTime: number = 0;
 	toxicDripAccum: number = 0;
+	burningFlameAccum: number = 0;
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
@@ -130,6 +131,7 @@ export class Game implements IGame {
 				QUETZAL: 0,
 				GRAVITY_FLIP: 0,
 				TOXIC_WASTE: 0,
+				BURNING: 0,
 				COIN: 0,
 			},
 		};
@@ -314,6 +316,25 @@ export class Game implements IGame {
 			this.ui.showMessage("Toxicity Cleared");
 		}
 
+		if (this.timers.burning > 0) {
+			this.burningFlameAccum += deltaTime;
+			while (this.burningFlameAccum >= CONFIG.BURNING_FLAME_INTERVAL) {
+				this.burningFlameAccum -= CONFIG.BURNING_FLAME_INTERVAL;
+				const flameY = this.dino.isGravityFlipped
+					? this.dino.y + this.dino.height * 0.7
+					: this.dino.y + this.dino.height * 0.2;
+				this.effects.spawnFlames(
+					this.dino.displayX + this.dino.width / 2,
+					flameY,
+				);
+			}
+		}
+
+		if (timerEvents.burningExpired) {
+			this.burningFlameAccum = 0;
+			this.ui.showMessage("Flames Extinguished");
+		}
+
 		if (timerEvents.comboExpired) {
 			this.scoring.combo = 0;
 			this.ui.updateCombo(0);
@@ -363,6 +384,7 @@ export class Game implements IGame {
 		else if (pType === "QUETZAL") this.activateQuetzRide();
 		else if (pType === "GRAVITY_FLIP") this.activateGravityFlip();
 		else if (pType === "TOXIC_WASTE") this.collectToxicWaste();
+		else if (pType === "BURNING") this.collectBurning();
 
 		// Coins
 		if (this.coins.checkCollision(this.dino)) {
@@ -490,6 +512,26 @@ export class Game implements IGame {
 			200,
 			0.8,
 		);
+	}
+
+	collectBurning() {
+		this.audio.playPowerup();
+		this.timers.burning = CONFIG.BURNING_DURATION;
+		this.burningFlameAccum = 0;
+		this.incrementScore(CONFIG.BURNING_BONUS);
+		this.ui.showMessage("🌋 BURNING 🌋");
+		this.stats.powerups.BURNING++;
+		const cx = this.dino.x + this.dino.width / 2;
+		const cy = this.dino.y + this.dino.height / 2;
+		this.effects.spawnParticles(
+			cx,
+			cy,
+			CONFIG.BURNING_COLOR_BRIGHT,
+			20,
+			200,
+			0.8,
+		);
+		this.meteorShower.spawnMeteorRing(cx, cy);
 	}
 
 	incrementScore(amount: number = 1, fromSmash: boolean = false) {
@@ -684,6 +726,9 @@ export class Game implements IGame {
 				break;
 			case "TOXIC_WASTE":
 				this.collectToxicWaste();
+				break;
+			case "BURNING":
+				this.collectBurning();
 				break;
 		}
 		this.toggleDebugMenu(false);

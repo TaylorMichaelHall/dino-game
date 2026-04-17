@@ -132,7 +132,7 @@ export class PowerupManager implements IPowerupManager {
 		}
 
 		if (currentScore >= this.nextToxicWasteSpawn) {
-			this.spawn("TOXIC_WASTE");
+			this.spawn(Math.random() < 0.5 ? "TOXIC_WASTE" : "BURNING");
 			this.nextToxicWasteSpawn =
 				this.calculateNextToxicWasteSpawn(currentScore);
 		}
@@ -185,19 +185,40 @@ export class PowerupManager implements IPowerupManager {
 			else if (p.type === "MAGNET") this.drawMagnet(ctx, p.x, p.y);
 			else if (p.type === "QUETZAL") this.drawFeather(ctx, p.x, p.y);
 			else if (p.type === "GRAVITY_FLIP") this.drawGravityFlip(ctx, p.x, p.y);
-			else if (p.type === "TOXIC_WASTE") this.drawToxicWaste(ctx, p.x, p.y);
+			else if (p.type === "TOXIC_WASTE")
+				this.drawPulsingEmoji(
+					ctx,
+					p.x,
+					p.y,
+					"☢️",
+					CONFIG.TOXIC_COLOR_BRIGHT_RGB,
+				);
+			else if (p.type === "BURNING")
+				this.drawPulsingEmoji(
+					ctx,
+					p.x,
+					p.y,
+					"🌋",
+					CONFIG.BURNING_COLOR_BRIGHT_RGB,
+				);
 		});
 	}
 
-	drawToxicWaste(ctx: CanvasRenderingContext2D, x: number, y: number) {
+	drawPulsingEmoji(
+		ctx: CanvasRenderingContext2D,
+		x: number,
+		y: number,
+		emoji: string,
+		colorRgb: string,
+	) {
 		const bob = Math.sin(this.game.time * 0.004) * 4;
 		const by = y + bob;
 		const pulse = 0.18 + Math.sin(this.game.time * 0.006) * 0.1;
 
 		ctx.save();
 		const grad = ctx.createRadialGradient(x, by, 4, x, by, 36);
-		grad.addColorStop(0, `rgba(${CONFIG.TOXIC_COLOR_BRIGHT_RGB}, ${pulse})`);
-		grad.addColorStop(1, `rgba(${CONFIG.TOXIC_COLOR_BRIGHT_RGB}, 0)`);
+		grad.addColorStop(0, `rgba(${colorRgb}, ${pulse})`);
+		grad.addColorStop(1, `rgba(${colorRgb}, 0)`);
 		ctx.fillStyle = grad;
 		ctx.beginPath();
 		ctx.arc(x, by, 36, 0, Math.PI * 2);
@@ -205,7 +226,7 @@ export class PowerupManager implements IPowerupManager {
 		ctx.restore();
 
 		ctx.font = "34px serif";
-		ctx.fillText("☢️", x, by);
+		ctx.fillText(emoji, x, by);
 	}
 
 	drawBone(ctx: CanvasRenderingContext2D, x: number, y: number) {
@@ -280,7 +301,8 @@ export class PowerupManager implements IPowerupManager {
 				p.type === "MAGNET" ||
 				p.type === "QUETZAL" ||
 				p.type === "GRAVITY_FLIP" ||
-				p.type === "TOXIC_WASTE"
+				p.type === "TOXIC_WASTE" ||
+				p.type === "BURNING"
 					? CONFIG.POWERUP_LARGE_RADIUS
 					: CONFIG.POWERUP_RADIUS;
 			if (dist < dino.radius + r) {
