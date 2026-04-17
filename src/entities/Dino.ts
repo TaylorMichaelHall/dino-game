@@ -1,12 +1,8 @@
 import { CONFIG } from "../config/Constants";
 import { DINOS, SUPER_DINOS } from "../config/DinoConfig";
+import { ELEMENTAL_KEYS, ELEMENTALS } from "../config/ElementalConfig";
 import type { DinoConfig, IDino, IGame } from "../types";
-import {
-	burningFilter,
-	loadImage,
-	spritePath,
-	toxicFilter,
-} from "../utils/helpers";
+import { loadImage, spritePath } from "../utils/helpers";
 
 interface HistoryPoint {
 	y: number;
@@ -291,12 +287,13 @@ export class Dino implements IDino {
 	draw(ctx: CanvasRenderingContext2D) {
 		if (!this.visible) return;
 
-		const filter =
-			this.game.timers.burning > 0
-				? burningFilter(this.game.time)
-				: this.game.timers.toxicWaste > 0
-					? toxicFilter(this.game.time)
-					: null;
+		let filter: string | null = null;
+		for (const key of ELEMENTAL_KEYS) {
+			if (this.game.timers.elemental[key] > 0) {
+				filter = ELEMENTALS[key].filter(this.game.time);
+				break;
+			}
+		}
 
 		// Draw Follower if in Super mode
 		if (this.isSuper && this.historyLen > 0) {

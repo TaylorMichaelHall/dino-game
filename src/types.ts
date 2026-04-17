@@ -35,7 +35,8 @@ export type PowerupType =
 	| "QUETZAL"
 	| "GRAVITY_FLIP"
 	| "TOXIC_WASTE"
-	| "BURNING";
+	| "BURNING"
+	| "LIGHTNING";
 
 export interface ComboStage {
 	threshold: number;
@@ -234,6 +235,7 @@ export interface IEffectManager {
 	spawnFCT(x: number, y: number, text: string, color?: string): void;
 	spawnDrips(x: number, y: number): void;
 	spawnFlames(x: number, y: number): void;
+	spawnLightningBolt(targetX: number, targetY: number): void;
 }
 
 export interface IObstacle {

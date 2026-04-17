@@ -1,11 +1,7 @@
 import { CONFIG } from "../config/Constants";
+import { ELEMENTAL_KEYS, ELEMENTALS } from "../config/ElementalConfig";
 import type { IGame } from "../types";
-import {
-	compactInPlace,
-	loadImage,
-	spritePath,
-	toxicFilter,
-} from "../utils/helpers";
+import { compactInPlace, loadImage, spritePath } from "../utils/helpers";
 
 type Phase = "idle" | "entering" | "riding" | "exiting";
 
@@ -284,8 +280,11 @@ export class QuetzRideManager {
 		const tilt = (this.targetY - this.quetzY) * 0.001;
 		ctx.rotate(Math.max(-0.2, Math.min(0.2, tilt)));
 
-		if (this.game.timers.toxicWaste > 0) {
-			ctx.filter = toxicFilter(this.game.time);
+		for (const key of ELEMENTAL_KEYS) {
+			if (this.game.timers.elemental[key] > 0) {
+				ctx.filter = ELEMENTALS[key].filter(this.game.time);
+				break;
+			}
 		}
 
 		ctx.drawImage(this.quetzSprite, -w / 2, -h / 2, w, h);

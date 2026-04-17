@@ -1,4 +1,9 @@
 import { CONFIG } from "../config/Constants";
+import {
+	ELEMENTAL_KEYS,
+	type ElementalKey,
+	makeElementalRecord,
+} from "../config/ElementalConfig";
 
 export interface TimerEvents {
 	speedBoostExpired: boolean;
@@ -7,8 +12,7 @@ export interface TimerEvents {
 	comboExpired: boolean;
 	quetzRideExpired: boolean;
 	gravityFlipExpired: boolean;
-	toxicWasteExpired: boolean;
-	burningExpired: boolean;
+	elementalExpired: Record<ElementalKey, boolean>;
 }
 
 export interface ITimerManager {
@@ -22,8 +26,7 @@ export interface ITimerManager {
 	shakeIntensity: number;
 	quetzRide: number;
 	gravityFlip: number;
-	toxicWaste: number;
-	burning: number;
+	elemental: Record<ElementalKey, number>;
 	update(dt: number, superModeActive: boolean): TimerEvents;
 	triggerShake(intensity?: number): void;
 	reset(): void;
@@ -44,10 +47,13 @@ export class TimerManager implements ITimerManager {
 	shakeIntensity: number = 0;
 	quetzRide: number = 0;
 	gravityFlip: number = 0;
-	toxicWaste: number = 0;
-	burning: number = 0;
+	elemental: Record<ElementalKey, number> = makeElementalRecord(() => 0);
+	private elementalExpired: Record<ElementalKey, boolean> = makeElementalRecord(
+		() => false,
+	);
 
 	update(dt: number, superModeActive: boolean): TimerEvents {
+		for (const key of ELEMENTAL_KEYS) this.elementalExpired[key] = false;
 		const events: TimerEvents = {
 			speedBoostExpired: false,
 			superModeExpired: false,
@@ -55,8 +61,7 @@ export class TimerManager implements ITimerManager {
 			comboExpired: false,
 			quetzRideExpired: false,
 			gravityFlipExpired: false,
-			toxicWasteExpired: false,
-			burningExpired: false,
+			elementalExpired: this.elementalExpired,
 		};
 
 		// Speed boost timer
@@ -99,19 +104,12 @@ export class TimerManager implements ITimerManager {
 			}
 		}
 
-		// Toxic waste timer (cosmetic)
-		if (this.toxicWaste > 0) {
-			this.toxicWaste -= dt;
-			if (this.toxicWaste <= 0) {
-				events.toxicWasteExpired = true;
-			}
-		}
-
-		// Burning timer (cosmetic)
-		if (this.burning > 0) {
-			this.burning -= dt;
-			if (this.burning <= 0) {
-				events.burningExpired = true;
+		for (const key of ELEMENTAL_KEYS) {
+			if (this.elemental[key] > 0) {
+				this.elemental[key] -= dt;
+				if (this.elemental[key] <= 0) {
+					events.elementalExpired[key] = true;
+				}
 			}
 		}
 
@@ -155,7 +153,6 @@ export class TimerManager implements ITimerManager {
 		this.shakeIntensity = 0;
 		this.quetzRide = 0;
 		this.gravityFlip = 0;
-		this.toxicWaste = 0;
-		this.burning = 0;
+		for (const key of ELEMENTAL_KEYS) this.elemental[key] = 0;
 	}
 }

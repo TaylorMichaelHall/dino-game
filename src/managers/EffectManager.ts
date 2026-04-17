@@ -54,6 +54,13 @@ interface FCT {
 	vy: number;
 }
 
+interface LightningBolt {
+	targetX: number;
+	targetY: number;
+	age: number;
+	duration: number;
+}
+
 /**
  * EffectManager
  * Handles visual effects like speed lines, glitch effects, trails, and FCT.
@@ -65,6 +72,7 @@ export class EffectManager {
 	shatterParticles: ShatterParticle[];
 	trails: Trail[];
 	fct: FCT[];
+	bolts: LightningBolt[];
 	spriteCache: Map<string, HTMLImageElement>;
 
 	constructor(game: IGame) {
@@ -74,6 +82,7 @@ export class EffectManager {
 		this.shatterParticles = [];
 		this.trails = [];
 		this.fct = [];
+		this.bolts = [];
 		this.spriteCache = new Map();
 		this.initSpeedLines();
 	}
@@ -202,6 +211,15 @@ export class EffectManager {
 		}
 	}
 
+	spawnLightningBolt(targetX: number, targetY: number) {
+		this.bolts.push({
+			targetX,
+			targetY,
+			age: 0,
+			duration: CONFIG.LIGHTNING_BOLT_DURATION,
+		});
+	}
+
 	spawnTrail(x: number, y: number, w: number, h: number, sprite: string) {
 		// Pre-warm the cache when spawning trails
 		this.getCachedImage(sprite);
@@ -272,6 +290,12 @@ export class EffectManager {
 			f.life -= deltaTime;
 		});
 		compactInPlace(this.fct, (f) => f.life > 0);
+
+		// Lightning bolts
+		this.bolts.forEach((b) => {
+			b.age += deltaTime;
+		});
+		compactInPlace(this.bolts, (b) => b.age < b.duration);
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
@@ -360,6 +384,46 @@ export class EffectManager {
 			ctx.stroke();
 			ctx.restore();
 		}
+
+		this.bolts.forEach((b) => {
+			const t = b.age / b.duration;
+			const alpha = 1 - t;
+			const lineW = 4 * (1 - t) + 1;
+			ctx.save();
+			ctx.shadowColor = CONFIG.LIGHTNING_COLOR_BRIGHT;
+			ctx.shadowBlur = 20;
+			ctx.lineCap = "round";
+			ctx.lineJoin = "round";
+			ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+			ctx.lineWidth = lineW;
+			ctx.beginPath();
+			let x = b.targetX + (Math.random() - 0.5) * 4;
+			ctx.moveTo(x, 0);
+			const segments = 14;
+			const points: { x: number; y: number }[] = [{ x, y: 0 }];
+			for (let i = 1; i <= segments; i++) {
+				const ny = (b.targetY / segments) * i;
+				const taper = 1 - i / segments;
+				const nx =
+					b.targetX +
+					(Math.random() - 0.5) * 18 * taper +
+					(x - b.targetX) * 0.3;
+				ctx.lineTo(nx, ny);
+				points.push({ x: nx, y: ny });
+				x = nx;
+			}
+			ctx.stroke();
+			ctx.strokeStyle = `rgba(255, 255, 160, ${alpha})`;
+			ctx.lineWidth = Math.max(1, lineW - 2);
+			ctx.beginPath();
+			ctx.moveTo(points[0].x, points[0].y);
+			for (let i = 1; i < points.length; i++) {
+				ctx.lineTo(points[i].x, points[i].y);
+			}
+			ctx.stroke();
+			ctx.restore();
+		});
+		ctx.globalAlpha = 1.0;
 
 		if (this.game.timers.superMode > 0) {
 			this.drawGlitchEffect(ctx);
