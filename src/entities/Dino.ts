@@ -252,24 +252,11 @@ export class Dino implements IDino {
 		const centerX = this.displayX + this.width / 2;
 		const centerY = this.y + this.height / 2;
 
-		let dist: number;
-		let maxDist: number;
-		let baseAlpha: number;
-		let shadowY: number;
-
-		if (this.isGravityFlipped) {
-			const ceilingY = 20;
-			dist = Math.max(0, centerY - ceilingY);
-			maxDist = this.game.height;
-			baseAlpha = 0.25;
-			shadowY = Math.min(ceilingY, centerY - 8);
-		} else {
-			const groundY = CONFIG.HORIZON_Y;
-			dist = Math.max(0, groundY - centerY);
-			maxDist = groundY;
-			baseAlpha = 0.35;
-			shadowY = Math.max(groundY + 8, centerY + 8);
-		}
+		const groundY = CONFIG.HORIZON_Y;
+		const dist = Math.max(0, groundY - centerY);
+		const maxDist = groundY;
+		const baseAlpha = 0.35;
+		const shadowY = Math.max(groundY + 8, centerY + 8);
 
 		const t = Math.min(1, dist / maxDist);
 		const shadowWidth = 25 + t * 35;
