@@ -12,6 +12,7 @@ export interface TimerEvents {
 	comboExpired: boolean;
 	quetzRideExpired: boolean;
 	gravityFlipExpired: boolean;
+	directionFlipExpired: boolean;
 	elementalExpired: Record<ElementalKey, boolean>;
 }
 
@@ -26,6 +27,7 @@ export interface ITimerManager {
 	shakeIntensity: number;
 	quetzRide: number;
 	gravityFlip: number;
+	directionFlip: number;
 	elemental: Record<ElementalKey, number>;
 	update(dt: number, superModeActive: boolean): TimerEvents;
 	triggerShake(intensity?: number): void;
@@ -47,6 +49,7 @@ export class TimerManager implements ITimerManager {
 	shakeIntensity: number = 0;
 	quetzRide: number = 0;
 	gravityFlip: number = 0;
+	directionFlip: number = 0;
 	elemental: Record<ElementalKey, number> = makeElementalRecord(() => 0);
 	private elementalExpired: Record<ElementalKey, boolean> = makeElementalRecord(
 		() => false,
@@ -61,6 +64,7 @@ export class TimerManager implements ITimerManager {
 			comboExpired: false,
 			quetzRideExpired: false,
 			gravityFlipExpired: false,
+			directionFlipExpired: false,
 			elementalExpired: this.elementalExpired,
 		};
 
@@ -101,6 +105,14 @@ export class TimerManager implements ITimerManager {
 			this.gravityFlip -= dt;
 			if (this.gravityFlip <= 0) {
 				events.gravityFlipExpired = true;
+			}
+		}
+
+		// Direction flip timer
+		if (this.directionFlip > 0) {
+			this.directionFlip -= dt;
+			if (this.directionFlip <= 0) {
+				events.directionFlipExpired = true;
 			}
 		}
 
@@ -153,6 +165,7 @@ export class TimerManager implements ITimerManager {
 		this.shakeIntensity = 0;
 		this.quetzRide = 0;
 		this.gravityFlip = 0;
+		this.directionFlip = 0;
 		for (const key of ELEMENTAL_KEYS) this.elemental[key] = 0;
 	}
 }

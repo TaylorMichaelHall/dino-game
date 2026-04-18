@@ -34,6 +34,7 @@ export type PowerupType =
 	| "MAGNET"
 	| "QUETZAL"
 	| "GRAVITY_FLIP"
+	| "DIRECTION_FLIP"
 	| "TOXIC_WASTE"
 	| "BURNING"
 	| "LIGHTNING";

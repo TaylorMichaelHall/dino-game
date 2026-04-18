@@ -72,6 +72,7 @@ export class Game implements IGame {
 	debugUsed: boolean;
 	lastBorderTime: number = 0;
 	elementalTick: Record<ElementalKey, ElementalTickState>;
+	flipProgress: number = 0;
 
 	constructor(canvas: HTMLCanvasElement) {
 		this.canvas = canvas;
@@ -139,6 +140,7 @@ export class Game implements IGame {
 				MAGNET: 0,
 				QUETZAL: 0,
 				GRAVITY_FLIP: 0,
+				DIRECTION_FLIP: 0,
 				TOXIC_WASTE: 0,
 				BURNING: 0,
 				LIGHTNING: 0,
@@ -174,6 +176,7 @@ export class Game implements IGame {
 		this.hearts = CONFIG.MAX_HEARTS;
 		this.timers.reset();
 		this.scoring.reset();
+		this.flipProgress = 0;
 		this.dino.reset();
 		this.obstacles.reset();
 		this.groundPlane.reset();
@@ -307,6 +310,30 @@ export class Game implements IGame {
 			this.ui.showMessage("Gravity Restored! +50");
 		}
 
+		if (this.timers.directionFlip > 0) {
+			this.ui.updatePowerupTimer(this.timers.directionFlip);
+		}
+
+		if (timerEvents.directionFlipExpired) {
+			this.ui.updatePowerupTimer(0);
+			this.incrementScore(CONFIG.DIRECTION_FLIP_BONUS);
+			this.ui.showMessage("Direction Restored! +50");
+		}
+
+		const flipTarget = this.timers.directionFlip > 0 ? 1 : 0;
+		const flipRate = 1 / CONFIG.DIRECTION_FLIP_TRANSITION;
+		if (this.flipProgress < flipTarget) {
+			this.flipProgress = Math.min(
+				flipTarget,
+				this.flipProgress + flipRate * deltaTime,
+			);
+		} else if (this.flipProgress > flipTarget) {
+			this.flipProgress = Math.max(
+				flipTarget,
+				this.flipProgress - flipRate * deltaTime,
+			);
+		}
+
 		for (const key of ELEMENTAL_KEYS) {
 			const e = ELEMENTALS[key];
 			if (this.timers.elemental[key] > 0) {
@@ -366,6 +393,7 @@ export class Game implements IGame {
 		else if (pType === "MAGNET") this.collectMagnet();
 		else if (pType === "QUETZAL") this.activateQuetzRide();
 		else if (pType === "GRAVITY_FLIP") this.activateGravityFlip();
+		else if (pType === "DIRECTION_FLIP") this.activateDirectionFlip();
 		else if (pType && pType in ELEMENTALS)
 			this.collectElemental(pType as ElementalKey);
 
@@ -477,6 +505,21 @@ export class Game implements IGame {
 			15,
 			200,
 			0.8,
+		);
+	}
+
+	activateDirectionFlip() {
+		this.audio.playPowerup();
+		this.timers.directionFlip = CONFIG.DIRECTION_FLIP_DURATION;
+		this.ui.showMessage("🔄 DIRECTION FLIP! 🔄");
+		this.stats.powerups.DIRECTION_FLIP++;
+		this.effects.spawnParticles(
+			this.dino.x + this.dino.width / 2,
+			this.dino.y + this.dino.height / 2,
+			"#00ffff",
+			20,
+			250,
+			0.9,
 		);
 	}
 
@@ -630,6 +673,17 @@ export class Game implements IGame {
 			this.titleAnimation.draw(this.ctx);
 		}
 
+		const flipping = this.flipProgress > 0;
+		if (flipping) {
+			const t = this.flipProgress;
+			const eased = t < 0.5 ? 2 * t * t : 1 - (-2 * t + 2) ** 2 / 2;
+			const xScale = 1 - 2 * eased;
+			this.ctx.save();
+			this.ctx.translate(this.width / 2, 0);
+			this.ctx.scale(xScale, 1);
+			this.ctx.translate(-this.width / 2, 0);
+		}
+
 		this.parallax.draw(this.ctx);
 		this.groundPlane.draw(this.ctx);
 		this.meteorShower.draw(this.ctx);
@@ -641,6 +695,10 @@ export class Game implements IGame {
 		this.coins.draw(this.ctx);
 		this.dino.draw(this.ctx);
 		this.quetzRide.draw(this.ctx);
+
+		if (flipping) {
+			this.ctx.restore();
+		}
 	}
 
 	toggleDebugMenu(show: boolean = !this.debugActive) {
@@ -683,6 +741,9 @@ export class Game implements IGame {
 				break;
 			case "GRAVITY_FLIP":
 				this.activateGravityFlip();
+				break;
+			case "DIRECTION_FLIP":
+				this.activateDirectionFlip();
 				break;
 			case "TOXIC_WASTE":
 			case "BURNING":
