@@ -30,7 +30,7 @@ export class PowerupManager implements IPowerupManager {
 	emeraldImg: HTMLImageElement;
 	featherImg: HTMLImageElement;
 	nextQuetzSpawn: number;
-	nextGravityFlipSpawn: number;
+	nextFlipSpawn: number;
 	nextElementalSpawn: number;
 
 	constructor(game: IGame) {
@@ -40,7 +40,7 @@ export class PowerupManager implements IPowerupManager {
 		this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
 		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
-		this.nextGravityFlipSpawn = this.calculateNextGravityFlipSpawn(0);
+		this.nextFlipSpawn = this.calculateNextFlipSpawn(0);
 		this.nextElementalSpawn = this.calculateNextElementalSpawn(0);
 		this.radius = CONFIG.POWERUP_RADIUS;
 
@@ -74,14 +74,13 @@ export class PowerupManager implements IPowerupManager {
 		);
 	}
 
-	calculateNextGravityFlipSpawn(currentScore: number): number {
+	calculateNextFlipSpawn(currentScore: number): number {
 		return (
-			Math.max(currentScore, CONFIG.GRAVITY_FLIP_THRESHOLD) +
+			Math.max(currentScore, CONFIG.FLIP_THRESHOLD) +
 			Math.floor(
-				Math.random() *
-					(CONFIG.GRAVITY_FLIP_SPAWN_MAX - CONFIG.GRAVITY_FLIP_SPAWN_MIN),
+				Math.random() * (CONFIG.FLIP_SPAWN_MAX - CONFIG.FLIP_SPAWN_MIN),
 			) +
-			CONFIG.GRAVITY_FLIP_SPAWN_MIN
+			CONFIG.FLIP_SPAWN_MIN
 		);
 	}
 
@@ -124,16 +123,18 @@ export class PowerupManager implements IPowerupManager {
 			this.nextQuetzSpawn = currentScore + CONFIG.QUETZ_SPAWN_INTERVAL;
 		}
 
-		// Don't spawn gravity flip during super mode, quetz ride, or active gravity flip
+		// Gravity flip and direction flip share a spawn slot — pick one randomly.
 		if (
-			currentScore >= this.nextGravityFlipSpawn &&
+			currentScore >= this.nextFlipSpawn &&
 			this.game.timers.superMode <= 0 &&
 			this.game.timers.quetzRide <= 0 &&
-			this.game.timers.gravityFlip <= 0
+			this.game.timers.gravityFlip <= 0 &&
+			this.game.timers.directionFlip <= 0
 		) {
-			this.spawn("GRAVITY_FLIP");
-			this.nextGravityFlipSpawn =
-				this.calculateNextGravityFlipSpawn(currentScore);
+			const flipType: PowerupType =
+				Math.random() < 0.5 ? "GRAVITY_FLIP" : "DIRECTION_FLIP";
+			this.spawn(flipType);
+			this.nextFlipSpawn = this.calculateNextFlipSpawn(currentScore);
 		}
 
 		if (currentScore >= this.nextElementalSpawn) {
@@ -191,6 +192,8 @@ export class PowerupManager implements IPowerupManager {
 			else if (p.type === "MAGNET") this.drawMagnet(ctx, p.x, p.y);
 			else if (p.type === "QUETZAL") this.drawFeather(ctx, p.x, p.y);
 			else if (p.type === "GRAVITY_FLIP") this.drawGravityFlip(ctx, p.x, p.y);
+			else if (p.type === "DIRECTION_FLIP")
+				this.drawDirectionFlip(ctx, p.x, p.y);
 			else if (p.type in ELEMENTALS) {
 				const e = ELEMENTALS[p.type as ElementalKey];
 				this.drawPulsingEmoji(ctx, p.x, p.y, e.emoji, e.colorBrightRgb);
@@ -253,6 +256,10 @@ export class PowerupManager implements IPowerupManager {
 		ctx.fillText("🙃", x, y + bob);
 	}
 
+	drawDirectionFlip(ctx: CanvasRenderingContext2D, x: number, y: number) {
+		this.drawPulsingEmoji(ctx, x, y, "🔄", "0, 255, 255");
+	}
+
 	drawMagnet(ctx: CanvasRenderingContext2D, x: number, y: number) {
 		ctx.font = "40px serif";
 		ctx.fillText("🧲", x, y);
@@ -295,6 +302,7 @@ export class PowerupManager implements IPowerupManager {
 				p.type === "MAGNET" ||
 				p.type === "QUETZAL" ||
 				p.type === "GRAVITY_FLIP" ||
+				p.type === "DIRECTION_FLIP" ||
 				p.type in ELEMENTALS
 					? CONFIG.POWERUP_LARGE_RADIUS
 					: CONFIG.POWERUP_RADIUS;
@@ -312,7 +320,7 @@ export class PowerupManager implements IPowerupManager {
 		this.nextDiamondSpawn = this.calculateNextDiamondSpawn(0);
 		this.nextMagnetSpawn = this.calculateNextMagnetSpawn(0);
 		this.nextQuetzSpawn = this.calculateNextQuetzSpawn(0);
-		this.nextGravityFlipSpawn = this.calculateNextGravityFlipSpawn(0);
+		this.nextFlipSpawn = this.calculateNextFlipSpawn(0);
 		this.nextElementalSpawn = this.calculateNextElementalSpawn(0);
 	}
 }
