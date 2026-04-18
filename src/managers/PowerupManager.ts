@@ -123,14 +123,7 @@ export class PowerupManager implements IPowerupManager {
 			this.nextQuetzSpawn = currentScore + CONFIG.QUETZ_SPAWN_INTERVAL;
 		}
 
-		// Gravity flip and direction flip share a spawn slot — pick one randomly.
-		if (
-			currentScore >= this.nextFlipSpawn &&
-			this.game.timers.superMode <= 0 &&
-			this.game.timers.quetzRide <= 0 &&
-			this.game.timers.gravityFlip <= 0 &&
-			this.game.timers.directionFlip <= 0
-		) {
+		if (currentScore >= this.nextFlipSpawn) {
 			const flipType: PowerupType =
 				Math.random() < 0.5 ? "GRAVITY_FLIP" : "DIRECTION_FLIP";
 			this.spawn(flipType);

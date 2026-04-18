@@ -498,6 +498,20 @@ export class UIManager {
 				isImg: true,
 			});
 		}
+		if (stats.powerups.GRAVITY_FLIP && stats.powerups.GRAVITY_FLIP > 0) {
+			items.push({
+				name: "Gravity Flips",
+				count: stats.powerups.GRAVITY_FLIP,
+				icon: "🙃",
+			});
+		}
+		if (stats.powerups.DIRECTION_FLIP && stats.powerups.DIRECTION_FLIP > 0) {
+			items.push({
+				name: "Direction Flips",
+				count: stats.powerups.DIRECTION_FLIP,
+				icon: "🔄",
+			});
+		}
 		for (const key of ELEMENTAL_KEYS) {
 			const count = stats.powerups[key];
 			if (count && count > 0) {
