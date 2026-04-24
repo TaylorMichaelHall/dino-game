@@ -1,7 +1,16 @@
 import { CONFIG } from "../config/Constants";
-import { ELEMENTAL_KEYS, ELEMENTALS } from "../config/ElementalConfig";
+import {
+	ELEMENTAL_KEYS,
+	ELEMENTALS,
+	type ElementalKey,
+} from "../config/ElementalConfig";
 import type { IGame } from "../types";
-import { compactInPlace, loadImage, spritePath } from "../utils/helpers";
+import {
+	compactInPlace,
+	loadImage,
+	spritePath,
+	supportsCanvasColorFilters,
+} from "../utils/helpers";
 
 type Phase = "idle" | "entering" | "riding" | "exiting";
 
@@ -28,6 +37,7 @@ export class QuetzRideManager {
 	trailTimer: number;
 	windParticles: WindParticle[];
 	targetY: number;
+	elementalTintSprites: Partial<Record<ElementalKey, HTMLCanvasElement>>;
 
 	get active() {
 		return this.phase !== "idle";
@@ -47,6 +57,7 @@ export class QuetzRideManager {
 		this.trailTimer = 0;
 		this.windParticles = [];
 		this.targetY = 0;
+		this.elementalTintSprites = {};
 	}
 
 	activate() {
@@ -280,15 +291,72 @@ export class QuetzRideManager {
 		const tilt = (this.targetY - this.quetzY) * 0.001;
 		ctx.rotate(Math.max(-0.2, Math.min(0.2, tilt)));
 
-		for (const key of ELEMENTAL_KEYS) {
-			if (this.game.timers.elemental[key] > 0) {
-				ctx.filter = ELEMENTALS[key].filter(this.game.time);
-				break;
-			}
+		const activeElemental = this.activeElemental();
+		if (activeElemental && supportsCanvasColorFilters()) {
+			ctx.filter = ELEMENTALS[activeElemental].filter(this.game.time);
 		}
 
 		ctx.drawImage(this.quetzSprite, -w / 2, -h / 2, w, h);
+		this.drawElementalTint(ctx, -w / 2, -h / 2, w, h, activeElemental);
 		ctx.restore();
+	}
+
+	private activeElemental(): ElementalKey | null {
+		for (const key of ELEMENTAL_KEYS) {
+			if (this.game.timers.elemental[key] > 0) return key;
+		}
+		return null;
+	}
+
+	private drawElementalTint(
+		ctx: CanvasRenderingContext2D,
+		x: number,
+		y: number,
+		w: number,
+		h: number,
+		activeElemental: ElementalKey | null,
+	): void {
+		if (!activeElemental || supportsCanvasColorFilters()) return;
+
+		const tintedSprite = this.getElementalTintSprite(activeElemental);
+		ctx.save();
+		ctx.filter = "none";
+		ctx.globalAlpha *= this.getElementalTintAlpha(activeElemental);
+		ctx.drawImage(tintedSprite, x, y, w, h);
+		ctx.restore();
+	}
+
+	private getElementalTintAlpha(activeElemental: ElementalKey): number {
+		switch (activeElemental) {
+			case "BURNING":
+				return 0.36 + Math.sin(this.game.time * 0.035) * 0.08;
+			case "LIGHTNING":
+				return Math.random() < 0.08 ? 0.58 : 0.42;
+			case "TOXIC_WASTE":
+				return 0.42 + Math.sin(this.game.time * 0.008) * 0.08;
+		}
+	}
+
+	private getElementalTintSprite(
+		activeElemental: ElementalKey,
+	): HTMLCanvasElement {
+		const cached = this.elementalTintSprites[activeElemental];
+		if (cached) return cached;
+
+		const canvas = document.createElement("canvas");
+		canvas.width = this.quetzSprite.naturalWidth;
+		canvas.height = this.quetzSprite.naturalHeight;
+
+		const tintCtx = canvas.getContext("2d");
+		if (tintCtx) {
+			tintCtx.drawImage(this.quetzSprite, 0, 0);
+			tintCtx.globalCompositeOperation = "source-atop";
+			tintCtx.fillStyle = ELEMENTALS[activeElemental].colorBright;
+			tintCtx.fillRect(0, 0, canvas.width, canvas.height);
+		}
+
+		this.elementalTintSprites[activeElemental] = canvas;
+		return canvas;
 	}
 
 	drawWindTrail(ctx: CanvasRenderingContext2D) {
