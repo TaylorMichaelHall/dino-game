@@ -4,6 +4,8 @@
 
 import { CONFIG } from "../config/Constants";
 
+let canvasColorFilterSupport: boolean | null = null;
+
 export function toxicFilter(gameTime: number): string {
 	const pulse = 8 + Math.sin(gameTime * 0.008) * 4;
 	return `drop-shadow(0 0 ${pulse}px ${CONFIG.TOXIC_COLOR_BRIGHT}) hue-rotate(80deg) saturate(1.8) brightness(1.15)`;
@@ -19,6 +21,38 @@ export function lightningFilter(gameTime: number): string {
 	const pulse = 10 + Math.sin(gameTime * 0.03) * 5;
 	const crack = Math.random() < 0.08 ? 22 : 12;
 	return `drop-shadow(0 0 ${pulse}px ${CONFIG.LIGHTNING_COLOR_BRIGHT}) drop-shadow(0 0 ${crack}px ${CONFIG.LIGHTNING_COLOR_ACCENT}) brightness(1.15) saturate(1.4)`;
+}
+
+export function supportsCanvasColorFilters(): boolean {
+	if (canvasColorFilterSupport !== null) return canvasColorFilterSupport;
+	if (typeof document === "undefined") {
+		canvasColorFilterSupport = false;
+		return canvasColorFilterSupport;
+	}
+
+	const source = document.createElement("canvas");
+	source.width = 1;
+	source.height = 1;
+	const sourceCtx = source.getContext("2d");
+
+	const output = document.createElement("canvas");
+	output.width = 1;
+	output.height = 1;
+	const outputCtx = output.getContext("2d");
+
+	if (!sourceCtx || !outputCtx) {
+		canvasColorFilterSupport = false;
+		return canvasColorFilterSupport;
+	}
+
+	sourceCtx.fillStyle = "#ff0000";
+	sourceCtx.fillRect(0, 0, 1, 1);
+	outputCtx.filter = "hue-rotate(120deg) saturate(2)";
+	outputCtx.drawImage(source, 0, 0);
+
+	const [red, green, blue] = outputCtx.getImageData(0, 0, 1, 1).data;
+	canvasColorFilterSupport = red < 220 && (green > 20 || blue > 20);
+	return canvasColorFilterSupport;
 }
 
 /**

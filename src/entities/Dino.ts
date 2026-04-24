@@ -1,8 +1,16 @@
 import { CONFIG } from "../config/Constants";
 import { DINOS, SUPER_DINOS } from "../config/DinoConfig";
-import { ELEMENTAL_KEYS, ELEMENTALS } from "../config/ElementalConfig";
+import {
+	ELEMENTAL_KEYS,
+	ELEMENTALS,
+	type ElementalKey,
+} from "../config/ElementalConfig";
 import type { DinoConfig, IDino, IGame } from "../types";
-import { loadImage, spritePath } from "../utils/helpers";
+import {
+	loadImage,
+	spritePath,
+	supportsCanvasColorFilters,
+} from "../utils/helpers";
 
 interface HistoryPoint {
 	y: number;
@@ -56,6 +64,10 @@ export class Dino implements IDino {
 	backflipRotation: number;
 	backflipDuration: number;
 	sprites: Record<string, HTMLImageElement>;
+	elementalTintSprites: Record<
+		string,
+		Partial<Record<ElementalKey, HTMLCanvasElement>>
+	>;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -105,6 +117,7 @@ export class Dino implements IDino {
 		this.backflipDuration = CONFIG.DINO_BACKFLIP_DURATION;
 
 		this.sprites = {};
+		this.elementalTintSprites = {};
 		this.initSprites();
 	}
 
@@ -271,16 +284,22 @@ export class Dino implements IDino {
 		ctx.restore();
 	}
 
+	private activeElemental(): ElementalKey | null {
+		for (const key of ELEMENTAL_KEYS) {
+			if (this.game.timers.elemental[key] > 0) return key;
+		}
+		return null;
+	}
+
 	draw(ctx: CanvasRenderingContext2D) {
 		if (!this.visible) return;
 
-		let filter: string | null = null;
-		for (const key of ELEMENTAL_KEYS) {
-			if (this.game.timers.elemental[key] > 0) {
-				filter = ELEMENTALS[key].filter(this.game.time);
-				break;
-			}
-		}
+		const activeElemental = this.activeElemental();
+		const useElementalFilter = supportsCanvasColorFilters();
+		const filter =
+			activeElemental && useElementalFilter
+				? ELEMENTALS[activeElemental].filter(this.game.time)
+				: null;
 
 		// Draw Follower if in Super mode
 		if (this.isSuper && this.historyLen > 0) {
@@ -295,7 +314,7 @@ export class Dino implements IDino {
 			ctx.scale(0.8, 0.8);
 			ctx.globalAlpha = 0.8;
 			if (filter) ctx.filter = filter;
-			this.drawNormalDino(ctx); // Helper for choosing correct current level sprite
+			this.drawNormalDino(ctx, activeElemental); // Helper for choosing correct current level sprite
 			ctx.restore();
 		}
 
@@ -309,7 +328,7 @@ export class Dino implements IDino {
 			ctx.rotate(-0.2); // Slighting angle up
 			ctx.scale(0.8, 0.8);
 			if (filter) ctx.filter = filter;
-			this.drawSuper(ctx, this.flyingOffSprite.type);
+			this.drawSuper(ctx, this.flyingOffSprite.type, activeElemental);
 			ctx.restore();
 		}
 
@@ -341,9 +360,9 @@ export class Dino implements IDino {
 		if (filter) ctx.filter = filter;
 
 		if (this.isSuper) {
-			this.drawSuper(ctx);
+			this.drawSuper(ctx, this.superType, activeElemental);
 		} else {
-			this.drawNormalDino(ctx);
+			this.drawNormalDino(ctx, activeElemental);
 		}
 
 		ctx.restore();
@@ -420,36 +439,118 @@ export class Dino implements IDino {
 		this.historyClear();
 	}
 
-	drawNormalDino(ctx: CanvasRenderingContext2D) {
+	drawNormalDino(
+		ctx: CanvasRenderingContext2D,
+		activeElemental: ElementalKey | null = null,
+	) {
 		const dinoConfig = DINOS[this.level];
 		if (!dinoConfig) return;
-		this.drawDino(ctx, dinoConfig);
+		this.drawDino(ctx, dinoConfig, activeElemental);
 	}
 
 	drawSuper(
 		ctx: CanvasRenderingContext2D,
 		type: "trex" | "spino" | null = this.superType,
+		activeElemental: ElementalKey | null = null,
 	) {
 		if (!type) return;
 		const superConfig = SUPER_DINOS[type];
 		if (!superConfig) return;
-		this.drawDino(ctx, superConfig);
+		this.drawDino(ctx, superConfig, activeElemental);
 	}
 
 	drawDino(
 		ctx: CanvasRenderingContext2D,
 		config: DinoConfig | { id: string; width: number; isSuper?: boolean },
+		activeElemental: ElementalKey | null = null,
 	) {
 		const sprite = this.sprites[config.id];
 		if (sprite?.complete && sprite.naturalWidth > 0) {
 			const w = config.width;
 			const h = w * (sprite.naturalHeight / sprite.naturalWidth);
 			ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
+			this.drawElementalTint(
+				ctx,
+				config.id,
+				sprite,
+				-w / 2,
+				-h / 2,
+				w,
+				h,
+				activeElemental,
+			);
 		} else {
 			// Fallback
 			ctx.fillStyle = config.isSuper ? "#0ff" : "#444";
 			ctx.fillRect(-20, -20, 40, 40);
+			if (activeElemental && !supportsCanvasColorFilters()) {
+				ctx.fillStyle = ELEMENTALS[activeElemental].colorBright;
+				ctx.fillRect(-20, -20, 40, 40);
+			}
 		}
+	}
+
+	private drawElementalTint(
+		ctx: CanvasRenderingContext2D,
+		id: string,
+		sprite: HTMLImageElement,
+		x: number,
+		y: number,
+		w: number,
+		h: number,
+		activeElemental: ElementalKey | null,
+	): void {
+		if (!activeElemental || supportsCanvasColorFilters()) return;
+
+		const pulse = this.getElementalTintAlpha(activeElemental);
+		const tintedSprite = this.getElementalTintSprite(
+			id,
+			sprite,
+			activeElemental,
+		);
+		ctx.save();
+		ctx.filter = "none";
+		ctx.globalAlpha *= pulse;
+		ctx.drawImage(tintedSprite, x, y, w, h);
+		ctx.restore();
+	}
+
+	private getElementalTintAlpha(activeElemental: ElementalKey): number {
+		switch (activeElemental) {
+			case "BURNING":
+				return 0.36 + Math.sin(this.game.time * 0.035) * 0.08;
+			case "LIGHTNING":
+				return Math.random() < 0.08 ? 0.58 : 0.42;
+			case "TOXIC_WASTE":
+				return 0.42 + Math.sin(this.game.time * 0.008) * 0.08;
+		}
+	}
+
+	private getElementalTintSprite(
+		id: string,
+		sprite: HTMLImageElement,
+		activeElemental: ElementalKey,
+	): HTMLCanvasElement {
+		const cached = this.elementalTintSprites[id]?.[activeElemental];
+		if (cached) return cached;
+
+		const canvas = document.createElement("canvas");
+		canvas.width = sprite.naturalWidth;
+		canvas.height = sprite.naturalHeight;
+
+		const tintCtx = canvas.getContext("2d");
+		if (tintCtx) {
+			tintCtx.drawImage(sprite, 0, 0);
+			tintCtx.globalCompositeOperation = "source-atop";
+			tintCtx.fillStyle = ELEMENTALS[activeElemental].colorBright;
+			tintCtx.fillRect(0, 0, canvas.width, canvas.height);
+		}
+
+		this.elementalTintSprites[id] = {
+			...this.elementalTintSprites[id],
+			[activeElemental]: canvas,
+		};
+		return canvas;
 	}
 
 	reset() {
