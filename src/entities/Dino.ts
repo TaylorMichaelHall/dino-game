@@ -63,6 +63,7 @@ export class Dino implements IDino {
 	isBackflipping: boolean;
 	backflipRotation: number;
 	backflipDuration: number;
+	squash: number;
 	sprites: Record<string, HTMLImageElement>;
 	elementalTintSprites: Record<
 		string,
@@ -115,6 +116,7 @@ export class Dino implements IDino {
 		this.isBackflipping = false;
 		this.backflipRotation = 0;
 		this.backflipDuration = CONFIG.DINO_BACKFLIP_DURATION;
+		this.squash = 0;
 
 		this.sprites = {};
 		this.elementalTintSprites = {};
@@ -241,6 +243,8 @@ export class Dino implements IDino {
 			}
 		}
 
+		this.squash += (0 - this.squash) * CONFIG.DINO_SQUASH_RECOVERY * deltaTime;
+
 		// Trail effect when fast, super, or quetz riding
 		if (
 			this.game.timers.speedBoost > 0 ||
@@ -355,7 +359,9 @@ export class Dino implements IDino {
 
 		ctx.rotate(rotation);
 
-		ctx.scale(0.8, 0.8);
+		const stretch = 1 + this.squash * 0.18;
+		const squash = 1 - this.squash * 0.14;
+		ctx.scale(0.8 * squash, 0.8 * stretch);
 
 		if (filter) ctx.filter = filter;
 
@@ -380,6 +386,21 @@ export class Dino implements IDino {
 		this.velocity = this.isGravityFlipped
 			? -this.jumpStrength
 			: this.jumpStrength;
+		this.squash = 1;
+
+		const cx = this.displayX + this.width * 0.5;
+		const cy = this.y + this.height * 0.5;
+		const exhaustAngle = this.isGravityFlipped ? -Math.PI / 2 : Math.PI / 2;
+		this.game.effects.spawnDirectionalParticles(
+			cx - 8,
+			cy,
+			"rgba(255, 242, 166, 0.95)",
+			8,
+			exhaustAngle,
+			0.9,
+			180,
+			0.34,
+		);
 	}
 
 	upgrade() {
@@ -397,6 +418,7 @@ export class Dino implements IDino {
 	takeDamage() {
 		this.invulnerable = true;
 		this.invulnerableTimer = CONFIG.INVULNERABLE_DURATION;
+		this.squash = -0.9;
 	}
 
 	setSuper(active: boolean, type: "trex" | "spino" = "trex") {
@@ -570,5 +592,6 @@ export class Dino implements IDino {
 		this.gravity = CONFIG.GRAVITY;
 		this.isBackflipping = false;
 		this.backflipRotation = 0;
+		this.squash = 0;
 	}
 }

@@ -13,35 +13,6 @@
 	}
 }
 
-@keyframes lightning-flicker {
-	0%,
-	19.999%,
-	22%,
-	62.999%,
-	64%,
-	64.999%,
-	70%,
-	100% {
-		opacity: 1;
-		text-shadow:
-			0 0 5px #fff,
-			0 0 10px #fff,
-			0 0 20px var(--color-accent),
-			0 0 30px var(--color-accent),
-			0 0 40px var(--color-accent);
-	}
-
-	20%,
-	21.999%,
-	63%,
-	63.999%,
-	65%,
-	69.999% {
-		opacity: 0.4;
-		text-shadow: none;
-	}
-}
-
 @keyframes combo-pop-anim {
 	0% {
 		transform: scale(1.5);
@@ -92,24 +63,34 @@
 	}
 }
 
-@keyframes fadeUp {
+@keyframes callout-banner {
 	0% {
 		opacity: 0;
-		transform: translate(-50%, -40%) scale(0.8);
+		clip-path: inset(0 48% 0 48%);
+		transform: translate(-50%, -44%) scale(0.96);
+		filter: brightness(1.25);
 	}
 
-	20% {
+	14% {
 		opacity: 1;
-		transform: translate(-50%, -50%) scale(1.1);
+		clip-path: inset(0 0 0 0);
+		transform: translate(-50%, -50%) scale(1.02);
 	}
 
-	80% {
-		opacity: 1;
+	28% {
 		transform: translate(-50%, -50%) scale(1);
+		filter: brightness(1);
+	}
+
+	78% {
+		opacity: 1;
+		clip-path: inset(0 0 0 0);
+		transform: translate(-50%, -50%);
 	}
 
 	100% {
 		opacity: 0;
-		transform: translate(-50%, -60%);
+		clip-path: inset(0 42% 0 42%);
+		transform: translate(-50%, -58%) scale(0.98);
 	}
 }

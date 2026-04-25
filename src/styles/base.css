@@ -2,10 +2,9 @@
 
 :root {
 	--font-main: "Outfit", sans-serif;
-	--color-bg: #1a1a2e;
+	--color-bg: #070912;
 	--color-text: #ffffff;
-	--color-accent: #e94560;
-	--color-ui-bg: rgba(22, 33, 62, 0.85);
+	--color-accent: #20e3b2;
 }
 
 * {
@@ -17,7 +16,18 @@
 
 body {
 	font-family: var(--font-main);
-	background-color: var(--color-bg);
+	background:
+		radial-gradient(
+			circle at 18% 8%,
+			rgba(32, 227, 178, 0.18),
+			transparent 28rem
+		),
+		radial-gradient(
+			circle at 82% 12%,
+			rgba(255, 65, 108, 0.18),
+			transparent 30rem
+		),
+		linear-gradient(180deg, #080a14 0%, #11101d 44%, #05060b 100%);
 	color: var(--color-text);
 	overflow-y: auto;
 	display: flex;

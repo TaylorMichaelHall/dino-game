@@ -61,6 +61,25 @@ interface LightningBolt {
 	duration: number;
 }
 
+interface Shockwave {
+	x: number;
+	y: number;
+	color: string;
+	life: number;
+	maxLife: number;
+	radius: number;
+	maxRadius: number;
+}
+
+interface AmbientMote {
+	x: number;
+	y: number;
+	size: number;
+	speed: number;
+	alpha: number;
+	twinkle: number;
+}
+
 /**
  * EffectManager
  * Handles visual effects like speed lines, glitch effects, trails, and FCT.
@@ -73,6 +92,8 @@ export class EffectManager {
 	trails: Trail[];
 	fct: FCT[];
 	bolts: LightningBolt[];
+	shockwaves: Shockwave[];
+	motes: AmbientMote[];
 	spriteCache: Map<string, HTMLImageElement>;
 
 	constructor(game: IGame) {
@@ -83,8 +104,11 @@ export class EffectManager {
 		this.trails = [];
 		this.fct = [];
 		this.bolts = [];
+		this.shockwaves = [];
+		this.motes = [];
 		this.spriteCache = new Map();
 		this.initSpeedLines();
+		this.initAmbientMotes();
 	}
 
 	getCachedImage(src: string): HTMLImageElement {
@@ -114,6 +138,19 @@ export class EffectManager {
 		}
 	}
 
+	initAmbientMotes() {
+		for (let i = 0; i < CONFIG.AMBIENT_MOTE_COUNT; i++) {
+			this.motes.push({
+				x: Math.random() * this.game.width,
+				y: Math.random() * this.game.height,
+				size: Math.random() * 1.8 + 0.6,
+				speed: CONFIG.AMBIENT_MOTE_SPEED * (0.4 + Math.random() * 1.2),
+				alpha: 0.08 + Math.random() * 0.16,
+				twinkle: Math.random() * Math.PI * 2,
+			});
+		}
+	}
+
 	spawnParticles(
 		x: number,
 		y: number,
@@ -136,6 +173,49 @@ export class EffectManager {
 				size: Math.random() * 4 + 2,
 			});
 		}
+	}
+
+	spawnDirectionalParticles(
+		x: number,
+		y: number,
+		color: string,
+		count: number,
+		angle: number,
+		spread: number,
+		speed: number,
+		life: number,
+	) {
+		for (let i = 0; i < count; i++) {
+			const a = angle + (Math.random() - 0.5) * spread;
+			const velocity = (Math.random() * 0.45 + 0.55) * speed;
+			this.particles.push({
+				x,
+				y,
+				vx: Math.cos(a) * velocity,
+				vy: Math.sin(a) * velocity,
+				life,
+				maxLife: life,
+				color,
+				size: Math.random() * 3 + 2,
+			});
+		}
+	}
+
+	spawnShockwave(
+		x: number,
+		y: number,
+		color: string = "255, 255, 255",
+		maxRadius: number = 80,
+	) {
+		this.shockwaves.push({
+			x,
+			y,
+			color,
+			life: CONFIG.SHOCKWAVE_LIFETIME,
+			maxLife: CONFIG.SHOCKWAVE_LIFETIME,
+			radius: 8,
+			maxRadius,
+		});
 	}
 
 	spawnShatter(
@@ -247,6 +327,17 @@ export class EffectManager {
 	}
 
 	update(deltaTime: number) {
+		const speedMultiplier = this.game.timers.speedBoost > 0 ? 2.8 : 1;
+
+		this.motes.forEach((mote) => {
+			mote.x -= mote.speed * speedMultiplier * deltaTime;
+			mote.y += Math.sin(this.game.time * 0.001 + mote.twinkle) * deltaTime * 5;
+			if (mote.x < -20) {
+				mote.x = this.game.width + 20;
+				mote.y = Math.random() * this.game.height;
+			}
+		});
+
 		// Speed Lines
 		if (this.game.timers.speedBoost > 0) {
 			this.speedLines.forEach((line) => {
@@ -296,9 +387,35 @@ export class EffectManager {
 			b.age += deltaTime;
 		});
 		compactInPlace(this.bolts, (b) => b.age < b.duration);
+
+		this.shockwaves.forEach((w) => {
+			const t = 1 - w.life / w.maxLife;
+			w.radius = 8 + (w.maxRadius - 8) * (1 - (1 - t) * (1 - t));
+			w.life -= deltaTime;
+		});
+		compactInPlace(this.shockwaves, (w) => w.life > 0);
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
+		this.drawAmbientMotes(ctx);
+
+		this.shockwaves.forEach((w) => {
+			const t = 1 - w.life / w.maxLife;
+			const alpha = (1 - t) * 0.65;
+			ctx.save();
+			ctx.strokeStyle = `rgba(${w.color}, ${alpha})`;
+			ctx.lineWidth = 7 * (1 - t) + 1;
+			ctx.beginPath();
+			ctx.arc(w.x, w.y, w.radius, 0, Math.PI * 2);
+			ctx.stroke();
+			ctx.strokeStyle = `rgba(255, 255, 255, ${alpha * 0.6})`;
+			ctx.lineWidth = 2;
+			ctx.beginPath();
+			ctx.arc(w.x, w.y, w.radius * 0.72, 0, Math.PI * 2);
+			ctx.stroke();
+			ctx.restore();
+		});
+
 		// Particles
 		this.particles.forEach((p) => {
 			const alpha = p.life / p.maxLife;
@@ -374,8 +491,11 @@ export class EffectManager {
 
 		if (this.game.timers.speedBoost > 0) {
 			ctx.save();
-			ctx.strokeStyle = `rgba(255, 255, 255, ${CONFIG.SPEED_LINE_OPACITY})`;
-			ctx.lineWidth = 2;
+			const opacity = CONFIG.SPEED_LINE_BOOST_OPACITY;
+			ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
+			ctx.lineWidth = 2.5;
+			ctx.shadowColor = "rgba(255, 210, 90, 0.35)";
+			ctx.shadowBlur = 10;
 			ctx.beginPath();
 			this.speedLines.forEach((l) => {
 				ctx.moveTo(l.x, l.y);
@@ -428,6 +548,49 @@ export class EffectManager {
 		if (this.game.timers.superMode > 0) {
 			this.drawGlitchEffect(ctx);
 		}
+	}
+
+	drawAmbientMotes(ctx: CanvasRenderingContext2D) {
+		ctx.save();
+		ctx.globalCompositeOperation = "screen";
+		this.motes.forEach((mote) => {
+			const pulse =
+				0.65 + Math.sin(this.game.time * 0.003 + mote.twinkle) * 0.35;
+			ctx.globalAlpha = mote.alpha * pulse;
+			ctx.fillStyle = "#fff7c2";
+			ctx.beginPath();
+			ctx.arc(mote.x, mote.y, mote.size, 0, Math.PI * 2);
+			ctx.fill();
+		});
+		ctx.restore();
+		ctx.globalAlpha = 1;
+	}
+
+	drawPostProcessing(ctx: CanvasRenderingContext2D) {
+		const w = this.game.width;
+		const h = this.game.height;
+
+		ctx.save();
+		const vignette = ctx.createRadialGradient(
+			w * 0.5,
+			h * 0.48,
+			h * 0.18,
+			w * 0.5,
+			h * 0.52,
+			h * 0.78,
+		);
+		vignette.addColorStop(0, "rgba(0, 0, 0, 0)");
+		vignette.addColorStop(0.72, "rgba(0, 0, 0, 0.1)");
+		vignette.addColorStop(1, "rgba(0, 0, 0, 0.34)");
+		ctx.fillStyle = vignette;
+		ctx.fillRect(0, 0, w, h);
+
+		ctx.globalAlpha = 0.08;
+		ctx.fillStyle = "#ffffff";
+		for (let y = 0; y < h; y += 4) {
+			ctx.fillRect(0, y, w, 1);
+		}
+		ctx.restore();
 	}
 
 	drawGlitchEffect(ctx: CanvasRenderingContext2D) {

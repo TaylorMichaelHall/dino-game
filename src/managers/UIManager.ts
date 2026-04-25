@@ -65,9 +65,6 @@ export class UIManager {
 			helpScreen: get("help-screen"),
 			closeHelpBtnTop: get("close-help-btn-top"),
 			helpContent: document.querySelector(".help-content") as HTMLElement,
-			displayedHighScore: get("displayed-high-score"),
-			combo: get("combo"),
-			powerupTimerFill: get("powerup-timer-fill"),
 			gameOverStats: get("game-over-stats"),
 			gameOverActions: get("game-over-actions"),
 			leaderboardScreen: get("leaderboard-screen"),
@@ -540,7 +537,9 @@ export class UIManager {
 		// Append → as the last item in the stats row
 		const nextBtn = document.createElement("button");
 		nextBtn.className = "stat-item stat-next-btn";
-		nextBtn.innerHTML = '<span class="stat-icon">&rarr;</span>';
+		nextBtn.type = "button";
+		nextBtn.innerHTML =
+			'<span class="stat-next-text">Continue</span><span class="stat-next-arrow">&rarr;</span>';
 		nextBtn.onclick = () => this.showGameOverActions();
 		list.appendChild(nextBtn);
 		nextBtn.scrollIntoView({
@@ -562,21 +561,39 @@ export class UIManager {
 		const itemEl = document.createElement("div");
 		itemEl.className = "stat-item";
 
-		let iconHtml = "";
+		const iconWrap = document.createElement("div");
+		iconWrap.className = "stat-info";
+
 		if (item.sprite) {
-			iconHtml = `<img src="${spritePath(item.sprite)}" class="stat-img">`;
+			const img = document.createElement("img");
+			img.src = spritePath(item.sprite);
+			img.className = "stat-img";
+			img.alt = item.name;
+			iconWrap.appendChild(img);
 		} else if (item.isImg && item.icon) {
-			iconHtml = `<img src="${spritePath(item.icon)}" class="stat-img">`;
+			const img = document.createElement("img");
+			img.src = spritePath(item.icon);
+			img.className = "stat-img";
+			img.alt = item.name;
+			iconWrap.appendChild(img);
 		} else {
-			iconHtml = `<span class="stat-icon">${item.icon}</span>`;
+			const icon = document.createElement("span");
+			icon.className = "stat-icon";
+			icon.textContent = item.icon || "";
+			iconWrap.appendChild(icon);
 		}
 
-		itemEl.innerHTML = `
-            <div class="stat-info">
-                ${iconHtml}
-            </div>
-            <span class="stat-count">0</span>
-        `;
+		const countEl = document.createElement("span");
+		countEl.className = "stat-count";
+		countEl.textContent = "0";
+
+		const labelEl = document.createElement("span");
+		labelEl.className = "stat-label";
+		labelEl.textContent = item.name;
+
+		itemEl.appendChild(iconWrap);
+		itemEl.appendChild(countEl);
+		itemEl.appendChild(labelEl);
 		list.appendChild(itemEl);
 		itemEl.scrollIntoView({
 			behavior: "smooth",
@@ -584,7 +601,6 @@ export class UIManager {
 			inline: "center",
 		});
 
-		const countEl = itemEl.querySelector(".stat-count") as HTMLElement;
 		const targetCount = item.count;
 		let currentCount = 0;
 
@@ -601,7 +617,7 @@ export class UIManager {
 		// Sound and count up
 		while (currentCount < targetCount) {
 			currentCount = Math.min(targetCount, currentCount + step);
-			if (countEl) countEl.innerText = currentCount.toString();
+			countEl.innerText = currentCount.toString();
 			this.game.audio.playPoint();
 
 			// Small pop on each tick
@@ -613,6 +629,7 @@ export class UIManager {
 			await new Promise((r) => setTimeout(r, delay));
 		}
 
+		itemEl.classList.add("stat-complete");
 		await new Promise((r) => setTimeout(r, 150));
 	}
 }
