@@ -13,6 +13,7 @@ interface ParallaxLayer {
 	points: Point[];
 	height: number;
 	offset: number;
+	cache: LayerCache;
 }
 
 interface Star {
@@ -30,6 +31,11 @@ interface Cloud {
 	height: number;
 	speedFactor: number;
 	alpha: number;
+}
+
+interface LayerCache {
+	canvas: HTMLCanvasElement;
+	key: string;
 }
 
 export class ParallaxManager {
@@ -54,6 +60,7 @@ export class ParallaxManager {
 				points: this.generateMountainRidge(280, 122, 0.35),
 				height: 210,
 				offset: 0,
+				cache: this.createLayerCache(),
 			},
 			{
 				kind: "nearMountains",
@@ -62,6 +69,7 @@ export class ParallaxManager {
 				points: this.generateMountainRidge(210, 112, 1.7),
 				height: 165,
 				offset: 0,
+				cache: this.createLayerCache(),
 			},
 			{
 				kind: "foothills",
@@ -70,8 +78,16 @@ export class ParallaxManager {
 				points: this.generateFoothills(1.1),
 				height: 76,
 				offset: 0,
+				cache: this.createLayerCache(),
 			},
 		];
+	}
+
+	private createLayerCache(): LayerCache {
+		const canvas = document.createElement("canvas");
+		canvas.width = this.WORLD_WIDTH;
+		canvas.height = CONFIG.HORIZON_Y;
+		return { canvas, key: "" };
 	}
 
 	private generateStars(): Star[] {
@@ -254,9 +270,9 @@ export class ParallaxManager {
 		const farAtmosphere = this.mixColor(mountainFarColor, skyColor, 0.34);
 		const nearAtmosphere = this.mixColor(mountainNearColor, skyColor, 0.16);
 
-		this.layers[0].color = `rgb(${farAtmosphere.join(",")})`;
-		this.layers[1].color = `rgb(${nearAtmosphere.join(",")})`;
-		this.layers[2].color = `rgb(${treesColor.join(",")})`;
+		this.layers[0].color = this.toRgb(this.quantizeColor(farAtmosphere));
+		this.layers[1].color = this.toRgb(this.quantizeColor(nearAtmosphere));
+		this.layers[2].color = this.toRgb(this.quantizeColor(treesColor));
 
 		ctx.save();
 		ctx.beginPath();
@@ -269,28 +285,31 @@ export class ParallaxManager {
 		this.celestial.draw(ctx, cycleFactor);
 		this.drawClouds(ctx, cycleFactor);
 
-		// Layer 0: far mountains (blurred)
-		ctx.filter = "blur(2px)";
-		this.drawLayer(ctx, this.layers[0], -this.WORLD_WIDTH);
-		this.drawLayer(ctx, this.layers[0], 0);
-		this.drawLayer(ctx, this.layers[0], this.WORLD_WIDTH);
-		ctx.filter = "none";
+		// Layer 0: far mountains (blur baked into cached layer)
+		this.drawCachedLayer(ctx, this.layers[0]);
 
 		// Pterodactyl flock between far and near mountains
 		this.flockManager?.draw(ctx);
 
 		// Layer 1: near mountains
-		this.drawLayer(ctx, this.layers[1], -this.WORLD_WIDTH);
-		this.drawLayer(ctx, this.layers[1], 0);
-		this.drawLayer(ctx, this.layers[1], this.WORLD_WIDTH);
+		this.drawCachedLayer(ctx, this.layers[1]);
 
 		// Layer 2: foothills
-		this.drawLayer(ctx, this.layers[2], -this.WORLD_WIDTH);
-		this.drawLayer(ctx, this.layers[2], 0);
-		this.drawLayer(ctx, this.layers[2], this.WORLD_WIDTH);
+		this.drawCachedLayer(ctx, this.layers[2]);
 
 		ctx.filter = "none";
 		ctx.restore();
+	}
+
+	private quantizeColor(color: number[]): number[] {
+		const step = 4;
+		return color.map((channel) =>
+			Math.max(0, Math.min(255, Math.round(channel / step) * step)),
+		);
+	}
+
+	private toRgb(color: number[]): string {
+		return `rgb(${color.join(",")})`;
 	}
 
 	private drawStars(ctx: CanvasRenderingContext2D, cycleFactor: number) {
@@ -446,6 +465,42 @@ export class ParallaxManager {
 		}
 
 		ctx.restore();
+	}
+
+	private drawCachedLayer(ctx: CanvasRenderingContext2D, layer: ParallaxLayer) {
+		this.refreshLayerCache(layer);
+
+		const x = -layer.offset;
+		ctx.drawImage(layer.cache.canvas, x - this.WORLD_WIDTH, 0);
+		ctx.drawImage(layer.cache.canvas, x, 0);
+		ctx.drawImage(layer.cache.canvas, x + this.WORLD_WIDTH, 0);
+	}
+
+	private refreshLayerCache(layer: ParallaxLayer) {
+		const key = `${layer.kind}:${layer.color}`;
+		if (layer.cache.key === key) return;
+
+		const cacheCtx = layer.cache.canvas.getContext("2d");
+		if (!cacheCtx) return;
+
+		layer.cache.key = key;
+		cacheCtx.clearRect(
+			0,
+			0,
+			layer.cache.canvas.width,
+			layer.cache.canvas.height,
+		);
+		cacheCtx.save();
+		if (layer.kind === "farMountains") cacheCtx.filter = "blur(2px)";
+		const previousOffset = layer.offset;
+		try {
+			layer.offset = 0;
+			this.drawLayer(cacheCtx, layer, 0);
+		} finally {
+			layer.offset = previousOffset;
+			cacheCtx.restore();
+		}
+		cacheCtx.filter = "none";
 	}
 
 	private drawMountainSilhouette(

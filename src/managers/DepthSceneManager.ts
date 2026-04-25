@@ -38,20 +38,24 @@ export class DepthSceneManager {
 
 	update(deltaTime: number, gameSpeed: number) {
 		this.scroll += gameSpeed * deltaTime;
+		let didRecycle = false;
 
 		for (const obj of this.objects) {
 			const parallax = 0.18 + obj.z * 0.58;
 			obj.x -= gameSpeed * parallax * deltaTime;
-			if (obj.x < -180)
+			if (obj.x < -180) {
 				this.recycle(obj, this.game.width + 260 + Math.random() * 520);
+				didRecycle = true;
+			}
 		}
+		if (didRecycle) this.sortByDepth();
 	}
 
 	draw(ctx: CanvasRenderingContext2D) {
 		this.drawHorizonHeat(ctx);
 
-		const sorted = [...this.objects].sort((a, b) => a.z - b.z);
-		for (const obj of sorted) {
+		for (const obj of this.objects) {
+			if (obj.x < -180 || obj.x > this.game.width + 220) continue;
 			const point = this.project(obj);
 			if (point.alpha <= 0.02) continue;
 
@@ -68,6 +72,7 @@ export class DepthSceneManager {
 		for (let i = 0; i < SCENERY_COUNT; i++) {
 			this.objects.push(this.makeObject((i / SCENERY_COUNT) * SCENERY_SPAN));
 		}
+		this.sortByDepth();
 	}
 
 	private makeObject(x: number): DepthObject {
@@ -77,6 +82,10 @@ export class DepthSceneManager {
 	private recycle(obj: DepthObject, x: number = this.game.width) {
 		const replacement = this.createObject(x);
 		Object.assign(obj, replacement);
+	}
+
+	private sortByDepth() {
+		this.objects.sort((a, b) => a.z - b.z);
 	}
 
 	private createObject(x: number): DepthObject {
