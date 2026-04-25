@@ -249,29 +249,58 @@ export class ObstacleManager implements IObstacleManager {
 		ctx.lineWidth = 4;
 
 		const amplitude = width / 2;
-		const dotPath = new Path2D();
 		const step = 15;
+		const leftNodes: { x: number; y: number; depth: number }[] = [];
+		const rightNodes: { x: number; y: number; depth: number }[] = [];
 
 		for (let y = startY; y < endY; y += step) {
 			const phase = y / 50 + this.game.time * 0.005;
 			const sinVal = Math.sin(phase);
+			const depth = (Math.cos(phase) + 1) / 2;
 
 			const xOffset = sinVal * (amplitude - 5);
 			const x1 = x + width / 2 + xOffset;
 			const x2 = x + width / 2 - xOffset;
-
-			if (Math.abs(sinVal) < 0.2) {
-				ctx.moveTo(x1, y);
-				ctx.lineTo(x2, y);
-			}
-
-			dotPath.rect(x1 - 2, y, 4, 4);
-			dotPath.rect(x2 - 2, y, 4, 4);
+			leftNodes.push({ x: x1, y, depth });
+			rightNodes.push({ x: x2, y, depth: 1 - depth });
 		}
 
-		ctx.stroke();
-		ctx.fillStyle = drawColor;
-		ctx.fill(dotPath);
+		this.drawHelixRail(ctx, leftNodes, drawColor);
+		this.drawHelixRail(ctx, rightNodes, drawColor);
+
+		for (let i = 0; i < leftNodes.length; i++) {
+			const a = leftNodes[i];
+			const b = rightNodes[i];
+			const frontAlpha = Math.max(a.depth, b.depth);
+			ctx.strokeStyle = `rgba(255, 255, 255, ${0.1 + frontAlpha * 0.32})`;
+			ctx.lineWidth = 1 + frontAlpha * 2;
+			ctx.beginPath();
+			ctx.moveTo(a.x, a.y);
+			ctx.lineTo(b.x, b.y);
+			ctx.stroke();
+		}
+
+		for (const nodes of [leftNodes, rightNodes]) {
+			for (const node of nodes) {
+				const radius = 2.2 + node.depth * 2.8;
+				ctx.fillStyle = drawColor;
+				ctx.globalAlpha = 0.42 + node.depth * 0.58;
+				ctx.beginPath();
+				ctx.arc(node.x, node.y, radius, 0, Math.PI * 2);
+				ctx.fill();
+				ctx.fillStyle = "rgba(255, 255, 255, 0.82)";
+				ctx.globalAlpha = 0.18 + node.depth * 0.34;
+				ctx.beginPath();
+				ctx.arc(
+					node.x - radius * 0.28,
+					node.y - radius * 0.28,
+					radius * 0.32,
+					0,
+					Math.PI * 2,
+				);
+				ctx.fill();
+			}
+		}
 		ctx.restore();
 
 		// Glow border — layered strokes instead of shadowBlur
@@ -290,6 +319,28 @@ export class ObstacleManager implements IObstacleManager {
 		ctx.lineWidth = 2;
 		ctx.strokeRect(x, startY, width, height);
 		ctx.restore();
+	}
+
+	private drawHelixRail(
+		ctx: CanvasRenderingContext2D,
+		nodes: { x: number; y: number; depth: number }[],
+		color: string,
+	) {
+		if (nodes.length < 2) return;
+
+		for (let i = 1; i < nodes.length; i++) {
+			const prev = nodes[i - 1];
+			const node = nodes[i];
+			const depth = (prev.depth + node.depth) / 2;
+			ctx.strokeStyle = color;
+			ctx.globalAlpha = 0.24 + depth * 0.76;
+			ctx.lineWidth = 2 + depth * 4;
+			ctx.beginPath();
+			ctx.moveTo(prev.x, prev.y);
+			ctx.lineTo(node.x, node.y);
+			ctx.stroke();
+		}
+		ctx.globalAlpha = 1;
 	}
 
 	/**

@@ -239,8 +239,6 @@ export const CONFIG = {
 	FLOCK_WAVE_FREQUENCY: 0.5,
 
 	// Background Sun
-	SUN_X: 600,
-	SUN_Y: 330,
 	SUN_CORE_RADIUS: 120,
 	SUN_GLOW_RADIUS: 300,
 };
