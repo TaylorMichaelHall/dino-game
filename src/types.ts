@@ -31,6 +31,7 @@ export type PowerupType =
 	| "BONE"
 	| "DIAMOND"
 	| "EMERALD"
+	| "ROBOT"
 	| "MAGNET"
 	| "QUETZAL"
 	| "GRAVITY_FLIP"
@@ -38,6 +39,13 @@ export type PowerupType =
 	| "TOXIC_WASTE"
 	| "BURNING"
 	| "LIGHTNING";
+
+export type SuperDinoType =
+	| "trex"
+	| "spino"
+	| "roboAllo"
+	| "roboBrachio"
+	| "roboTriceratops";
 
 export interface ComboStage {
 	threshold: number;
@@ -83,7 +91,7 @@ export interface IDino {
 	radius: number;
 	level: number;
 	isSuper: boolean;
-	superType: "trex" | "spino" | null;
+	superType: SuperDinoType | null;
 	invulnerable: boolean;
 	invulnerableTimer: number;
 	isQuetzRiding: boolean;
@@ -97,7 +105,7 @@ export interface IDino {
 	upgrade(): void;
 	getDinoName(): string;
 	takeDamage(): void;
-	setSuper(active: boolean, type?: "trex" | "spino"): void;
+	setSuper(active: boolean, type?: SuperDinoType): void;
 	setGravityFlipped(flipped: boolean): void;
 	reset(): void;
 }

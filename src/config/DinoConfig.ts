@@ -1,4 +1,4 @@
-import type { DinoConfig, SuperDinoConfig } from "../types";
+import type { DinoConfig, SuperDinoConfig, SuperDinoType } from "../types";
 
 /**
  * Dinosaur Configuration
@@ -55,7 +55,7 @@ export const DINOS: DinoConfig[] = [
 	},
 ];
 
-export const SUPER_DINOS: Record<string, SuperDinoConfig> = {
+export const SUPER_DINOS: Record<SuperDinoType, SuperDinoConfig> = {
 	trex: {
 		id: "superTrex",
 		name: "Super T-Rex",
@@ -68,4 +68,28 @@ export const SUPER_DINOS: Record<string, SuperDinoConfig> = {
 		sprite: "super_spino.webp",
 		width: 240,
 	},
+	roboAllo: {
+		id: "roboAllo",
+		name: "Robo Allosaurus",
+		sprite: "robo_allo.webp",
+		width: 230,
+	},
+	roboBrachio: {
+		id: "roboBrachio",
+		name: "Robo Brachiosaurus",
+		sprite: "robo_brachio.webp",
+		width: 240,
+	},
+	roboTriceratops: {
+		id: "roboTriceratops",
+		name: "Robo Triceratops",
+		sprite: "robo_triceratops.webp",
+		width: 230,
+	},
 };
+
+export const ROBOT_SUPER_DINO_TYPES: SuperDinoType[] = [
+	"roboAllo",
+	"roboBrachio",
+	"roboTriceratops",
+];
