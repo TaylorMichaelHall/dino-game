@@ -5,8 +5,10 @@ Browser-based arcade game. Side project with my kid. He picks the features, I wr
 
 Play it here: https://taylormichaelhall.com/dino
 
-<img width="1154" height="971" alt="553100163-0d4642f6-9082-4de1-a1ca-7eb879754eb5" src="https://github.com/user-attachments/assets/e40f1762-0b9c-4cc5-a153-e6d4e4e1aa6f" />
-<img width="360" height="775" alt="553100056-f2e1a99a-6219-4a12-a9f8-780adbc6dad6" src="https://github.com/user-attachments/assets/f556086f-90c0-4cd6-bdcc-1298ffc82197" />
+
+<img width="934" height="930" alt="Screenshot_20260424_213553" src="https://github.com/user-attachments/assets/d7126c9f-1b34-4f99-83e1-e4d0c3cd4948" />
+
+<img width="407" height="829" alt="Screenshot_20260424_213632" src="https://github.com/user-attachments/assets/5abe669b-2f9f-43e4-a21e-335f7ce28a13" />
 
 ---
 
