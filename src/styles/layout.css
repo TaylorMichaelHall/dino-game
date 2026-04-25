@@ -122,7 +122,7 @@ canvas {
 @media (max-width: 768px) {
 	#game-wrapper {
 		gap: 8px;
-		padding: 8px 10px 12px;
+		padding: clamp(42px, 12svh, 104px) 10px 12px;
 	}
 
 	#game-container {
@@ -132,7 +132,7 @@ canvas {
 
 @media (max-width: 560px) {
 	#game-wrapper {
-		padding: 6px 8px 12px;
+		padding: clamp(36px, 11svh, 90px) 8px 12px;
 		gap: 6px;
 	}
 

@@ -35,3 +35,10 @@ body {
 	align-items: center;
 	min-height: 100vh;
 }
+
+@media (max-width: 768px) {
+	body {
+		align-items: flex-start;
+		min-height: 100svh;
+	}
+}
