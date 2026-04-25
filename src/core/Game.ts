@@ -463,6 +463,12 @@ export class Game implements IGame {
 		this.timers.speedBoost = CONFIG.BONE_BOOST_DURATION;
 		this.incrementScore(CONFIG.BONE_BONUS);
 		this.ui.showMessage("🦴 MEGA SPEED 🦴");
+		this.effects.spawnShockwave(
+			this.dino.x + this.dino.width / 2,
+			this.dino.y + this.dino.height / 2,
+			"255, 220, 120",
+			120,
+		);
 		this.stats.powerups.BONE++;
 	}
 
@@ -472,6 +478,12 @@ export class Game implements IGame {
 		this.dino.setSuper(true, type);
 		const name = type === "spino" ? "SUPER SPINOSAURUS" : "SUPER T-REX";
 		this.ui.showMessage(`🧬 ${name} ACTIVATED 🧬`);
+		this.effects.spawnShockwave(
+			this.dino.x + this.dino.width / 2,
+			this.dino.y + this.dino.height / 2,
+			type === "spino" ? "45, 212, 191" : "129, 140, 248",
+			160,
+		);
 
 		if (type === "trex") this.stats.powerups.DIAMOND++;
 		else if (type === "spino") this.stats.powerups.EMERALD++;
@@ -489,6 +501,12 @@ export class Game implements IGame {
 		this.audio.playPowerup();
 		this.timers.magnet = CONFIG.MAGNET_DURATION;
 		this.ui.showMessage("🧲 COIN MAGNET ACTIVATED 🧲");
+		this.effects.spawnShockwave(
+			this.dino.x + this.dino.width / 2,
+			this.dino.y + this.dino.height / 2,
+			"255, 215, 0",
+			100,
+		);
 		this.stats.powerups.MAGNET++;
 	}
 
@@ -560,6 +578,12 @@ export class Game implements IGame {
 			this.heal();
 			this.audio.playUpgrade();
 			this.triggerShake(CONFIG.SHAKE_INTENSITY * 2);
+			this.effects.spawnShockwave(
+				this.dino.x + this.dino.width / 2,
+				this.dino.y + this.dino.height / 2,
+				"255, 215, 0",
+				130,
+			);
 
 			// Track evolved dino
 			const dinoId = DINOS[this.dino.level].id;
@@ -609,6 +633,22 @@ export class Game implements IGame {
 		this.audio.playHit();
 		this.timers.hitFlash = CONFIG.HIT_FLASH_DURATION;
 		this.triggerShake(CONFIG.SHAKE_INTENSITY * 2);
+		this.effects.spawnShockwave(
+			this.dino.x + this.dino.width / 2,
+			this.dino.y + this.dino.height / 2,
+			"255, 70, 95",
+			110,
+		);
+		this.effects.spawnDirectionalParticles(
+			this.dino.x + this.dino.width / 2,
+			this.dino.y + this.dino.height / 2,
+			"#ff4665",
+			18,
+			Math.PI,
+			Math.PI * 1.3,
+			260,
+			0.55,
+		);
 		this.updateUI();
 
 		if (this.hearts <= 0) this.gameOver();
@@ -695,6 +735,7 @@ export class Game implements IGame {
 		this.coins.draw(this.ctx);
 		this.dino.draw(this.ctx);
 		this.quetzRide.draw(this.ctx);
+		this.effects.drawPostProcessing(this.ctx);
 
 		if (flipping) {
 			this.ctx.restore();

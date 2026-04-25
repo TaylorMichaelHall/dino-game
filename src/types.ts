@@ -102,12 +102,9 @@ export interface UIElements {
 	hearts: HTMLElement | null;
 	score: HTMLElement | null;
 	highScore: HTMLElement | null;
-	displayedHighScore: HTMLElement | null;
 	gameplayHighScore: HTMLElement | null;
-	combo: HTMLElement | null;
 	comboText: HTMLElement | null;
 	powerupTimer: HTMLElement | null;
-	powerupTimerFill: HTMLElement | null;
 	debugMenu: HTMLElement | null;
 	debugDinoList: HTMLElement | null;
 	startBtn: HTMLElement | null;
@@ -234,6 +231,22 @@ export interface IEffectManager {
 	): void;
 	spawnTrail(x: number, y: number, w: number, h: number, sprite: string): void;
 	spawnFCT(x: number, y: number, text: string, color?: string): void;
+	spawnDirectionalParticles(
+		x: number,
+		y: number,
+		color: string,
+		count: number,
+		angle: number,
+		spread: number,
+		speed: number,
+		life: number,
+	): void;
+	spawnShockwave(
+		x: number,
+		y: number,
+		color?: string,
+		maxRadius?: number,
+	): void;
 	spawnDrips(x: number, y: number): void;
 	spawnFlames(x: number, y: number): void;
 	spawnLightningBolt(targetX: number, targetY: number): void;

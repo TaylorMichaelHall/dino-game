@@ -110,7 +110,112 @@ export class ObstacleManager implements IObstacleManager {
 				this.game.height,
 				obs.color,
 			);
+			this.drawGatePolish(
+				ctx,
+				obs.x,
+				topPipeBottomY,
+				bottomPipeTopY,
+				obs.color,
+			);
 		});
+	}
+
+	drawGatePolish(
+		ctx: CanvasRenderingContext2D,
+		x: number,
+		topY: number,
+		bottomY: number,
+		color: string,
+	) {
+		const isFlashing = this.game.timers.hitFlash > 0;
+		const drawColor = isFlashing ? "#ffffff" : color;
+		const w = this.obstacleWidth;
+		const pulse = 0.45 + Math.sin(this.game.time * 0.008 + x * 0.02) * 0.16;
+
+		ctx.save();
+		ctx.globalCompositeOperation = "screen";
+		const gapGlow = ctx.createLinearGradient(x, topY, x, bottomY);
+		gapGlow.addColorStop(0, `rgba(255, 255, 255, ${pulse * 0.18})`);
+		gapGlow.addColorStop(0.5, `rgba(255, 255, 255, ${pulse * 0.04})`);
+		gapGlow.addColorStop(1, `rgba(255, 255, 255, ${pulse * 0.18})`);
+		ctx.fillStyle = gapGlow;
+		ctx.fillRect(x - 10, topY, w + 20, bottomY - topY);
+		ctx.restore();
+
+		this.drawStrandCollar(ctx, x, topY, drawColor, -1, pulse);
+		this.drawStrandCollar(ctx, x, bottomY, drawColor, 1, pulse);
+
+		ctx.save();
+		ctx.strokeStyle = `rgba(255, 255, 255, ${0.28 + pulse * 0.16})`;
+		ctx.lineWidth = 2;
+		ctx.setLineDash([6, 12]);
+		ctx.lineDashOffset = -this.game.time * 0.035;
+		ctx.beginPath();
+		ctx.moveTo(x + w / 2, topY + 12);
+		ctx.lineTo(x + w / 2, bottomY - 12);
+		ctx.stroke();
+		ctx.restore();
+	}
+
+	drawStrandCollar(
+		ctx: CanvasRenderingContext2D,
+		x: number,
+		y: number,
+		color: string,
+		direction: -1 | 1,
+		pulse: number,
+	) {
+		const w = this.obstacleWidth;
+		const centerX = x + w / 2;
+		const glowAlpha = 0.42 + pulse * 0.24;
+
+		ctx.save();
+		ctx.globalCompositeOperation = "screen";
+		ctx.shadowColor = color;
+		ctx.shadowBlur = 14;
+		ctx.lineCap = "round";
+
+		const beam = ctx.createLinearGradient(x - 8, y, x + w + 8, y);
+		beam.addColorStop(0, "rgba(255, 255, 255, 0)");
+		beam.addColorStop(0.16, color);
+		beam.addColorStop(0.5, "rgba(255, 255, 255, 0.95)");
+		beam.addColorStop(0.84, color);
+		beam.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+		ctx.strokeStyle = beam;
+		ctx.lineWidth = 3;
+		ctx.globalAlpha = glowAlpha;
+		ctx.beginPath();
+		ctx.moveTo(x - 4, y);
+		ctx.lineTo(x + w + 4, y);
+		ctx.stroke();
+
+		ctx.globalAlpha = 0.26 + pulse * 0.12;
+		ctx.lineWidth = 1.5;
+		ctx.beginPath();
+		ctx.moveTo(x + 6, y + direction * 8);
+		ctx.quadraticCurveTo(
+			centerX,
+			y + direction * 14,
+			x + w - 6,
+			y + direction * 8,
+		);
+		ctx.stroke();
+
+		ctx.fillStyle = color;
+		ctx.globalAlpha = 0.62;
+		for (const nodeX of [x + 8, x + w - 8]) {
+			ctx.beginPath();
+			ctx.arc(nodeX, y, 3.4, 0, Math.PI * 2);
+			ctx.fill();
+		}
+
+		ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+		ctx.globalAlpha = 0.55;
+		ctx.beginPath();
+		ctx.arc(centerX, y, 2.2, 0, Math.PI * 2);
+		ctx.fill();
+		ctx.restore();
 	}
 
 	/**
@@ -132,6 +237,13 @@ export class ObstacleManager implements IObstacleManager {
 		ctx.beginPath();
 		ctx.rect(x, startY, width, height);
 		ctx.clip();
+
+		const bodyGrad = ctx.createLinearGradient(x, 0, x + width, 0);
+		bodyGrad.addColorStop(0, "rgba(255, 255, 255, 0.04)");
+		bodyGrad.addColorStop(0.45, "rgba(0, 0, 0, 0.16)");
+		bodyGrad.addColorStop(1, "rgba(255, 255, 255, 0.08)");
+		ctx.fillStyle = bodyGrad;
+		ctx.fillRect(x, startY, width, height);
 
 		ctx.strokeStyle = drawColor;
 		ctx.lineWidth = 4;
