@@ -15,7 +15,6 @@ export interface ElementalConfig {
 	duration: number;
 	bonus: number;
 	pickupMessage: string;
-	expireMessage: string;
 	statsLabel: string;
 	statsIcon: string;
 	filter: (gameTime: number) => string;
@@ -46,8 +45,7 @@ export const ELEMENTALS: Record<ElementalKey, ElementalConfig> = {
 		colorBrightRgb: CONFIG.TOXIC_COLOR_BRIGHT_RGB,
 		duration: CONFIG.TOXIC_WASTE_DURATION,
 		bonus: CONFIG.TOXIC_WASTE_BONUS,
-		pickupMessage: "☢️ TOXIC WASTE ☢️",
-		expireMessage: "Toxicity Cleared",
+		pickupMessage: "TOXIC WASTE",
 		statsLabel: "Toxic Waste",
 		statsIcon: "☢️",
 		filter: toxicFilter,
@@ -71,8 +69,7 @@ export const ELEMENTALS: Record<ElementalKey, ElementalConfig> = {
 		colorBrightRgb: CONFIG.BURNING_COLOR_BRIGHT_RGB,
 		duration: CONFIG.BURNING_DURATION,
 		bonus: CONFIG.BURNING_BONUS,
-		pickupMessage: "🌋 BURNING 🌋",
-		expireMessage: "Flames Extinguished",
+		pickupMessage: "BURNING",
 		statsLabel: "Burning",
 		statsIcon: "🌋",
 		filter: burningFilter,
@@ -101,8 +98,7 @@ export const ELEMENTALS: Record<ElementalKey, ElementalConfig> = {
 		colorBrightRgb: CONFIG.LIGHTNING_COLOR_BRIGHT_RGB,
 		duration: CONFIG.LIGHTNING_DURATION,
 		bonus: CONFIG.LIGHTNING_BONUS,
-		pickupMessage: "⚡ LIGHTNING ⚡",
-		expireMessage: "Charge Dissipated",
+		pickupMessage: "LIGHTNING",
 		statsLabel: "Lightning",
 		statsIcon: "⚡",
 		filter: lightningFilter,
