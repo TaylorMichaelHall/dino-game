@@ -824,20 +824,24 @@ button:active {
 /* Media Queries */
 @media (max-width: 768px) {
 	h1 {
-		font-size: 1.4rem;
+		font-size: 1.25rem;
+	}
+
+	.main-title::after {
+		margin-top: 4px;
 	}
 
 	#scoreboard {
-		gap: 8px;
+		gap: 6px;
 	}
 
 	.score-card {
-		min-height: 48px;
-		padding: 7px 10px;
+		min-height: 42px;
+		padding: 6px 9px;
 	}
 
 	.score-value {
-		font-size: 1.4rem;
+		font-size: 1.25rem;
 	}
 
 	#game-footer {
@@ -853,11 +857,20 @@ button:active {
 
 @media (max-width: 560px) {
 	#scoreboard {
-		flex-direction: column;
+		gap: 6px;
 	}
 
 	.score-card {
-		min-height: 42px;
+		min-height: 36px;
+		padding: 5px 8px;
+	}
+
+	.score-label {
+		font-size: 0.64rem;
+	}
+
+	.score-value {
+		font-size: 1.05rem;
 	}
 
 	button {
