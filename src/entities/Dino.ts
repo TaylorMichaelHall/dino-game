@@ -5,7 +5,7 @@ import {
 	ELEMENTALS,
 	type ElementalKey,
 } from "../config/ElementalConfig";
-import type { DinoConfig, IDino, IGame } from "../types";
+import type { DinoConfig, IDino, IGame, SuperDinoType } from "../types";
 import {
 	loadImage,
 	spritePath,
@@ -22,7 +22,7 @@ interface FlyingOffSprite {
 	y: number;
 	vx: number;
 	vy: number;
-	type: "trex" | "spino";
+	type: SuperDinoType;
 }
 
 /**
@@ -49,7 +49,7 @@ export class Dino implements IDino {
 	timeSinceLastFlash: number;
 	visible: boolean;
 	isSuper: boolean;
-	superType: "trex" | "spino" | null;
+	superType: SuperDinoType | null;
 	historyBuffer: HistoryPoint[];
 	historyHead: number;
 	historyLen: number;
@@ -421,7 +421,7 @@ export class Dino implements IDino {
 		this.squash = -0.9;
 	}
 
-	setSuper(active: boolean, type: "trex" | "spino" = "trex") {
+	setSuper(active: boolean, type: SuperDinoType = "trex") {
 		if (active && !this.isSuper) {
 			// Start of powerup: the normal dino becomes the follower
 			this.isSuper = true;
@@ -446,7 +446,7 @@ export class Dino implements IDino {
 			y: this.y,
 			vx: 800,
 			vy: -400,
-			type: this.superType as "trex" | "spino",
+			type: this.superType as SuperDinoType,
 		};
 
 		// Smoothly transition state: normal dino was at followerX, history[0].y
@@ -472,7 +472,7 @@ export class Dino implements IDino {
 
 	drawSuper(
 		ctx: CanvasRenderingContext2D,
-		type: "trex" | "spino" | null = this.superType,
+		type: SuperDinoType | null = this.superType,
 		activeElemental: ElementalKey | null = null,
 	) {
 		if (!type) return;

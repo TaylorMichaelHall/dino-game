@@ -102,7 +102,8 @@ export class PowerupManager implements IPowerupManager {
 		}
 
 		if (currentScore >= this.nextDiamondSpawn) {
-			const type = Math.random() < 0.5 ? "DIAMOND" : "EMERALD";
+			const superTypes: PowerupType[] = ["DIAMOND", "EMERALD", "ROBOT"];
+			const type = superTypes[Math.floor(Math.random() * superTypes.length)];
 			this.spawn(type);
 			this.nextDiamondSpawn += CONFIG.DIAMOND_THRESHOLD; // Fixed block increment
 		}
@@ -182,6 +183,7 @@ export class PowerupManager implements IPowerupManager {
 			if (p.type === "BONE") this.drawBone(ctx, p.x, p.y);
 			else if (p.type === "DIAMOND") this.drawDiamond(ctx, p.x, p.y);
 			else if (p.type === "EMERALD") this.drawEmerald(ctx, p.x, p.y);
+			else if (p.type === "ROBOT") this.drawRobot(ctx, p.x, p.y);
 			else if (p.type === "MAGNET") this.drawMagnet(ctx, p.x, p.y);
 			else if (p.type === "QUETZAL") this.drawFeather(ctx, p.x, p.y);
 			else if (p.type === "GRAVITY_FLIP") this.drawGravityFlip(ctx, p.x, p.y);
@@ -243,6 +245,10 @@ export class PowerupManager implements IPowerupManager {
 		}
 	}
 
+	drawRobot(ctx: CanvasRenderingContext2D, x: number, y: number) {
+		this.drawPulsingEmoji(ctx, x, y, "🔩", "125, 211, 252");
+	}
+
 	drawGravityFlip(ctx: CanvasRenderingContext2D, x: number, y: number) {
 		const bob = Math.sin(this.game.time * 0.004) * 4;
 		ctx.font = "36px serif";
@@ -292,6 +298,7 @@ export class PowerupManager implements IPowerupManager {
 			const r =
 				p.type === "DIAMOND" ||
 				p.type === "EMERALD" ||
+				p.type === "ROBOT" ||
 				p.type === "MAGNET" ||
 				p.type === "QUETZAL" ||
 				p.type === "GRAVITY_FLIP" ||

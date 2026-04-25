@@ -557,6 +557,13 @@ export class UIManager {
 				isImg: true,
 			});
 		}
+		if (stats.powerups.ROBOT && stats.powerups.ROBOT > 0) {
+			items.push({
+				name: "Robo Dinos",
+				count: stats.powerups.ROBOT,
+				icon: "🔩",
+			});
+		}
 		if (stats.powerups.MAGNET && stats.powerups.MAGNET > 0) {
 			items.push({
 				name: "Magnets",

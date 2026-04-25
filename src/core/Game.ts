@@ -1,5 +1,9 @@
 import { CONFIG, GAME_STATE } from "../config/Constants";
-import { DINOS } from "../config/DinoConfig";
+import {
+	DINOS,
+	ROBOT_SUPER_DINO_TYPES,
+	SUPER_DINOS,
+} from "../config/DinoConfig";
 import {
 	ELEMENTAL_KEYS,
 	ELEMENTALS,
@@ -31,6 +35,7 @@ import type {
 	IGame,
 	ILeaderboardService,
 	IUIManager,
+	SuperDinoType,
 } from "../types";
 import { type IScoreManager, ScoreManager } from "./ScoreManager";
 import { type ITimerManager, TimerManager } from "./TimerManager";
@@ -141,6 +146,7 @@ export class Game implements IGame {
 				BONE: 0,
 				DIAMOND: 0,
 				EMERALD: 0,
+				ROBOT: 0,
 				MAGNET: 0,
 				QUETZAL: 0,
 				GRAVITY_FLIP: 0,
@@ -368,15 +374,21 @@ export class Game implements IGame {
 			"#ffd978",
 		);
 
-		const superLabel =
-			this.dino.superType === "spino" ? "Super Spino" : "Super T-Rex";
+		const superConfig = this.dino.superType
+			? SUPER_DINOS[this.dino.superType]
+			: SUPER_DINOS.trex;
+		const isRobot = this.dino.superType?.startsWith("robo") ?? false;
 		addTimer(
 			"superMode",
-			"🧬",
-			superLabel,
+			isRobot ? "🔩" : "🧬",
+			superConfig.name,
 			this.timers.superMode,
 			CONFIG.SUPER_TREX_DURATION,
-			this.dino.superType === "spino" ? "#2dd4bf" : "#818cf8",
+			isRobot
+				? "#7dd3fc"
+				: this.dino.superType === "spino"
+					? "#2dd4bf"
+					: "#818cf8",
 		);
 
 		addTimer(
@@ -445,6 +457,7 @@ export class Game implements IGame {
 		if (pType === "BONE") this.collectBone();
 		else if (pType === "DIAMOND") this.activateSuperMode("trex");
 		else if (pType === "EMERALD") this.activateSuperMode("spino");
+		else if (pType === "ROBOT") this.activateRobotMode();
 		else if (pType === "MAGNET") this.collectMagnet();
 		else if (pType === "QUETZAL") this.activateQuetzRide();
 		else if (pType === "GRAVITY_FLIP") this.activateGravityFlip();
@@ -527,20 +540,35 @@ export class Game implements IGame {
 		this.stats.powerups.BONE++;
 	}
 
-	activateSuperMode(type: "trex" | "spino") {
+	activateSuperMode(type: SuperDinoType) {
+		const superConfig = SUPER_DINOS[type];
+		const isRobot = type.startsWith("robo");
 		this.audio.playTransform();
 		this.timers.superMode = CONFIG.SUPER_TREX_DURATION;
 		this.dino.setSuper(true, type);
-		this.ui.showMessage(type === "spino" ? "SUPER SPINO" : "SUPER T-REX");
+		this.ui.showMessage(superConfig.name.toUpperCase());
 		this.effects.spawnShockwave(
 			this.dino.x + this.dino.width / 2,
 			this.dino.y + this.dino.height / 2,
-			type === "spino" ? "45, 212, 191" : "129, 140, 248",
+			isRobot
+				? "125, 211, 252"
+				: type === "spino"
+					? "45, 212, 191"
+					: "129, 140, 248",
 			160,
 		);
 
 		if (type === "trex") this.stats.powerups.DIAMOND++;
 		else if (type === "spino") this.stats.powerups.EMERALD++;
+		else this.stats.powerups.ROBOT++;
+	}
+
+	activateRobotMode() {
+		const type =
+			ROBOT_SUPER_DINO_TYPES[
+				Math.floor(Math.random() * ROBOT_SUPER_DINO_TYPES.length)
+			];
+		this.activateSuperMode(type);
 	}
 
 	activateQuetzRide() {
@@ -820,6 +848,9 @@ export class Game implements IGame {
 				break;
 			case "SPINO":
 				this.activateSuperMode("spino");
+				break;
+			case "ROBOT":
+				this.activateRobotMode();
 				break;
 			case "MAGNET":
 				this.collectMagnet();
