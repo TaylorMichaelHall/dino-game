@@ -219,13 +219,13 @@ export class GroundPlaneManager {
 			const wave = 10 + t * 18;
 			ctx.strokeStyle = `rgba(${glowColor[0]}, ${glowColor[1]}, ${glowColor[2]}, ${alpha})`;
 			ctx.lineWidth = 1 + t * 1.8;
+			const scrollPhase = this.scrollOffset * 0.006;
 			ctx.beginPath();
-			for (let x = -20; x <= this.game.width + 20; x += 24) {
-				const scrollPhase = this.scrollOffset * 0.006;
+			for (let x = -24; x <= this.game.width + 24; x += 32) {
 				const py =
 					y +
 					Math.sin(x * 0.018 + scrollPhase + t * 4) * wave * (0.15 + t * 0.35);
-				if (x === -20) ctx.moveTo(x, py);
+				if (x === -24) ctx.moveTo(x, py);
 				else ctx.lineTo(x, py);
 			}
 			ctx.stroke();
