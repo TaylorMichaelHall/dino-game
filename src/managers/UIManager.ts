@@ -2,6 +2,7 @@ import { CONFIG } from "../config/Constants";
 import { DINOS } from "../config/DinoConfig";
 import { ELEMENTAL_KEYS, ELEMENTALS } from "../config/ElementalConfig";
 import type {
+	ActivePowerupTimer,
 	ComboStage,
 	DinoConfig,
 	IGame,
@@ -48,7 +49,6 @@ export class UIManager {
 			startBtn: get("start-btn"),
 			resumeBtn: get("resume-btn"),
 			powerupTimer: get("powerup-timer"),
-			timerSeconds: get("timer-seconds"),
 			musicToggle: get("music-toggle"),
 			sfxToggle: get("sfx-toggle"),
 			pauseBtn: get("pause-btn"),
@@ -238,19 +238,96 @@ export class UIManager {
 		}
 	}
 
-	updatePowerupTimer(timeLeft: number) {
-		if (timeLeft > 0) {
-			this.elements.powerupTimer?.classList.remove("hidden");
-			const seconds = Math.ceil(timeLeft);
-			if (
-				this.elements.timerSeconds &&
-				this.elements.timerSeconds.innerText !== seconds.toString()
-			) {
-				this.elements.timerSeconds.innerText = seconds.toString();
-			}
-		} else {
-			this.elements.powerupTimer?.classList.add("hidden");
-		}
+	updatePowerupTimers(timers: ActivePowerupTimer[]) {
+		const stack = this.elements.powerupTimer;
+		if (!stack) return;
+
+		stack.classList.toggle("hidden", timers.length === 0);
+
+		const previousPositions = new Map<string, DOMRect>();
+		stack
+			.querySelectorAll<HTMLElement>(".powerup-timer-item")
+			.forEach((item) => {
+				previousPositions.set(
+					item.dataset.timerId ?? "",
+					item.getBoundingClientRect(),
+				);
+			});
+
+		const activeIds = new Set(timers.map((timer) => timer.id));
+		stack
+			.querySelectorAll<HTMLElement>(".powerup-timer-item")
+			.forEach((item) => {
+				if (!item.dataset.timerId || !activeIds.has(item.dataset.timerId)) {
+					item.remove();
+				}
+			});
+
+		timers.forEach((timer) => {
+			const item = this.getPowerupTimerItem(stack, timer);
+			const fill = item.querySelector<HTMLElement>(".powerup-timer-fill");
+			const seconds = item.querySelector<HTMLElement>(".powerup-timer-seconds");
+			const progress =
+				timer.duration > 0
+					? Math.max(0, Math.min(1, timer.timeLeft / timer.duration))
+					: 0;
+
+			item.style.setProperty("--timer-color", timer.color);
+			item.title = timer.label;
+			if (fill) fill.style.transform = `scaleX(${progress})`;
+			if (seconds) seconds.textContent = Math.ceil(timer.timeLeft).toString();
+			stack.appendChild(item);
+		});
+
+		stack
+			.querySelectorAll<HTMLElement>(".powerup-timer-item")
+			.forEach((item) => {
+				const previous = previousPositions.get(item.dataset.timerId ?? "");
+				if (!previous) return;
+
+				const current = item.getBoundingClientRect();
+				const deltaY = previous.top - current.top;
+				if (Math.abs(deltaY) < 1) return;
+
+				item.animate(
+					[
+						{ transform: `translateY(${deltaY}px)` },
+						{ transform: "translateY(0)" },
+					],
+					{ duration: 240, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+				);
+			});
+	}
+
+	private getPowerupTimerItem(
+		stack: HTMLElement,
+		timer: ActivePowerupTimer,
+	): HTMLElement {
+		const existing = stack.querySelector<HTMLElement>(
+			`[data-timer-id="${timer.id}"]`,
+		);
+		if (existing) return existing;
+
+		const item = document.createElement("div");
+		item.className = "powerup-timer-item";
+		item.dataset.timerId = timer.id;
+
+		const icon = document.createElement("span");
+		icon.className = "powerup-timer-icon";
+		icon.textContent = timer.icon;
+
+		const track = document.createElement("span");
+		track.className = "powerup-timer-track";
+
+		const fill = document.createElement("span");
+		fill.className = "powerup-timer-fill";
+		track.appendChild(fill);
+
+		const seconds = document.createElement("span");
+		seconds.className = "powerup-timer-seconds";
+
+		item.append(icon, track, seconds);
+		return item;
 	}
 
 	updateCombo(combo: number, stage?: ComboStage, multiplier?: number) {

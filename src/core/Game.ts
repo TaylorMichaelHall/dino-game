@@ -24,6 +24,7 @@ import { TitleManager } from "../managers/TitleManager";
 import { UIManager } from "../managers/UIManager";
 import { LeaderboardService } from "../services/LeaderboardService";
 import type {
+	ActivePowerupTimer,
 	GameState,
 	IAudioManager,
 	IDino,
@@ -198,7 +199,7 @@ export class Game implements IGame {
 		this.ui.setScreen(this.state);
 		this.ui.setTheme(0);
 		this.ui.clearBorderEffect();
-		this.ui.updatePowerupTimer(0);
+		this.ui.updatePowerupTimers([]);
 		this.updateUI();
 	}
 
@@ -273,55 +274,21 @@ export class Game implements IGame {
 			this.timers.superMode > 0,
 		);
 
-		if (timerEvents.speedBoostExpired) {
-			this.ui.showMessage("Normal Speed");
-		}
-
-		if (this.timers.superMode > 0) {
-			this.ui.updatePowerupTimer(this.timers.superMode);
-		}
-
 		if (timerEvents.superModeExpired) {
-			this.ui.updatePowerupTimer(0);
-			const superName =
-				this.dino.superType === "spino" ? "Super Spinosaurus" : "Super T-Rex";
 			this.dino.setSuper(false);
-			this.ui.showMessage(`${superName} Power Depleted`);
-		}
-
-		if (timerEvents.magnetExpired) {
-			this.ui.showMessage("Magnet Deactivated");
-		}
-
-		if (this.timers.quetzRide > 0) {
-			this.ui.updatePowerupTimer(this.timers.quetzRide);
 		}
 
 		if (timerEvents.quetzRideExpired) {
-			this.ui.updatePowerupTimer(0);
 			this.quetzRide.deactivate();
-			this.ui.showMessage("Quetzalcoatlus Departed!");
-		}
-
-		if (this.timers.gravityFlip > 0) {
-			this.ui.updatePowerupTimer(this.timers.gravityFlip);
 		}
 
 		if (timerEvents.gravityFlipExpired) {
-			this.ui.updatePowerupTimer(0);
 			this.dino.setGravityFlipped(false);
 			this.incrementScore(CONFIG.GRAVITY_FLIP_BONUS);
-			this.ui.showMessage("Gravity Restored! +50");
-		}
-
-		if (this.timers.directionFlip > 0) {
-			this.ui.updatePowerupTimer(this.timers.directionFlip);
 		}
 
 		if (timerEvents.directionFlipExpired) {
-			this.ui.updatePowerupTimer(0);
 			this.incrementScore(CONFIG.DIRECTION_FLIP_BONUS);
-			this.ui.showMessage("Direction Restored! +50");
 		}
 
 		const flipTarget = this.timers.directionFlip > 0 ? 1 : 0;
@@ -345,9 +312,10 @@ export class Game implements IGame {
 			}
 			if (timerEvents.elementalExpired[key]) {
 				this.elementalTick[key].accum = 0;
-				this.ui.showMessage(e.expireMessage);
 			}
 		}
+
+		this.ui.updatePowerupTimers(this.getActivePowerupTimers());
 
 		if (timerEvents.comboExpired) {
 			this.scoring.combo = 0;
@@ -375,6 +343,88 @@ export class Game implements IGame {
 		this.meteorShower.checkSpawn(this.scoring.score);
 		this.meteorShower.update(deltaTime);
 		this.pteroFlock.update(deltaTime);
+	}
+
+	getActivePowerupTimers(): ActivePowerupTimer[] {
+		const timers: ActivePowerupTimer[] = [];
+		const addTimer = (
+			id: string,
+			icon: string,
+			label: string,
+			timeLeft: number,
+			duration: number,
+			color: string,
+		) => {
+			if (timeLeft <= 0) return;
+			timers.push({ id, icon, label, timeLeft, duration, color });
+		};
+
+		addTimer(
+			"speedBoost",
+			"🦴",
+			"Mega Speed",
+			this.timers.speedBoost,
+			CONFIG.BONE_BOOST_DURATION,
+			"#ffd978",
+		);
+
+		const superLabel =
+			this.dino.superType === "spino" ? "Super Spino" : "Super T-Rex";
+		addTimer(
+			"superMode",
+			"🧬",
+			superLabel,
+			this.timers.superMode,
+			CONFIG.SUPER_TREX_DURATION,
+			this.dino.superType === "spino" ? "#2dd4bf" : "#818cf8",
+		);
+
+		addTimer(
+			"magnet",
+			"🧲",
+			"Coin Magnet",
+			this.timers.magnet,
+			CONFIG.MAGNET_DURATION,
+			"#ffd700",
+		);
+		addTimer(
+			"quetzRide",
+			"🦅",
+			"Quetz Ride",
+			this.timers.quetzRide,
+			CONFIG.QUETZ_DURATION + CONFIG.QUETZ_ENTER_DURATION,
+			"#93c5fd",
+		);
+		addTimer(
+			"gravityFlip",
+			"🙃",
+			"Gravity Flip",
+			this.timers.gravityFlip,
+			CONFIG.GRAVITY_FLIP_DURATION,
+			"#a855f6",
+		);
+		addTimer(
+			"directionFlip",
+			"↔",
+			"Direction Flip",
+			this.timers.directionFlip,
+			CONFIG.DIRECTION_FLIP_DURATION,
+			"#00ffff",
+		);
+
+		for (const key of ELEMENTAL_KEYS) {
+			const elemental = ELEMENTALS[key];
+			addTimer(
+				key,
+				elemental.emoji,
+				elemental.statsLabel,
+				this.timers.elemental[key],
+				elemental.duration,
+				elemental.colorBright,
+			);
+		}
+
+		return timers.sort((a, b) => a.timeLeft - b.timeLeft);
 	}
 
 	updateBorderEffect() {
@@ -467,7 +517,7 @@ export class Game implements IGame {
 		this.audio.playPowerup();
 		this.timers.speedBoost = CONFIG.BONE_BOOST_DURATION;
 		this.incrementScore(CONFIG.BONE_BONUS);
-		this.ui.showMessage("🦴 MEGA SPEED 🦴");
+		this.ui.showMessage("MEGA SPEED");
 		this.effects.spawnShockwave(
 			this.dino.x + this.dino.width / 2,
 			this.dino.y + this.dino.height / 2,
@@ -481,8 +531,7 @@ export class Game implements IGame {
 		this.audio.playTransform();
 		this.timers.superMode = CONFIG.SUPER_TREX_DURATION;
 		this.dino.setSuper(true, type);
-		const name = type === "spino" ? "SUPER SPINOSAURUS" : "SUPER T-REX";
-		this.ui.showMessage(`🧬 ${name} ACTIVATED 🧬`);
+		this.ui.showMessage(type === "spino" ? "SUPER SPINO" : "SUPER T-REX");
 		this.effects.spawnShockwave(
 			this.dino.x + this.dino.width / 2,
 			this.dino.y + this.dino.height / 2,
@@ -498,14 +547,14 @@ export class Game implements IGame {
 		this.audio.playQuetzPickup();
 		this.timers.quetzRide = CONFIG.QUETZ_DURATION + CONFIG.QUETZ_ENTER_DURATION;
 		this.quetzRide.activate();
-		this.ui.showMessage("🦅 QUETZALCOATLUS RIDE! 🦅");
+		this.ui.showMessage("QUETZ RIDE");
 		this.stats.powerups.QUETZAL++;
 	}
 
 	collectMagnet() {
 		this.audio.playPowerup();
 		this.timers.magnet = CONFIG.MAGNET_DURATION;
-		this.ui.showMessage("🧲 COIN MAGNET ACTIVATED 🧲");
+		this.ui.showMessage("COIN MAGNET");
 		this.effects.spawnShockwave(
 			this.dino.x + this.dino.width / 2,
 			this.dino.y + this.dino.height / 2,
@@ -519,7 +568,7 @@ export class Game implements IGame {
 		this.audio.playPowerup();
 		this.timers.gravityFlip = CONFIG.GRAVITY_FLIP_DURATION;
 		this.dino.setGravityFlipped(true);
-		this.ui.showMessage("🙃 GRAVITY FLIP! 🙃");
+		this.ui.showMessage("GRAVITY FLIP");
 		this.stats.powerups.GRAVITY_FLIP++;
 		this.effects.spawnParticles(
 			this.dino.x + this.dino.width / 2,
@@ -534,7 +583,7 @@ export class Game implements IGame {
 	activateDirectionFlip() {
 		this.audio.playPowerup();
 		this.timers.directionFlip = CONFIG.DIRECTION_FLIP_DURATION;
-		this.ui.showMessage("🔄 DIRECTION FLIP! 🔄");
+		this.ui.showMessage("DIRECTION FLIP");
 		this.stats.powerups.DIRECTION_FLIP++;
 		this.effects.spawnParticles(
 			this.dino.x + this.dino.width / 2,

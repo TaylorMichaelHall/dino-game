@@ -48,6 +48,15 @@ export interface ComboStage {
 	class: string;
 }
 
+export interface ActivePowerupTimer {
+	id: string;
+	icon: string;
+	label: string;
+	timeLeft: number;
+	duration: number;
+	color: string;
+}
+
 export interface DinoConfig {
 	id: string;
 	name: string;
@@ -119,7 +128,6 @@ export interface UIElements {
 	startHighScore: HTMLElement | null;
 	finalScore: HTMLElement | null;
 	highScoreBadge: HTMLElement | null;
-	timerSeconds: HTMLElement | null;
 	comboContainer: HTMLElement | null;
 	comboLabel: HTMLElement | null;
 	overlayText: HTMLElement | null;
@@ -148,7 +156,7 @@ export interface IUIManager {
 	updateBorderEffect(isFlashing: boolean, color: string): void;
 	clearBorderEffect(): void;
 	updateCombo(combo: number, stage?: ComboStage, multiplier?: number): void;
-	updatePowerupTimer(timeLeft: number): void;
+	updatePowerupTimers(timers: ActivePowerupTimer[]): void;
 	toggleDebugMenu(show: boolean): void;
 	toggleHelp(show: boolean): void;
 	isHelpOpen(): boolean;
