@@ -428,6 +428,10 @@ export class Dino implements IDino {
 			this.superType = type;
 			this.visible = true;
 			this.invulnerable = false;
+		} else if (active && this.isSuper) {
+			this.superType = type;
+			this.visible = true;
+			this.invulnerable = false;
 		} else if (!active && this.isSuper) {
 			// End of powerup: Super sprite flies off, normal dino takes over
 			this.finishSuper();
