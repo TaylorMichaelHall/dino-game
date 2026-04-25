@@ -10,6 +10,7 @@ import {
 import { Dino } from "../entities/Dino";
 import { AudioManager } from "../managers/AudioManager";
 import { CoinManager } from "../managers/CoinManager";
+import { DepthSceneManager } from "../managers/DepthSceneManager";
 import { EffectManager } from "../managers/EffectManager";
 import { GroundPlaneManager } from "../managers/GroundPlaneManager";
 import { InputManager } from "../managers/InputManager";
@@ -49,6 +50,7 @@ export class Game implements IGame {
 	obstacles: ObstacleManager;
 	powerups: PowerupManager;
 	coins: CoinManager;
+	depthScene: DepthSceneManager;
 	titleAnimation: TitleManager;
 	input: InputManager;
 	effects: EffectManager;
@@ -91,6 +93,7 @@ export class Game implements IGame {
 		this.obstacles = new ObstacleManager(this);
 		this.powerups = new PowerupManager(this);
 		this.coins = new CoinManager(this);
+		this.depthScene = new DepthSceneManager(this);
 		this.titleAnimation = new TitleManager(this);
 		this.input = new InputManager(this);
 		this.effects = new EffectManager(this);
@@ -180,6 +183,7 @@ export class Game implements IGame {
 		this.dino.reset();
 		this.obstacles.reset();
 		this.groundPlane.reset();
+		this.depthScene.reset();
 		this.powerups.reset();
 		this.coins.reset();
 		this.meteorShower.reset();
@@ -359,6 +363,7 @@ export class Game implements IGame {
 		this.dino.update(deltaTime);
 		this.parallax.update(deltaTime, obstacleSpeed);
 		this.groundPlane.update(deltaTime, CONFIG.BASE_SPEED);
+		this.depthScene.update(deltaTime, obstacleSpeed);
 		this.obstacles.update(deltaTime, speedMultiplier);
 		this.powerups.update(deltaTime, obstacleSpeed);
 		this.coins.update(deltaTime, obstacleSpeed);
@@ -726,6 +731,7 @@ export class Game implements IGame {
 
 		this.parallax.draw(this.ctx);
 		this.groundPlane.draw(this.ctx);
+		this.depthScene.draw(this.ctx);
 		this.meteorShower.draw(this.ctx);
 		this.dino.drawGroundShadow(this.ctx);
 		this.effects.draw(this.ctx);

@@ -2,10 +2,14 @@ import { CONFIG } from "../config/Constants";
 import type { IGame } from "../types";
 import type { PteroFlockManager } from "./PteroFlockManager";
 
+type ParallaxLayerKind = "farMountains" | "nearMountains" | "foothills";
+type Point = { x: number; y: number };
+
 interface ParallaxLayer {
+	kind: ParallaxLayerKind;
 	speedFactor: number;
 	color: string;
-	points: { x: number; y: number }[];
+	points: Point[];
 	height: number;
 	offset: number;
 }
@@ -41,23 +45,26 @@ export class ParallaxManager {
 		this.clouds = this.generateClouds();
 		this.layers = [
 			{
+				kind: "farMountains",
 				speedFactor: 0.1,
-				color: "rgba(100, 100, 120, 0.2)", // Base color, gets overridden
-				points: this.generateMountainRidge(240, 105, 0.35),
+				color: "rgb(100, 100, 120)",
+				points: this.generateMountainRidge(280, 122, 0.35),
 				height: 210,
 				offset: 0,
 			},
 			{
+				kind: "nearMountains",
 				speedFactor: 0.3,
-				color: "rgba(80, 80, 100, 0.3)",
-				points: this.generateMountainRidge(180, 95, 1.7),
+				color: "rgb(80, 80, 100)",
+				points: this.generateMountainRidge(210, 112, 1.7),
 				height: 165,
 				offset: 0,
 			},
 			{
+				kind: "foothills",
 				speedFactor: 0.6,
-				color: "rgba(40, 60, 40, 0.4)",
-				points: this.generateRollingHills(90, 36),
+				color: "rgb(40, 60, 40)",
+				points: this.generateFoothills(1.1),
 				height: 76,
 				offset: 0,
 			},
@@ -87,7 +94,7 @@ export class ParallaxManager {
 				width: 130 + Math.random() * 170,
 				height: 18 + Math.random() * 26,
 				speedFactor: 0.035 + Math.random() * 0.035,
-				alpha: 0.1 + Math.random() * 0.12,
+				alpha: 0.3 + Math.random() * 0.18,
 			});
 		}
 		return clouds;
@@ -97,50 +104,60 @@ export class ParallaxManager {
 		peakSpacing: number,
 		ruggedness: number,
 		phase: number,
-	): { x: number; y: number }[] {
-		const points = [];
-		const step = 60;
-		const period = this.WORLD_WIDTH;
-		const twoPi = Math.PI * 2;
-		const peakCycles = Math.max(1, Math.round(period / peakSpacing));
-		const detailCycles = peakCycles * 3;
-		const shoulderCycles = Math.max(1, Math.round(peakCycles * 0.55));
+	): Point[] {
+		const points: Point[] = [];
+		const peakCount = Math.ceil(this.WORLD_WIDTH / peakSpacing) + 2;
+		const step = this.WORLD_WIDTH / peakCount;
+		let x = 0;
 
-		for (let x = 0; x <= period; x += step) {
-			const t = x / period;
-			const peakWave = (Math.sin(t * twoPi * peakCycles + phase) + 1) / 2;
-			const detailWave =
-				(Math.sin(t * twoPi * detailCycles + phase * 2.3) + 1) / 2;
-			const shoulderWave =
-				(Math.sin(t * twoPi * shoulderCycles + phase * 0.7) + 1) / 2;
-			const y =
-				18 + (1 - peakWave) * ruggedness + detailWave * 24 + shoulderWave * 28;
+		for (let i = 0; i <= peakCount; i++) {
+			const peakNoise = this.hashNoise(i * 4.17 + phase);
+			const shoulderNoise = this.hashNoise(i * 7.31 + phase * 2.3);
+			const valleyNoise = this.hashNoise(i * 9.19 + phase * 1.4);
+			const isPeak = i % 2 === 1;
+			const y = isPeak
+				? 16 + peakNoise * 34
+				: 72 + valleyNoise * ruggedness * 0.68 + shoulderNoise * 24;
+
+			points.push({ x, y });
+
+			if (isPeak) {
+				const notchX = x + step * (0.22 + this.hashNoise(i + phase) * 0.14);
+				const notchY = y + 28 + this.hashNoise(i * 2.11 + phase) * 36;
+				if (notchX < this.WORLD_WIDTH) points.push({ x: notchX, y: notchY });
+			}
+
+			x += step * (0.78 + this.hashNoise(i * 3.7 + phase) * 0.44);
+		}
+
+		points.sort((a, b) => a.x - b.x);
+		if (points[points.length - 1].x < this.WORLD_WIDTH) {
+			points.push({
+				x: this.WORLD_WIDTH,
+				y: 92 + this.hashNoise(phase * 33) * 56,
+			});
+		}
+		return points;
+	}
+
+	private generateFoothills(phase: number): Point[] {
+		const points: Point[] = [];
+		const step = 58;
+
+		for (let x = 0; x <= this.WORLD_WIDTH; x += step) {
+			const i = x / step;
+			const broad = this.hashNoise(Math.floor(i / 3) + phase);
+			const detail = this.hashNoise(i * 2.61 + phase * 4.2);
+			const y = 28 + broad * 24 + detail * 18;
 			points.push({ x, y });
 		}
 
 		return points;
 	}
 
-	private generateRollingHills(
-		spacing: number,
-		amplitude: number,
-	): { x: number; y: number }[] {
-		const points = [];
-		const step = 40;
-		const period = this.WORLD_WIDTH;
-		const twoPi = Math.PI * 2;
-		const baseCycles = Math.max(1, Math.round(period / spacing));
-		const broadCycles = Math.max(1, Math.round(baseCycles / 3));
-
-		for (let x = 0; x <= period; x += step) {
-			const t = x / period;
-			const y =
-				amplitude * 0.7 +
-				Math.sin(t * twoPi * baseCycles) * amplitude * 0.35 +
-				Math.cos(t * twoPi * broadCycles) * amplitude * 0.25;
-			points.push({ x, y });
-		}
-		return points;
+	private hashNoise(seed: number): number {
+		const value = Math.sin(seed * 127.1 + 311.7) * 43758.5453123;
+		return value - Math.floor(value);
 	}
 
 	update(deltaTime: number, gameSpeed: number) {
@@ -172,6 +189,18 @@ export class ParallaxManager {
 			c1[0] + (c2[0] - c1[0]) * mix,
 			c1[1] + (c2[1] - c1[1]) * mix,
 			c1[2] + (c2[2] - c1[2]) * mix,
+		];
+	}
+
+	private mixColor(
+		color: number[],
+		target: number[],
+		amount: number,
+	): number[] {
+		return [
+			Math.round(color[0] + (target[0] - color[0]) * amount),
+			Math.round(color[1] + (target[1] - color[1]) * amount),
+			Math.round(color[2] + (target[2] - color[2]) * amount),
 		];
 	}
 
@@ -217,9 +246,12 @@ export class ParallaxManager {
 			[60, 40, 40], // Dusk
 		]);
 
-		this.layers[0].color = `rgba(${mountainFarColor.join(",")}, 0.6)`;
-		this.layers[1].color = `rgba(${mountainNearColor.join(",")}, 0.8)`;
-		this.layers[2].color = `rgba(${treesColor.join(",")}, 1.0)`;
+		const farAtmosphere = this.mixColor(mountainFarColor, skyColor, 0.34);
+		const nearAtmosphere = this.mixColor(mountainNearColor, skyColor, 0.16);
+
+		this.layers[0].color = `rgb(${farAtmosphere.join(",")})`;
+		this.layers[1].color = `rgb(${nearAtmosphere.join(",")})`;
+		this.layers[2].color = `rgb(${treesColor.join(",")})`;
 
 		ctx.save();
 		ctx.beginPath();
@@ -281,10 +313,10 @@ export class ParallaxManager {
 
 	private drawClouds(ctx: CanvasRenderingContext2D, cycleFactor: number) {
 		const dayAlpha = this.getCycleColor(cycleFactor, [
-			[0.05],
-			[0.34],
-			[0.52],
-			[0.24],
+			[0.1],
+			[0.62],
+			[0.86],
+			[0.48],
 		])[0];
 		if (dayAlpha <= 0.01) return;
 
@@ -317,8 +349,9 @@ export class ParallaxManager {
 			0,
 			y + cloud.height,
 		);
-		shadow.addColorStop(0, "rgba(255, 255, 255, 0.75)");
-		shadow.addColorStop(1, "rgba(175, 190, 215, 0.28)");
+		shadow.addColorStop(0, "rgba(255, 255, 255, 0.92)");
+		shadow.addColorStop(0.62, "rgba(245, 250, 255, 0.72)");
+		shadow.addColorStop(1, "rgba(160, 176, 205, 0.42)");
 		ctx.fillStyle = shadow;
 
 		ctx.beginPath();
@@ -360,7 +393,19 @@ export class ParallaxManager {
 		);
 		ctx.fill();
 
-		ctx.fillStyle = "rgba(255, 255, 255, 0.22)";
+		ctx.strokeStyle = "rgba(90, 112, 145, 0.18)";
+		ctx.lineWidth = 1.5;
+		ctx.beginPath();
+		ctx.moveTo(x + cloud.width * 0.16, y + cloud.height * 0.52);
+		ctx.quadraticCurveTo(
+			x + cloud.width * 0.48,
+			y + cloud.height * 0.72,
+			x + cloud.width * 0.84,
+			y + cloud.height * 0.48,
+		);
+		ctx.stroke();
+
+		ctx.fillStyle = "rgba(255, 255, 255, 0.36)";
 		ctx.fillRect(
 			x + cloud.width * 0.18,
 			y + cloud.height * 0.36,
@@ -446,28 +491,167 @@ export class ParallaxManager {
 		worldOffset: number,
 	) {
 		ctx.save();
-		ctx.fillStyle = layer.color;
 		ctx.translate(worldOffset - layer.offset, 0);
 
 		const groundY = CONFIG.HORIZON_Y;
-		ctx.beginPath();
 		const startY = groundY - layer.height;
-		ctx.moveTo(layer.points[0].x, groundY);
-		ctx.lineTo(layer.points[0].x, startY + layer.points[0].y);
+		const points = layer.points.map((p) => ({
+			x: p.x,
+			y: startY + p.y,
+		}));
 
-		for (let i = 1; i < layer.points.length; i++) {
-			const prev = layer.points[i - 1];
-			const p = layer.points[i];
-			const xc = (prev.x + p.x) / 2;
-			const yc = (startY + prev.y + startY + p.y) / 2;
-			ctx.quadraticCurveTo(prev.x, startY + prev.y, xc, yc);
+		this.drawMountainSilhouette(ctx, points, groundY, layer.color);
+
+		if (layer.kind !== "foothills") {
+			this.drawMountainFacets(ctx, points, groundY, layer.kind);
+			this.drawPeakCaps(ctx, points, layer.kind);
+			this.drawRidgeLine(ctx, points, layer.kind);
+		} else {
+			this.drawFoothillTexture(ctx, points, groundY);
 		}
 
-		const last = layer.points[layer.points.length - 1];
-		ctx.lineTo(last.x, startY + last.y);
+		ctx.restore();
+	}
+
+	private drawMountainSilhouette(
+		ctx: CanvasRenderingContext2D,
+		points: Point[],
+		groundY: number,
+		color: string,
+	) {
+		ctx.fillStyle = color;
+		ctx.beginPath();
+		ctx.moveTo(points[0].x, groundY);
+		ctx.lineTo(points[0].x, points[0].y);
+		for (let i = 1; i < points.length; i++) {
+			ctx.lineTo(points[i].x, points[i].y);
+		}
+		const last = points[points.length - 1];
 		ctx.lineTo(last.x, groundY);
 		ctx.closePath();
 		ctx.fill();
+	}
+
+	private drawMountainFacets(
+		ctx: CanvasRenderingContext2D,
+		points: Point[],
+		groundY: number,
+		kind: Exclude<ParallaxLayerKind, "foothills">,
+	) {
+		ctx.save();
+		ctx.globalCompositeOperation = "multiply";
+		const shadowAlpha = kind === "farMountains" ? 0.12 : 0.2;
+		const lightAlpha = kind === "farMountains" ? 0.1 : 0.16;
+
+		for (let i = 1; i < points.length - 1; i += 2) {
+			const prev = points[i - 1];
+			const peak = points[i];
+			const next = points[i + 1];
+			const baseY = Math.min(groundY, Math.max(prev.y, next.y) + 80);
+
+			ctx.fillStyle = `rgba(18, 24, 32, ${shadowAlpha})`;
+			ctx.beginPath();
+			ctx.moveTo(peak.x, peak.y);
+			ctx.lineTo(next.x, next.y);
+			ctx.lineTo((peak.x + next.x) / 2 + 30, baseY);
+			ctx.closePath();
+			ctx.fill();
+
+			ctx.globalCompositeOperation = "screen";
+			ctx.fillStyle = `rgba(255, 230, 190, ${lightAlpha})`;
+			ctx.beginPath();
+			ctx.moveTo(peak.x, peak.y);
+			ctx.lineTo(prev.x, prev.y);
+			ctx.lineTo((peak.x + prev.x) / 2 - 18, baseY - 18);
+			ctx.closePath();
+			ctx.fill();
+			ctx.globalCompositeOperation = "multiply";
+		}
+
+		ctx.restore();
+	}
+
+	private drawPeakCaps(
+		ctx: CanvasRenderingContext2D,
+		points: Point[],
+		kind: Exclude<ParallaxLayerKind, "foothills">,
+	) {
+		const capAlpha = kind === "farMountains" ? 0.16 : 0.24;
+		const capHeight = kind === "farMountains" ? 24 : 18;
+
+		ctx.save();
+		ctx.globalCompositeOperation = "screen";
+		ctx.fillStyle = `rgba(235, 245, 255, ${capAlpha})`;
+		for (let i = 1; i < points.length - 1; i += 2) {
+			const prev = points[i - 1];
+			const peak = points[i];
+			const next = points[i + 1];
+			if (peak.y > Math.min(prev.y, next.y) - 18) continue;
+
+			const leftX =
+				peak.x - Math.min(42, Math.max(14, (peak.x - prev.x) * 0.34));
+			const rightX =
+				peak.x + Math.min(44, Math.max(16, (next.x - peak.x) * 0.32));
+			ctx.beginPath();
+			ctx.moveTo(peak.x, peak.y + 2);
+			ctx.lineTo(leftX, peak.y + capHeight);
+			ctx.lineTo(peak.x - 4, peak.y + capHeight * 0.66);
+			ctx.lineTo(rightX, peak.y + capHeight * 1.08);
+			ctx.closePath();
+			ctx.fill();
+		}
+		ctx.restore();
+	}
+
+	private drawRidgeLine(
+		ctx: CanvasRenderingContext2D,
+		points: Point[],
+		kind: Exclude<ParallaxLayerKind, "foothills">,
+	) {
+		ctx.save();
+		ctx.strokeStyle =
+			kind === "farMountains"
+				? "rgba(255, 255, 255, 0.1)"
+				: "rgba(255, 236, 210, 0.14)";
+		ctx.lineWidth = kind === "farMountains" ? 1 : 1.5;
+		ctx.beginPath();
+		ctx.moveTo(points[0].x, points[0].y);
+		for (let i = 1; i < points.length; i++) {
+			ctx.lineTo(points[i].x, points[i].y);
+		}
+		ctx.stroke();
+		ctx.restore();
+	}
+
+	private drawFoothillTexture(
+		ctx: CanvasRenderingContext2D,
+		points: Point[],
+		groundY: number,
+	) {
+		ctx.save();
+		ctx.globalCompositeOperation = "multiply";
+		ctx.fillStyle = "rgba(9, 18, 14, 0.24)";
+		for (let i = 0; i < points.length - 1; i++) {
+			const p = points[i];
+			const next = points[i + 1];
+			const midX = (p.x + next.x) / 2;
+			const baseY = Math.max(p.y, next.y) + 12;
+			const treeHeight = 18 + this.hashNoise(i * 1.91) * 24;
+
+			ctx.beginPath();
+			ctx.moveTo(midX, baseY - treeHeight);
+			ctx.lineTo(midX - 12, baseY + 4);
+			ctx.lineTo(midX + 12, baseY + 4);
+			ctx.closePath();
+			ctx.fill();
+		}
+
+		const mist = ctx.createLinearGradient(0, groundY - 84, 0, groundY);
+		mist.addColorStop(0, "rgba(255, 255, 255, 0)");
+		mist.addColorStop(1, "rgba(255, 255, 255, 0.08)");
+		ctx.globalCompositeOperation = "screen";
+		ctx.fillStyle = mist;
+		ctx.fillRect(0, groundY - 84, this.WORLD_WIDTH, 84);
 		ctx.restore();
 	}
 }
