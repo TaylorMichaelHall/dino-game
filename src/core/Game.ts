@@ -78,6 +78,7 @@ export class Game implements IGame {
 	leaderboard: ILeaderboardService;
 	debugActive: boolean;
 	debugUsed: boolean;
+	lastRobotSuperType: SuperDinoType | null;
 	lastBorderTime: number = 0;
 	elementalTick: Record<ElementalKey, ElementalTickState>;
 	flipProgress: number = 0;
@@ -125,6 +126,7 @@ export class Game implements IGame {
 		}));
 		this.debugActive = false;
 		this.debugUsed = false;
+		this.lastRobotSuperType = null;
 
 		this.input.bindUIEvents();
 		this.ui.updateAudioButtons(this.musicEnabled, this.sfxEnabled);
@@ -198,6 +200,7 @@ export class Game implements IGame {
 		this.pteroFlock.reset();
 		this.stats = this.initStats();
 		this.debugUsed = false;
+		this.lastRobotSuperType = null;
 		this.ui.updateCombo(0);
 
 		this.state = GAME_STATE.START as GameState;
@@ -564,10 +567,17 @@ export class Game implements IGame {
 	}
 
 	activateRobotMode() {
-		const type =
-			ROBOT_SUPER_DINO_TYPES[
-				Math.floor(Math.random() * ROBOT_SUPER_DINO_TYPES.length)
-			];
+		const wasRobotActive =
+			this.dino.isSuper && this.dino.superType?.startsWith("robo");
+		const excludedType = wasRobotActive
+			? this.dino.superType
+			: this.lastRobotSuperType;
+		const candidates = ROBOT_SUPER_DINO_TYPES.filter(
+			(type) => type !== excludedType,
+		);
+		const pool = candidates.length > 0 ? candidates : ROBOT_SUPER_DINO_TYPES;
+		const type = pool[Math.floor(Math.random() * pool.length)];
+		this.lastRobotSuperType = type;
 		this.activateSuperMode(type);
 	}
 
