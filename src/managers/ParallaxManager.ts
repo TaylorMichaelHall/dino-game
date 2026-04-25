@@ -1,5 +1,6 @@
 import { CONFIG } from "../config/Constants";
 import type { IGame } from "../types";
+import { CelestialManager } from "./CelestialManager";
 import type { PteroFlockManager } from "./PteroFlockManager";
 
 type ParallaxLayerKind = "farMountains" | "nearMountains" | "foothills";
@@ -37,12 +38,14 @@ export class ParallaxManager {
 	flockManager: PteroFlockManager | null = null;
 	stars: Star[];
 	clouds: Cloud[];
+	celestial: CelestialManager;
 	private readonly WORLD_WIDTH = 2400; // Large enough to cover screen twice
 
 	constructor(game: IGame) {
 		this.game = game;
 		this.stars = this.generateStars();
 		this.clouds = this.generateClouds();
+		this.celestial = new CelestialManager(game);
 		this.layers = [
 			{
 				kind: "farMountains",
@@ -142,12 +145,14 @@ export class ParallaxManager {
 
 	private generateFoothills(phase: number): Point[] {
 		const points: Point[] = [];
-		const step = 58;
+		const segments = Math.round(this.WORLD_WIDTH / 58);
+		const step = this.WORLD_WIDTH / segments;
 
-		for (let x = 0; x <= this.WORLD_WIDTH; x += step) {
-			const i = x / step;
-			const broad = this.hashNoise(Math.floor(i / 3) + phase);
-			const detail = this.hashNoise(i * 2.61 + phase * 4.2);
+		for (let i = 0; i <= segments; i++) {
+			const wrappedI = i % segments;
+			const x = i * step;
+			const broad = this.hashNoise(Math.floor(wrappedI / 3) + phase);
+			const detail = this.hashNoise(wrappedI * 2.61 + phase * 4.2);
 			const y = 28 + broad * 24 + detail * 18;
 			points.push({ x, y });
 		}
@@ -260,8 +265,8 @@ export class ParallaxManager {
 
 		this.drawStars(ctx, cycleFactor);
 
-		// Sun behind all mountain layers
-		this.drawSun(ctx, cycleFactor);
+		// Celestial bodies sit behind all mountain layers.
+		this.celestial.draw(ctx, cycleFactor);
 		this.drawClouds(ctx, cycleFactor);
 
 		// Layer 0: far mountains (blurred)
@@ -415,76 +420,6 @@ export class ParallaxManager {
 		ctx.restore();
 	}
 
-	private drawSun(ctx: CanvasRenderingContext2D, cycleFactor: number) {
-		// Alpha by time of day: invisible at night
-		const sunAlpha = this.getCycleColor(cycleFactor, [
-			[0], // Night
-			[1.0], // Dawn
-			[0.85], // Day
-			[1.0], // Dusk
-		])[0];
-
-		if (sunAlpha < 0.01) return;
-
-		const x = CONFIG.SUN_X;
-		const y = CONFIG.SUN_Y;
-		const r = CONFIG.SUN_CORE_RADIUS;
-		const glowR = CONFIG.SUN_GLOW_RADIUS;
-
-		ctx.save();
-		ctx.globalAlpha = sunAlpha;
-
-		// Outer atmospheric glow (additive)
-		const prevComp = ctx.globalCompositeOperation;
-		ctx.globalCompositeOperation = "lighter";
-		const glowGrad = ctx.createRadialGradient(x, y, r * 0.5, x, y, glowR);
-		glowGrad.addColorStop(0, "rgba(255, 60, 120, 0.3)");
-		glowGrad.addColorStop(0.4, "rgba(255, 100, 50, 0.12)");
-		glowGrad.addColorStop(1, "rgba(0, 0, 0, 0)");
-		ctx.fillStyle = glowGrad;
-		ctx.fillRect(x - glowR, y - glowR, glowR * 2, glowR * 2);
-		ctx.globalCompositeOperation = prevComp;
-
-		// Sun disc - clip to circle
-		ctx.save();
-		ctx.beginPath();
-		ctx.arc(x, y, r, 0, Math.PI * 2);
-		ctx.clip();
-
-		// Outrun gradient: yellow top → orange middle → hot pink/magenta bottom
-		const discGrad = ctx.createLinearGradient(x, y - r, x, y + r);
-		discGrad.addColorStop(0, "#fcee09");
-		discGrad.addColorStop(0.35, "#ff6b2b");
-		discGrad.addColorStop(0.65, "#ee3168");
-		discGrad.addColorStop(1, "#d11583");
-		ctx.fillStyle = discGrad;
-		ctx.fillRect(x - r, y - r, r * 2, r * 2);
-
-		// Horizontal stripe cutouts (classic outrun look)
-		// Stripes get wider toward the bottom
-		ctx.globalCompositeOperation = "destination-out";
-		const stripeCount = 7;
-		const stripeRegionTop = y - r * 0.1;
-		const stripeRegionBottom = y + r;
-		const regionHeight = stripeRegionBottom - stripeRegionTop;
-
-		for (let i = 0; i < stripeCount; i++) {
-			const t = i / stripeCount;
-			const stripeY = stripeRegionTop + t * regionHeight;
-			const thickness = 1.5 + t * 4;
-			const gap = regionHeight / stripeCount;
-			// Only draw if within disc
-			if (stripeY + thickness > y - r && stripeY < y + r) {
-				ctx.fillStyle = "rgba(0, 0, 0, 1)";
-				ctx.fillRect(x - r, stripeY + gap * 0.5, r * 2, thickness);
-			}
-		}
-
-		ctx.restore(); // end clip
-
-		ctx.restore();
-	}
-
 	private drawLayer(
 		ctx: CanvasRenderingContext2D,
 		layer: ParallaxLayer,
@@ -631,9 +566,18 @@ export class ParallaxManager {
 		ctx.save();
 		ctx.globalCompositeOperation = "multiply";
 		ctx.fillStyle = "rgba(9, 18, 14, 0.24)";
-		for (let i = 0; i < points.length - 1; i++) {
-			const p = points[i];
-			const next = points[i + 1];
+		for (let i = -1; i < points.length; i++) {
+			const p =
+				i < 0
+					? {
+							x: points[points.length - 2].x - this.WORLD_WIDTH,
+							y: points[points.length - 2].y,
+						}
+					: points[i];
+			const next =
+				i + 1 >= points.length
+					? { x: points[1].x + this.WORLD_WIDTH, y: points[1].y }
+					: points[i + 1];
 			const midX = (p.x + next.x) / 2;
 			const baseY = Math.max(p.y, next.y) + 12;
 			const treeHeight = 18 + this.hashNoise(i * 1.91) * 24;
@@ -651,7 +595,7 @@ export class ParallaxManager {
 		mist.addColorStop(1, "rgba(255, 255, 255, 0.08)");
 		ctx.globalCompositeOperation = "screen";
 		ctx.fillStyle = mist;
-		ctx.fillRect(0, groundY - 84, this.WORLD_WIDTH, 84);
+		ctx.fillRect(-80, groundY - 84, this.WORLD_WIDTH + 160, 84);
 		ctx.restore();
 	}
 }
