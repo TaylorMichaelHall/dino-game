@@ -131,6 +131,7 @@ export interface UIElements {
 	musicToggle: HTMLElement | null;
 	sfxToggle: HTMLElement | null;
 	pauseBtn: HTMLElement | null;
+	jumpBtn: HTMLElement | null;
 	closeDebugBtn: HTMLElement | null;
 	helpBtn: HTMLElement | null;
 	startHighScore: HTMLElement | null;

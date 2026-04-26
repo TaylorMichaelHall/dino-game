@@ -69,6 +69,23 @@ export class InputManager implements IInputManager {
 			if (this.game.state === GAME_STATE.PLAYING) this.game.togglePause();
 		});
 
+		ui.jumpBtn?.addEventListener("click", (e: MouseEvent) => {
+			e.stopPropagation();
+			this.game.handleInput();
+		});
+		ui.jumpBtn?.addEventListener("pointerdown", () => {
+			ui.jumpBtn?.classList.add("is-pressed");
+		});
+		ui.jumpBtn?.addEventListener("pointerup", () => {
+			ui.jumpBtn?.classList.remove("is-pressed");
+		});
+		ui.jumpBtn?.addEventListener("pointercancel", () => {
+			ui.jumpBtn?.classList.remove("is-pressed");
+		});
+		ui.jumpBtn?.addEventListener("pointerleave", () => {
+			ui.jumpBtn?.classList.remove("is-pressed");
+		});
+
 		ui.closeDebugBtn?.addEventListener("click", (e: MouseEvent) => {
 			e.stopPropagation();
 			this.game.toggleDebugMenu(false);
