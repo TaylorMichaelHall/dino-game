@@ -52,6 +52,7 @@ export class UIManager {
 			musicToggle: get("music-toggle"),
 			sfxToggle: get("sfx-toggle"),
 			pauseBtn: get("pause-btn"),
+			jumpBtn: get("jump-btn"),
 			restartBtn: get("restart-btn"),
 			resetHighScoreBtn: get("reset-high-score-btn"),
 			debugMenu: get("debug-menu"),

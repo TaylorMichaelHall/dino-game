@@ -141,3 +141,55 @@ canvas {
 		gap: 4px;
 	}
 }
+
+@media (max-width: 560px) and (orientation: portrait) {
+	body {
+		overflow: hidden;
+	}
+
+	#game-wrapper {
+		height: 100svh;
+		justify-content: start;
+		gap: clamp(4px, 1svh, 7px);
+		overflow: hidden;
+		padding: clamp(8px, 2.4svh, 18px) 8px clamp(6px, 1.4svh, 10px);
+	}
+
+	#game-header {
+		flex: 0 0 auto;
+	}
+
+	.main-title,
+	h1 {
+		font-size: clamp(1rem, 6vw, 1.42rem);
+	}
+
+	.main-title::after {
+		margin-top: 5px;
+	}
+
+	#scoreboard {
+		flex: 0 0 auto;
+		gap: 6px;
+	}
+
+	.score-card {
+		min-height: clamp(40px, 7svh, 48px);
+		padding: 6px 9px;
+	}
+
+	.score-label {
+		font-size: clamp(0.62rem, 2.8vw, 0.72rem);
+	}
+
+	.score-value {
+		font-size: clamp(1.05rem, 5vw, 1.35rem);
+	}
+
+	#game-container {
+		flex: 0 1 auto;
+		width: min(100%, calc((100svh - 226px) * 4 / 3));
+		min-width: 280px;
+		max-height: none;
+	}
+}
