@@ -1,11 +1,12 @@
 import {
 	DynamoDBClient,
-	ScanCommand,
+	QueryCommand,
 	UpdateItemCommand,
 } from "@aws-sdk/client-dynamodb";
 
 const dynamo = new DynamoDBClient({});
-const TABLE_NAME = "dino-leaderboard";
+const TABLE_NAME = "game-leaderboard";
+const GAME_ID = "jurassic_escape";
 const MAX_ENTRIES = 20;
 const MAX_PLAUSIBLE_SCORE = 50000;
 const VALID_DINOS = ["raptor", "ptero", "trex", "spino", "mosa", "allo"];
@@ -32,7 +33,13 @@ function response(statusCode, body, event) {
 }
 
 async function getLeaderboard() {
-	const result = await dynamo.send(new ScanCommand({ TableName: TABLE_NAME }));
+	const result = await dynamo.send(
+		new QueryCommand({
+			TableName: TABLE_NAME,
+			KeyConditionExpression: "gameId = :g",
+			ExpressionAttributeValues: { ":g": { S: GAME_ID } },
+		}),
+	);
 	const items = result.Items || [];
 
 	let totalPlays = 0;
@@ -82,6 +89,11 @@ export async function handler(event) {
 			return response(400, { error: "Invalid playerId" }, event);
 		}
 
+		const key = {
+			gameId: { S: GAME_ID },
+			playerId: { S: playerId },
+		};
+
 		// Score submission: increment plays + conditionally update score in one call
 		if (initials !== undefined && score !== undefined) {
 			if (
@@ -104,7 +116,7 @@ export async function handler(event) {
 				await dynamo.send(
 					new UpdateItemCommand({
 						TableName: TABLE_NAME,
-						Key: { playerId: { S: playerId } },
+						Key: key,
 						UpdateExpression: "SET score = :score, initials = :initials, #d = :date, dino = :dino ADD plays :one",
 						ConditionExpression: "attribute_not_exists(score) OR score < :score",
 						ExpressionAttributeNames: { "#d": "date" },
@@ -125,7 +137,7 @@ export async function handler(event) {
 				await dynamo.send(
 					new UpdateItemCommand({
 						TableName: TABLE_NAME,
-						Key: { playerId: { S: playerId } },
+						Key: key,
 						UpdateExpression: "ADD plays :one",
 						ExpressionAttributeValues: { ":one": { N: "1" } },
 					}),
@@ -136,7 +148,7 @@ export async function handler(event) {
 			await dynamo.send(
 				new UpdateItemCommand({
 					TableName: TABLE_NAME,
-					Key: { playerId: { S: playerId } },
+					Key: key,
 					UpdateExpression: "ADD plays :one",
 					ExpressionAttributeValues: { ":one": { N: "1" } },
 				}),
