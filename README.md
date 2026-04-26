@@ -46,7 +46,7 @@ The leaderboard is optional — without `VITE_LEADERBOARD_URL` set, the game wor
 
 The global leaderboard runs on AWS (all within always-free tiers):
 
-- **DynamoDB table** `dino-leaderboard` — partition key `playerId` (String), provisioned 1 RCU / 1 WCU
+- **DynamoDB table** `game-leaderboard` — composite key `gameId` (HASH) + `playerId` (RANGE), provisioned 1 RCU / 1 WCU. Shared across games; this Lambda hardcodes `GAME_ID = "jurassic_escape"`.
 - **Lambda function** `dino-leaderboard` — Node.js 24.x, handler `leaderboard.handler`, source in `lambda/leaderboard.mjs`
 - **Lambda Function URL** — auth type NONE, CORS configured for the game's domain
 
