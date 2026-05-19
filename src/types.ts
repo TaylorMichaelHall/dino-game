@@ -153,6 +153,8 @@ export interface UIElements {
 	dinoPicker: HTMLElement | null;
 	dinoPickerImg: HTMLImageElement | null;
 	leaderboardBtn: HTMLElement | null;
+	ianSecret: HTMLElement | null;
+	gameWrapper: HTMLElement | null;
 }
 
 export interface IUIManager {
@@ -181,6 +183,7 @@ export interface IUIManager {
 	showLeaderboard(entries: LeaderboardEntry[]): void;
 	toggleLeaderboard(show: boolean): void;
 	isLeaderboardOpen(): boolean;
+	togglePremium(): void;
 }
 
 export interface IAudioManager {
@@ -363,4 +366,5 @@ export interface IGame {
 	handleInput(): void;
 	heal(): void;
 	submitLeaderboardScore(initials: string): Promise<void>;
+	togglePremium(): void;
 }

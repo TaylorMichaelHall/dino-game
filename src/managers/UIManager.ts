@@ -11,6 +11,8 @@ import type {
 } from "../types";
 import { spritePath } from "../utils/helpers";
 
+const IAN_SECRET_UNLOCK_TAPS = 10;
+
 /**
  * UIManager
  * Handles all DOM transformations and UI-related state updates.
@@ -22,6 +24,7 @@ export class UIManager {
 	initialCharInputs: NodeListOf<HTMLInputElement> | undefined;
 	dinoPickerIndex = 0;
 	lastBorderTime: number = 0;
+	ianSecretCount = 0;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -77,6 +80,8 @@ export class UIManager {
 				"dino-picker-img",
 			) as HTMLImageElement | null,
 			leaderboardBtn: get("leaderboard-btn"),
+			ianSecret: get("ian-secret"),
+			gameWrapper: get("game-wrapper"),
 		};
 
 		this.initialCharInputs = this.elements.initialsInput?.querySelectorAll(
@@ -84,6 +89,17 @@ export class UIManager {
 		) as NodeListOf<HTMLInputElement> | undefined;
 
 		this.bindMobileEvents();
+		this.bindSecretEvents();
+	}
+
+	private bindSecretEvents() {
+		this.elements.ianSecret?.addEventListener("click", () => {
+			this.ianSecretCount++;
+			if (this.ianSecretCount >= IAN_SECRET_UNLOCK_TAPS) {
+				this.game.togglePremium();
+				this.ianSecretCount = 0;
+			}
+		});
 	}
 
 	private bindMobileEvents() {
@@ -716,5 +732,13 @@ export class UIManager {
 
 		itemEl.classList.add("stat-complete");
 		await new Promise((r) => setTimeout(r, 150));
+	}
+
+	togglePremium() {
+		const wrapper = this.elements.gameWrapper;
+		if (!wrapper) return;
+		const active = !wrapper.classList.contains("premium-mode");
+		wrapper.classList.toggle("premium-mode", active);
+		this.showMessage(`PREMIUM MODE ${active ? "ACTIVATED" : "DEACTIVATED"}`);
 	}
 }

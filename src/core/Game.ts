@@ -800,6 +800,11 @@ export class Game implements IGame {
 		}
 	}
 
+	togglePremium() {
+		this.ui.togglePremium();
+		this.audio.playUpgrade();
+	}
+
 	draw() {
 		if (this.state === GAME_STATE.START) {
 			this.titleAnimation.draw(this.ctx);
