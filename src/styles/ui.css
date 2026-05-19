@@ -1255,9 +1255,7 @@ button:active {
 	}
 }
 
-.premium-mode .main-title,
-.premium-mode .score-value,
-.premium-mode .combo-text {
+.premium-mode .main-title {
 	background: linear-gradient(
 		90deg,
 		#ffd700 0%,
