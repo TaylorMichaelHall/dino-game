@@ -41,7 +41,7 @@ jobs:
 
       - name: Deploy to S3
         run: |
-          aws s3 sync ./dist s3://taylormichaelhall.com/dino --delete
+          aws s3 sync ./dist s3://taylormichaelhall.com/games/dino --delete
 
       - name: Deploy Lambda
         run: |
@@ -54,4 +54,4 @@ jobs:
 
       - name: Create CloudFront Invalidation
         run: |
-          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/dino/*"
+          aws cloudfront create-invalidation --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} --paths "/games/dino/*"
