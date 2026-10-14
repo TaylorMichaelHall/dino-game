@@ -13,6 +13,19 @@ import { spritePath } from "../utils/helpers";
 
 const IAN_SECRET_UNLOCK_TAPS = 10;
 
+// The timer bar eases between updates (see .powerup-timer-fill), so it only
+// needs a new target once it has moved this far.
+const TIMER_FILL_STEP = 0.01;
+
+interface PowerupTimerView {
+	item: HTMLElement;
+	fill: HTMLElement;
+	seconds: HTMLElement;
+	shownProgress: number;
+	shownSeconds: string;
+	shownColor: string;
+}
+
 /**
  * UIManager
  * Handles all DOM transformations and UI-related state updates.
@@ -25,6 +38,8 @@ export class UIManager {
 	dinoPickerIndex = 0;
 	lastBorderTime: number = 0;
 	ianSecretCount = 0;
+	private powerupTimerViews = new Map<string, PowerupTimerView>();
+	private powerupTimerOrder = "";
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -259,72 +274,84 @@ export class UIManager {
 		const stack = this.elements.powerupTimer;
 		if (!stack) return;
 
-		stack.classList.toggle("hidden", timers.length === 0);
+		// Called every frame: only touch layout when the set or order changes.
+		const order = timers.map((timer) => timer.id).join(",");
+		if (order !== this.powerupTimerOrder) {
+			this.powerupTimerOrder = order;
+			this.arrangePowerupTimers(stack, timers);
+		}
 
-		const previousPositions = new Map<string, DOMRect>();
-		stack
-			.querySelectorAll<HTMLElement>(".powerup-timer-item")
-			.forEach((item) => {
-				previousPositions.set(
-					item.dataset.timerId ?? "",
-					item.getBoundingClientRect(),
-				);
-			});
+		for (const timer of timers) {
+			const view = this.powerupTimerViews.get(timer.id);
+			if (!view) continue;
 
-		const activeIds = new Set(timers.map((timer) => timer.id));
-		stack
-			.querySelectorAll<HTMLElement>(".powerup-timer-item")
-			.forEach((item) => {
-				if (!item.dataset.timerId || !activeIds.has(item.dataset.timerId)) {
-					item.remove();
-				}
-			});
-
-		timers.forEach((timer) => {
-			const item = this.getPowerupTimerItem(stack, timer);
-			const fill = item.querySelector<HTMLElement>(".powerup-timer-fill");
-			const seconds = item.querySelector<HTMLElement>(".powerup-timer-seconds");
 			const progress =
 				timer.duration > 0
 					? Math.max(0, Math.min(1, timer.timeLeft / timer.duration))
 					: 0;
+			if (Math.abs(progress - view.shownProgress) >= TIMER_FILL_STEP) {
+				view.shownProgress = progress;
+				view.fill.style.transform = `scaleX(${progress})`;
+			}
 
-			item.style.setProperty("--timer-color", timer.color);
-			item.title = timer.label;
-			if (fill) fill.style.transform = `scaleX(${progress})`;
-			if (seconds) seconds.textContent = Math.ceil(timer.timeLeft).toString();
-			stack.appendChild(item);
-		});
-
-		stack
-			.querySelectorAll<HTMLElement>(".powerup-timer-item")
-			.forEach((item) => {
-				const previous = previousPositions.get(item.dataset.timerId ?? "");
-				if (!previous) return;
-
-				const current = item.getBoundingClientRect();
-				const deltaY = previous.top - current.top;
-				if (Math.abs(deltaY) < 1) return;
-
-				item.animate(
-					[
-						{ transform: `translateY(${deltaY}px)` },
-						{ transform: "translateY(0)" },
-					],
-					{ duration: 240, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
-				);
-			});
+			const seconds = Math.ceil(timer.timeLeft).toString();
+			if (view.shownSeconds !== seconds) {
+				view.shownSeconds = seconds;
+				view.seconds.textContent = seconds;
+			}
+			if (view.shownColor !== timer.color) {
+				view.shownColor = timer.color;
+				view.item.style.setProperty("--timer-color", timer.color);
+			}
+			if (view.item.title !== timer.label) view.item.title = timer.label;
+		}
 	}
 
-	private getPowerupTimerItem(
+	private arrangePowerupTimers(
 		stack: HTMLElement,
-		timer: ActivePowerupTimer,
-	): HTMLElement {
-		const existing = stack.querySelector<HTMLElement>(
-			`[data-timer-id="${timer.id}"]`,
-		);
-		if (existing) return existing;
+		timers: ActivePowerupTimer[],
+	) {
+		stack.classList.toggle("hidden", timers.length === 0);
 
+		const previousPositions = new Map<string, DOMRect>();
+		const activeIds = new Set(timers.map((timer) => timer.id));
+		for (const [id, view] of this.powerupTimerViews) {
+			if (activeIds.has(id)) {
+				previousPositions.set(id, view.item.getBoundingClientRect());
+			} else {
+				view.item.remove();
+				this.powerupTimerViews.delete(id);
+			}
+		}
+
+		for (const timer of timers) {
+			let view = this.powerupTimerViews.get(timer.id);
+			if (!view) {
+				view = this.createPowerupTimerView(timer);
+				this.powerupTimerViews.set(timer.id, view);
+			}
+			stack.appendChild(view.item);
+		}
+
+		for (const [id, previous] of previousPositions) {
+			const item = this.powerupTimerViews.get(id)?.item;
+			if (!item) continue;
+
+			const current = item.getBoundingClientRect();
+			const deltaY = previous.top - current.top;
+			if (Math.abs(deltaY) < 1) continue;
+
+			item.animate(
+				[
+					{ transform: `translateY(${deltaY}px)` },
+					{ transform: "translateY(0)" },
+				],
+				{ duration: 240, easing: "cubic-bezier(0.2, 0.8, 0.2, 1)" },
+			);
+		}
+	}
+
+	private createPowerupTimerView(timer: ActivePowerupTimer): PowerupTimerView {
 		const item = document.createElement("div");
 		item.className = "powerup-timer-item";
 		item.dataset.timerId = timer.id;
@@ -344,7 +371,14 @@ export class UIManager {
 		seconds.className = "powerup-timer-seconds";
 
 		item.append(icon, track, seconds);
-		return item;
+		return {
+			item,
+			fill,
+			seconds,
+			shownProgress: Number.NaN,
+			shownSeconds: "",
+			shownColor: "",
+		};
 	}
 
 	updateCombo(combo: number, stage?: ComboStage, multiplier?: number) {

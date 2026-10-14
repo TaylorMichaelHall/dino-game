@@ -159,7 +159,6 @@ h1 {
 	box-shadow:
 		0 0 12px color-mix(in srgb, var(--timer-color) 34%, transparent),
 		inset 0 1px 0 rgba(255, 255, 255, 0.12);
-	backdrop-filter: blur(6px);
 	opacity: 1;
 	transform: translateX(0) scale(1);
 	animation: timer-item-in 180ms ease-out;

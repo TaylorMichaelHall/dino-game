@@ -80,6 +80,21 @@ interface AmbientMote {
 	twinkle: number;
 }
 
+const TRAIL_SPRITE_SIZE = 96;
+
+const FCT_FONT = "bold 24px Outfit";
+const FCT_PAD = 10;
+const FCT_BASELINE = 28;
+const FCT_HEIGHT = 44;
+const FCT_SPRITE_LIMIT = 64;
+
+// [extra line width, opacity] of each halo stroke around a lightning bolt.
+const BOLT_GLOW_LAYERS = [
+	[26, 0.05],
+	[16, 0.09],
+	[7, 0.16],
+];
+
 /**
  * EffectManager
  * Handles visual effects like speed lines, glitch effects, trails, and FCT.
@@ -95,6 +110,9 @@ export class EffectManager {
 	shockwaves: Shockwave[];
 	motes: AmbientMote[];
 	spriteCache: Map<string, HTMLImageElement>;
+	private trailSprites = new Map<string, HTMLCanvasElement>();
+	private fctSprites = new Map<string, HTMLCanvasElement>();
+	private postProcessing: HTMLCanvasElement | null = null;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -109,6 +127,8 @@ export class EffectManager {
 		this.spriteCache = new Map();
 		this.initSpeedLines();
 		this.initAmbientMotes();
+		// Labels rendered before the web font arrived used a fallback face.
+		document.fonts?.ready.then(() => this.fctSprites.clear());
 	}
 
 	getCachedImage(src: string): HTMLImageElement {
@@ -119,6 +139,53 @@ export class EffectManager {
 			this.spriteCache.set(src, img);
 		}
 		return img;
+	}
+
+	/**
+	 * Trails redraw the same sprite many times per frame at a tiny size, so
+	 * they use a copy that has already been scaled down.
+	 */
+	private getTrailSprite(src: string): HTMLCanvasElement | null {
+		const cached = this.trailSprites.get(src);
+		if (cached) return cached;
+
+		const img = this.getCachedImage(src);
+		if (!img.complete || img.naturalWidth === 0) return null;
+
+		const canvas = document.createElement("canvas");
+		canvas.width = TRAIL_SPRITE_SIZE;
+		canvas.height = TRAIL_SPRITE_SIZE;
+		canvas.getContext("2d")?.drawImage(img, 0, 0, canvas.width, canvas.height);
+		this.trailSprites.set(src, canvas);
+		return canvas;
+	}
+
+	/** Floating text with its drop shadow, rendered once per label. */
+	private getFctSprite(text: string, color: string): HTMLCanvasElement {
+		const key = `${color}|${text}`;
+		const cached = this.fctSprites.get(key);
+		if (cached) return cached;
+
+		const canvas = document.createElement("canvas");
+		const ctx = canvas.getContext("2d");
+		if (ctx) {
+			ctx.font = FCT_FONT;
+			canvas.width = Math.ceil(ctx.measureText(text).width) + FCT_PAD * 2;
+			canvas.height = FCT_HEIGHT;
+			// Resizing the canvas resets its state.
+			ctx.font = FCT_FONT;
+			ctx.textAlign = "center";
+			ctx.fillStyle = color;
+			ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
+			ctx.shadowBlur = 4;
+			ctx.shadowOffsetX = 2;
+			ctx.shadowOffsetY = 2;
+			ctx.fillText(text, canvas.width / 2, FCT_BASELINE);
+		}
+
+		if (this.fctSprites.size >= FCT_SPRITE_LIMIT) this.fctSprites.clear();
+		this.fctSprites.set(key, canvas);
+		return canvas;
 	}
 
 	initSpeedLines() {
@@ -302,7 +369,7 @@ export class EffectManager {
 
 	spawnTrail(x: number, y: number, w: number, h: number, sprite: string) {
 		// Pre-warm the cache when spawning trails
-		this.getCachedImage(sprite);
+		this.getTrailSprite(sprite);
 		this.trails.push({
 			x,
 			y,
@@ -458,8 +525,8 @@ export class EffectManager {
 		this.trails.forEach((t) => {
 			const alpha = (t.life / t.maxLife) * 0.4;
 			ctx.globalAlpha = alpha;
-			const img = this.getCachedImage(t.sprite);
-			if (img.complete) {
+			const img = this.getTrailSprite(t.sprite);
+			if (img) {
 				ctx.drawImage(img, t.x, t.y, t.width, t.height);
 			}
 		});
@@ -467,40 +534,28 @@ export class EffectManager {
 
 		// FCT
 		this.fct.forEach((f) => {
-			const alpha = f.life / f.maxLife;
-			ctx.globalAlpha = alpha;
-			ctx.fillStyle = f.color;
-			ctx.font = "bold 24px Outfit";
-			ctx.textAlign = "center";
-
-			// Add text shadow for better visibility
-			ctx.shadowColor = "rgba(0, 0, 0, 0.8)";
-			ctx.shadowBlur = 4;
-			ctx.shadowOffsetX = 2;
-			ctx.shadowOffsetY = 2;
-
-			ctx.fillText(f.text, f.x, f.y);
-
-			// Reset shadow
-			ctx.shadowColor = "transparent";
-			ctx.shadowBlur = 0;
-			ctx.shadowOffsetX = 0;
-			ctx.shadowOffsetY = 0;
+			const sprite = this.getFctSprite(f.text, f.color);
+			ctx.globalAlpha = f.life / f.maxLife;
+			ctx.drawImage(sprite, f.x - sprite.width / 2, f.y - FCT_BASELINE);
 		});
 		ctx.globalAlpha = 1.0;
 
+		// Glows below are layered strokes: shadowBlur is too slow on mobile.
 		if (this.game.timers.speedBoost > 0) {
 			ctx.save();
-			const opacity = CONFIG.SPEED_LINE_BOOST_OPACITY;
-			ctx.strokeStyle = `rgba(255, 255, 255, ${opacity})`;
-			ctx.lineWidth = 2.5;
-			ctx.shadowColor = "rgba(255, 210, 90, 0.35)";
-			ctx.shadowBlur = 10;
 			ctx.beginPath();
 			this.speedLines.forEach((l) => {
 				ctx.moveTo(l.x, l.y);
 				ctx.lineTo(l.x + l.length, l.y);
 			});
+			ctx.strokeStyle = "rgba(255, 210, 90, 0.02)";
+			ctx.lineWidth = 16;
+			ctx.stroke();
+			ctx.strokeStyle = "rgba(255, 210, 90, 0.035)";
+			ctx.lineWidth = 8;
+			ctx.stroke();
+			ctx.strokeStyle = `rgba(255, 255, 255, ${CONFIG.SPEED_LINE_BOOST_OPACITY})`;
+			ctx.lineWidth = 2.5;
 			ctx.stroke();
 			ctx.restore();
 		}
@@ -510,17 +565,12 @@ export class EffectManager {
 			const alpha = 1 - t;
 			const lineW = 4 * (1 - t) + 1;
 			ctx.save();
-			ctx.shadowColor = CONFIG.LIGHTNING_COLOR_BRIGHT;
-			ctx.shadowBlur = 20;
 			ctx.lineCap = "round";
 			ctx.lineJoin = "round";
-			ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
-			ctx.lineWidth = lineW;
-			ctx.beginPath();
 			let x = b.targetX + (Math.random() - 0.5) * 4;
+			ctx.beginPath();
 			ctx.moveTo(x, 0);
 			const segments = 14;
-			const points: { x: number; y: number }[] = [{ x, y: 0 }];
 			for (let i = 1; i <= segments; i++) {
 				const ny = (b.targetY / segments) * i;
 				const taper = 1 - i / segments;
@@ -529,17 +579,18 @@ export class EffectManager {
 					(Math.random() - 0.5) * 18 * taper +
 					(x - b.targetX) * 0.3;
 				ctx.lineTo(nx, ny);
-				points.push({ x: nx, y: ny });
 				x = nx;
 			}
+			for (const [spread, glow] of BOLT_GLOW_LAYERS) {
+				ctx.strokeStyle = `rgba(${CONFIG.LIGHTNING_COLOR_BRIGHT_RGB}, ${alpha * glow})`;
+				ctx.lineWidth = lineW + spread;
+				ctx.stroke();
+			}
+			ctx.strokeStyle = `rgba(255, 255, 255, ${alpha})`;
+			ctx.lineWidth = lineW;
 			ctx.stroke();
 			ctx.strokeStyle = `rgba(255, 255, 160, ${alpha})`;
 			ctx.lineWidth = Math.max(1, lineW - 2);
-			ctx.beginPath();
-			ctx.moveTo(points[0].x, points[0].y);
-			for (let i = 1; i < points.length; i++) {
-				ctx.lineTo(points[i].x, points[i].y);
-			}
 			ctx.stroke();
 			ctx.restore();
 		});
@@ -567,10 +618,20 @@ export class EffectManager {
 	}
 
 	drawPostProcessing(ctx: CanvasRenderingContext2D) {
+		this.postProcessing ??= this.bakePostProcessing();
+		ctx.drawImage(this.postProcessing, 0, 0);
+	}
+
+	/** The vignette and scanlines never change, so they are rendered once. */
+	private bakePostProcessing(): HTMLCanvasElement {
 		const w = this.game.width;
 		const h = this.game.height;
+		const canvas = document.createElement("canvas");
+		canvas.width = w;
+		canvas.height = h;
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return canvas;
 
-		ctx.save();
 		const vignette = ctx.createRadialGradient(
 			w * 0.5,
 			h * 0.48,
@@ -590,7 +651,7 @@ export class EffectManager {
 		for (let y = 0; y < h; y += 4) {
 			ctx.fillRect(0, y, w, 1);
 		}
-		ctx.restore();
+		return canvas;
 	}
 
 	drawGlitchEffect(ctx: CanvasRenderingContext2D) {

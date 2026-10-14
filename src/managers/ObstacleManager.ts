@@ -9,6 +9,15 @@ interface Obstacle {
 	color: string;
 }
 
+interface CollarSprite {
+	beam: HTMLCanvasElement;
+	nodes: HTMLCanvasElement;
+}
+
+// Room around a collar for its glow to fade out.
+const COLLAR_PAD_X = 34;
+const COLLAR_PAD_Y = 32;
+
 export class ObstacleManager implements IObstacleManager {
 	game: IGame;
 	obstacles: Obstacle[];
@@ -19,6 +28,7 @@ export class ObstacleManager implements IObstacleManager {
 	speed: number;
 	colors: string[];
 	colorIndex: number;
+	private collarSprites = new Map<string, CollarSprite>();
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -165,57 +175,87 @@ export class ObstacleManager implements IObstacleManager {
 		direction: -1 | 1,
 		pulse: number,
 	) {
-		const w = this.obstacleWidth;
-		const centerX = x + w / 2;
-		const glowAlpha = 0.42 + pulse * 0.24;
+		const sprite = this.getCollarSprite(color);
 
 		ctx.save();
 		ctx.globalCompositeOperation = "screen";
-		ctx.shadowColor = color;
-		ctx.shadowBlur = 14;
-		ctx.lineCap = "round";
-
-		const beam = ctx.createLinearGradient(x - 8, y, x + w + 8, y);
-		beam.addColorStop(0, "rgba(255, 255, 255, 0)");
-		beam.addColorStop(0.16, color);
-		beam.addColorStop(0.5, "rgba(255, 255, 255, 0.95)");
-		beam.addColorStop(0.84, color);
-		beam.addColorStop(1, "rgba(255, 255, 255, 0)");
-
-		ctx.strokeStyle = beam;
-		ctx.lineWidth = 3;
-		ctx.globalAlpha = glowAlpha;
-		ctx.beginPath();
-		ctx.moveTo(x - 4, y);
-		ctx.lineTo(x + w + 4, y);
-		ctx.stroke();
-
-		ctx.globalAlpha = 0.26 + pulse * 0.12;
-		ctx.lineWidth = 1.5;
-		ctx.beginPath();
-		ctx.moveTo(x + 6, y + direction * 8);
-		ctx.quadraticCurveTo(
-			centerX,
-			y + direction * 14,
-			x + w - 6,
-			y + direction * 8,
-		);
-		ctx.stroke();
-
-		ctx.fillStyle = color;
-		ctx.globalAlpha = 0.62;
-		for (const nodeX of [x + 8, x + w - 8]) {
-			ctx.beginPath();
-			ctx.arc(nodeX, y, 3.4, 0, Math.PI * 2);
-			ctx.fill();
-		}
-
-		ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
-		ctx.globalAlpha = 0.55;
-		ctx.beginPath();
-		ctx.arc(centerX, y, 2.2, 0, Math.PI * 2);
-		ctx.fill();
+		ctx.translate(x, y);
+		ctx.scale(1, direction);
+		ctx.globalAlpha = 0.42 + pulse * 0.24;
+		ctx.drawImage(sprite.beam, -COLLAR_PAD_X, -COLLAR_PAD_Y);
+		ctx.globalAlpha = 1;
+		ctx.drawImage(sprite.nodes, -COLLAR_PAD_X, -COLLAR_PAD_Y);
 		ctx.restore();
+	}
+
+	/**
+	 * The collar's glow is a shadowBlur, which is far too slow to rasterize
+	 * for every gate on every frame, so it is rendered once per colour.
+	 * `beam` pulses with the gate; `nodes` stays at a fixed opacity.
+	 */
+	private getCollarSprite(color: string): CollarSprite {
+		const cached = this.collarSprites.get(color);
+		if (cached) return cached;
+
+		const w = this.obstacleWidth;
+		const centerX = w / 2;
+		const makeLayer = (paint: (ctx: CanvasRenderingContext2D) => void) => {
+			const canvas = document.createElement("canvas");
+			canvas.width = w + COLLAR_PAD_X * 2;
+			canvas.height = COLLAR_PAD_Y * 2 + 14;
+			const ctx = canvas.getContext("2d");
+			if (ctx) {
+				ctx.translate(COLLAR_PAD_X, COLLAR_PAD_Y);
+				ctx.shadowColor = color;
+				ctx.shadowBlur = 14;
+				ctx.lineCap = "round";
+				paint(ctx);
+			}
+			return canvas;
+		};
+
+		const sprite: CollarSprite = {
+			beam: makeLayer((ctx) => {
+				const beam = ctx.createLinearGradient(-8, 0, w + 8, 0);
+				beam.addColorStop(0, "rgba(255, 255, 255, 0)");
+				beam.addColorStop(0.16, color);
+				beam.addColorStop(0.5, "rgba(255, 255, 255, 0.95)");
+				beam.addColorStop(0.84, color);
+				beam.addColorStop(1, "rgba(255, 255, 255, 0)");
+
+				ctx.strokeStyle = beam;
+				ctx.lineWidth = 3;
+				ctx.beginPath();
+				ctx.moveTo(-4, 0);
+				ctx.lineTo(w + 4, 0);
+				ctx.stroke();
+
+				// The arc glows at ~60% of the beam's opacity across the pulse.
+				ctx.globalAlpha = 0.6;
+				ctx.lineWidth = 1.5;
+				ctx.beginPath();
+				ctx.moveTo(6, 8);
+				ctx.quadraticCurveTo(centerX, 14, w - 6, 8);
+				ctx.stroke();
+			}),
+			nodes: makeLayer((ctx) => {
+				ctx.fillStyle = color;
+				ctx.globalAlpha = 0.62;
+				for (const nodeX of [8, w - 8]) {
+					ctx.beginPath();
+					ctx.arc(nodeX, 0, 3.4, 0, Math.PI * 2);
+					ctx.fill();
+				}
+
+				ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+				ctx.globalAlpha = 0.55;
+				ctx.beginPath();
+				ctx.arc(centerX, 0, 2.2, 0, Math.PI * 2);
+				ctx.fill();
+			}),
+		};
+		this.collarSprites.set(color, sprite);
+		return sprite;
 	}
 
 	/**

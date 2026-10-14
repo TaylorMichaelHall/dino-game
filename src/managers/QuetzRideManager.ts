@@ -7,6 +7,8 @@ import {
 import type { IGame } from "../types";
 import {
 	compactInPlace,
+	FILTER_PAD,
+	getFilteredSprite,
 	loadImage,
 	spritePath,
 	supportsCanvasColorFilters,
@@ -293,10 +295,17 @@ export class QuetzRideManager {
 
 		const activeElemental = this.activeElemental();
 		if (activeElemental && supportsCanvasColorFilters()) {
-			ctx.filter = ELEMENTALS[activeElemental].filter(this.game.time);
+			const baked = getFilteredSprite(
+				this.quetzSprite,
+				"quetz",
+				w,
+				h,
+				ELEMENTALS[activeElemental].filter(this.game.time),
+			);
+			ctx.drawImage(baked, -w / 2 - FILTER_PAD, -h / 2 - FILTER_PAD);
+		} else {
+			ctx.drawImage(this.quetzSprite, -w / 2, -h / 2, w, h);
 		}
-
-		ctx.drawImage(this.quetzSprite, -w / 2, -h / 2, w, h);
 		this.drawElementalTint(ctx, -w / 2, -h / 2, w, h, activeElemental);
 		ctx.restore();
 	}

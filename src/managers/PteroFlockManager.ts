@@ -16,11 +16,15 @@ interface Flock {
 	birds: FlockBird[];
 }
 
+// Oversample the silhouette so wing-flap stretching stays crisp.
+const SILHOUETTE_SCALE = 3;
+
 export class PteroFlockManager {
 	game: IGame;
 	flocks: Flock[];
 	spawnTimer: number;
 	pteroSprite: HTMLImageElement;
+	private silhouette: HTMLCanvasElement | null = null;
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -103,6 +107,27 @@ export class PteroFlockManager {
 		});
 	}
 
+	/**
+	 * Black cut-out of the sprite at flock size, built once so the birds don't
+	 * need a per-frame canvas filter.
+	 */
+	private getSilhouette(w: number, h: number): HTMLCanvasElement {
+		if (this.silhouette) return this.silhouette;
+
+		const canvas = document.createElement("canvas");
+		canvas.width = Math.ceil(w * SILHOUETTE_SCALE);
+		canvas.height = Math.ceil(h * SILHOUETTE_SCALE);
+		const ctx = canvas.getContext("2d");
+		if (ctx) {
+			ctx.drawImage(this.pteroSprite, 0, 0, canvas.width, canvas.height);
+			ctx.globalCompositeOperation = "source-in";
+			ctx.fillStyle = "#000000";
+			ctx.fillRect(0, 0, canvas.width, canvas.height);
+		}
+		this.silhouette = canvas;
+		return canvas;
+	}
+
 	draw(ctx: CanvasRenderingContext2D) {
 		if (
 			this.flocks.length === 0 ||
@@ -116,9 +141,9 @@ export class PteroFlockManager {
 			this.pteroSprite.naturalHeight / this.pteroSprite.naturalWidth;
 		const w = size;
 		const h = size * aspect;
+		const silhouette = this.getSilhouette(w, h);
 
 		ctx.save();
-		ctx.filter = "brightness(0)";
 		ctx.globalAlpha = 0.5;
 
 		for (const flock of this.flocks) {
@@ -141,7 +166,7 @@ export class PteroFlockManager {
 				ctx.save();
 				ctx.translate(x, y);
 				ctx.scale(1.0 - flapAmount, 1.0 + flapAmount);
-				ctx.drawImage(this.pteroSprite, -w / 2, -h / 2, w, h);
+				ctx.drawImage(silhouette, -w / 2, -h / 2, w, h);
 				ctx.restore();
 			}
 		}

@@ -13,7 +13,10 @@ interface ParallaxLayer {
 	points: Point[];
 	height: number;
 	offset: number;
-	cache: LayerCache;
+	// Both are baked once: the day/night tint is applied at draw time by
+	// filling the silhouette, so the layer never has to be re-rasterized.
+	silhouette: Path2D;
+	detail: HTMLCanvasElement;
 }
 
 interface Star {
@@ -33,10 +36,8 @@ interface Cloud {
 	alpha: number;
 }
 
-interface LayerCache {
-	canvas: HTMLCanvasElement;
-	key: string;
-}
+// Headroom above a layer's nominal height for peaks, tree tips and blur.
+const DETAIL_PADDING = 32;
 
 export class ParallaxManager {
 	game: IGame;
@@ -53,41 +54,85 @@ export class ParallaxManager {
 		this.clouds = this.generateClouds();
 		this.celestial = new CelestialManager(game);
 		this.layers = [
-			{
-				kind: "farMountains",
-				speedFactor: 0.1,
-				color: "rgb(100, 100, 120)",
-				points: this.generateMountainRidge(280, 122, 0.35),
-				height: 210,
-				offset: 0,
-				cache: this.createLayerCache(),
-			},
-			{
-				kind: "nearMountains",
-				speedFactor: 0.3,
-				color: "rgb(80, 80, 100)",
-				points: this.generateMountainRidge(210, 112, 1.7),
-				height: 165,
-				offset: 0,
-				cache: this.createLayerCache(),
-			},
-			{
-				kind: "foothills",
-				speedFactor: 0.6,
-				color: "rgb(40, 60, 40)",
-				points: this.generateFoothills(1.1),
-				height: 76,
-				offset: 0,
-				cache: this.createLayerCache(),
-			},
+			this.createLayer(
+				"farMountains",
+				0.1,
+				this.generateMountainRidge(280, 122, 0.35),
+				210,
+			),
+			this.createLayer(
+				"nearMountains",
+				0.3,
+				this.generateMountainRidge(210, 112, 1.7),
+				165,
+			),
+			this.createLayer("foothills", 0.6, this.generateFoothills(1.1), 76),
 		];
 	}
 
-	private createLayerCache(): LayerCache {
+	private createLayer(
+		kind: ParallaxLayerKind,
+		speedFactor: number,
+		ridge: Point[],
+		height: number,
+	): ParallaxLayer {
+		const groundY = CONFIG.HORIZON_Y;
+		const startY = groundY - height;
+		const points = ridge.map((p) => ({ x: p.x, y: startY + p.y }));
+
+		const silhouette = new Path2D();
+		silhouette.moveTo(points[0].x, groundY);
+		for (const p of points) silhouette.lineTo(p.x, p.y);
+		silhouette.lineTo(points[points.length - 1].x, groundY);
+		silhouette.closePath();
+
+		return {
+			kind,
+			speedFactor,
+			color: "rgb(0, 0, 0)",
+			points,
+			height,
+			offset: 0,
+			silhouette,
+			detail: this.bakeLayerDetail(kind, points, height),
+		};
+	}
+
+	/**
+	 * Render a layer's shading (facets, snow caps, ridge line, trees, mist) to
+	 * a transparent strip. It is colour-independent, so it is drawn only once.
+	 */
+	private bakeLayerDetail(
+		kind: ParallaxLayerKind,
+		points: Point[],
+		height: number,
+	): HTMLCanvasElement {
+		const groundY = CONFIG.HORIZON_Y;
 		const canvas = document.createElement("canvas");
 		canvas.width = this.WORLD_WIDTH;
-		canvas.height = CONFIG.HORIZON_Y;
-		return { canvas, key: "" };
+		canvas.height = height + DETAIL_PADDING;
+		const ctx = canvas.getContext("2d");
+		if (!ctx) return canvas;
+
+		ctx.translate(0, canvas.height - groundY);
+		if (kind !== "foothills") {
+			this.drawMountainFacets(ctx, points, groundY, kind);
+			this.drawPeakCaps(ctx, points, kind);
+			this.drawRidgeLine(ctx, points, kind);
+		} else {
+			this.drawFoothillTexture(ctx, points, groundY);
+		}
+		if (kind !== "farMountains") return canvas;
+
+		// Distance haze: soften the far range with a single blur pass.
+		const blurred = document.createElement("canvas");
+		blurred.width = canvas.width;
+		blurred.height = canvas.height;
+		const blurCtx = blurred.getContext("2d");
+		if (!blurCtx) return canvas;
+		blurCtx.filter = "blur(2px)";
+		blurCtx.drawImage(canvas, 0, 0);
+		return blurred;
 	}
 
 	private generateStars(): Star[] {
@@ -270,9 +315,9 @@ export class ParallaxManager {
 		const farAtmosphere = this.mixColor(mountainFarColor, skyColor, 0.34);
 		const nearAtmosphere = this.mixColor(mountainNearColor, skyColor, 0.16);
 
-		this.layers[0].color = this.toRgb(this.quantizeColor(farAtmosphere));
-		this.layers[1].color = this.toRgb(this.quantizeColor(nearAtmosphere));
-		this.layers[2].color = this.toRgb(this.quantizeColor(treesColor));
+		this.layers[0].color = this.toRgb(farAtmosphere);
+		this.layers[1].color = this.toRgb(nearAtmosphere);
+		this.layers[2].color = this.toRgb(treesColor);
 
 		ctx.save();
 		ctx.beginPath();
@@ -285,31 +330,23 @@ export class ParallaxManager {
 		this.celestial.draw(ctx, cycleFactor);
 		this.drawClouds(ctx, cycleFactor);
 
-		// Layer 0: far mountains (blur baked into cached layer)
-		this.drawCachedLayer(ctx, this.layers[0]);
+		// Layer 0: far mountains
+		this.drawLayer(ctx, this.layers[0]);
 
 		// Pterodactyl flock between far and near mountains
 		this.flockManager?.draw(ctx);
 
 		// Layer 1: near mountains
-		this.drawCachedLayer(ctx, this.layers[1]);
+		this.drawLayer(ctx, this.layers[1]);
 
 		// Layer 2: foothills
-		this.drawCachedLayer(ctx, this.layers[2]);
+		this.drawLayer(ctx, this.layers[2]);
 
-		ctx.filter = "none";
 		ctx.restore();
 	}
 
-	private quantizeColor(color: number[]): number[] {
-		const step = 4;
-		return color.map((channel) =>
-			Math.max(0, Math.min(255, Math.round(channel / step) * step)),
-		);
-	}
-
 	private toRgb(color: number[]): string {
-		return `rgb(${color.join(",")})`;
+		return `rgb(${Math.round(color[0])}, ${Math.round(color[1])}, ${Math.round(color[2])})`;
 	}
 
 	private drawStars(ctx: CanvasRenderingContext2D, cycleFactor: number) {
@@ -439,87 +476,26 @@ export class ParallaxManager {
 		ctx.restore();
 	}
 
-	private drawLayer(
-		ctx: CanvasRenderingContext2D,
-		layer: ParallaxLayer,
-		worldOffset: number,
-	) {
-		ctx.save();
-		ctx.translate(worldOffset - layer.offset, 0);
+	private drawLayer(ctx: CanvasRenderingContext2D, layer: ParallaxLayer) {
+		const detailY = CONFIG.HORIZON_Y - layer.detail.height;
 
-		const groundY = CONFIG.HORIZON_Y;
-		const startY = groundY - layer.height;
-		const points = layer.points.map((p) => ({
-			x: p.x,
-			y: startY + p.y,
-		}));
-
-		this.drawMountainSilhouette(ctx, points, groundY, layer.color);
-
-		if (layer.kind !== "foothills") {
-			this.drawMountainFacets(ctx, points, groundY, layer.kind);
-			this.drawPeakCaps(ctx, points, layer.kind);
-			this.drawRidgeLine(ctx, points, layer.kind);
-		} else {
-			this.drawFoothillTexture(ctx, points, groundY);
+		ctx.fillStyle = layer.color;
+		ctx.strokeStyle = layer.color;
+		// The world tiles horizontally; draw each copy that overlaps the screen.
+		for (let x = -layer.offset; x < this.game.width; x += this.WORLD_WIDTH) {
+			ctx.save();
+			ctx.translate(x, 0);
+			if (layer.kind === "farMountains") {
+				// Feathered edge to match the blurred detail strip.
+				ctx.globalAlpha = 0.3;
+				ctx.lineWidth = 5;
+				ctx.stroke(layer.silhouette);
+				ctx.globalAlpha = 1;
+			}
+			ctx.fill(layer.silhouette);
+			ctx.restore();
+			ctx.drawImage(layer.detail, x, detailY);
 		}
-
-		ctx.restore();
-	}
-
-	private drawCachedLayer(ctx: CanvasRenderingContext2D, layer: ParallaxLayer) {
-		this.refreshLayerCache(layer);
-
-		const x = -layer.offset;
-		ctx.drawImage(layer.cache.canvas, x - this.WORLD_WIDTH, 0);
-		ctx.drawImage(layer.cache.canvas, x, 0);
-		ctx.drawImage(layer.cache.canvas, x + this.WORLD_WIDTH, 0);
-	}
-
-	private refreshLayerCache(layer: ParallaxLayer) {
-		const key = `${layer.kind}:${layer.color}`;
-		if (layer.cache.key === key) return;
-
-		const cacheCtx = layer.cache.canvas.getContext("2d");
-		if (!cacheCtx) return;
-
-		layer.cache.key = key;
-		cacheCtx.clearRect(
-			0,
-			0,
-			layer.cache.canvas.width,
-			layer.cache.canvas.height,
-		);
-		cacheCtx.save();
-		if (layer.kind === "farMountains") cacheCtx.filter = "blur(2px)";
-		const previousOffset = layer.offset;
-		try {
-			layer.offset = 0;
-			this.drawLayer(cacheCtx, layer, 0);
-		} finally {
-			layer.offset = previousOffset;
-			cacheCtx.restore();
-		}
-		cacheCtx.filter = "none";
-	}
-
-	private drawMountainSilhouette(
-		ctx: CanvasRenderingContext2D,
-		points: Point[],
-		groundY: number,
-		color: string,
-	) {
-		ctx.fillStyle = color;
-		ctx.beginPath();
-		ctx.moveTo(points[0].x, groundY);
-		ctx.lineTo(points[0].x, points[0].y);
-		for (let i = 1; i < points.length; i++) {
-			ctx.lineTo(points[i].x, points[i].y);
-		}
-		const last = points[points.length - 1];
-		ctx.lineTo(last.x, groundY);
-		ctx.closePath();
-		ctx.fill();
 	}
 
 	private drawMountainFacets(
@@ -529,7 +505,6 @@ export class ParallaxManager {
 		kind: Exclude<ParallaxLayerKind, "foothills">,
 	) {
 		ctx.save();
-		ctx.globalCompositeOperation = "multiply";
 		const shadowAlpha = kind === "farMountains" ? 0.12 : 0.2;
 		const lightAlpha = kind === "farMountains" ? 0.1 : 0.16;
 
@@ -547,7 +522,6 @@ export class ParallaxManager {
 			ctx.closePath();
 			ctx.fill();
 
-			ctx.globalCompositeOperation = "screen";
 			ctx.fillStyle = `rgba(255, 230, 190, ${lightAlpha})`;
 			ctx.beginPath();
 			ctx.moveTo(peak.x, peak.y);
@@ -555,7 +529,6 @@ export class ParallaxManager {
 			ctx.lineTo((peak.x + prev.x) / 2 - 18, baseY - 18);
 			ctx.closePath();
 			ctx.fill();
-			ctx.globalCompositeOperation = "multiply";
 		}
 
 		ctx.restore();
@@ -570,7 +543,6 @@ export class ParallaxManager {
 		const capHeight = kind === "farMountains" ? 24 : 18;
 
 		ctx.save();
-		ctx.globalCompositeOperation = "screen";
 		ctx.fillStyle = `rgba(235, 245, 255, ${capAlpha})`;
 		for (let i = 1; i < points.length - 1; i += 2) {
 			const prev = points[i - 1];
@@ -619,7 +591,6 @@ export class ParallaxManager {
 		groundY: number,
 	) {
 		ctx.save();
-		ctx.globalCompositeOperation = "multiply";
 		ctx.fillStyle = "rgba(9, 18, 14, 0.24)";
 		for (let i = -1; i < points.length; i++) {
 			const p =
@@ -648,7 +619,6 @@ export class ParallaxManager {
 		const mist = ctx.createLinearGradient(0, groundY - 84, 0, groundY);
 		mist.addColorStop(0, "rgba(255, 255, 255, 0)");
 		mist.addColorStop(1, "rgba(255, 255, 255, 0.08)");
-		ctx.globalCompositeOperation = "screen";
 		ctx.fillStyle = mist;
 		ctx.fillRect(-80, groundY - 84, this.WORLD_WIDTH + 160, 84);
 		ctx.restore();

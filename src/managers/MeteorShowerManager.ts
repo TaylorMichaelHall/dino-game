@@ -45,6 +45,9 @@ interface RingState {
 	spawnTimer: number;
 }
 
+// Room around a meteor head for its glow to fade out.
+const HEAD_GLOW_PAD = 34;
+
 export class MeteorShowerManager {
 	game: IGame;
 	active: boolean;
@@ -58,6 +61,7 @@ export class MeteorShowerManager {
 	meteorsSpawned: number;
 	rumblePlayed: boolean;
 	rings: RingState[];
+	private headSprites = new Map<number, HTMLCanvasElement>();
 
 	constructor(game: IGame) {
 		this.game = game;
@@ -323,6 +327,43 @@ export class MeteorShowerManager {
 		});
 	}
 
+	/**
+	 * Glowing meteor head, rendered once per size: the glow is a shadowBlur,
+	 * which is too slow to rasterize for every meteor on every frame.
+	 */
+	private getHeadSprite(size: number): HTMLCanvasElement {
+		const key = Math.round(size * 2);
+		const cached = this.headSprites.get(key);
+		if (cached) return cached;
+
+		const radius = key / 2;
+		const canvas = document.createElement("canvas");
+		canvas.width = canvas.height = Math.ceil(radius * 1.5 + HEAD_GLOW_PAD) * 2;
+		const ctx = canvas.getContext("2d");
+		if (ctx) {
+			const c = canvas.width / 2;
+			ctx.globalCompositeOperation = "lighter";
+
+			// Outer glow
+			ctx.shadowColor = "#ff6600";
+			ctx.shadowBlur = 20;
+			ctx.fillStyle = "#ff9933";
+			ctx.beginPath();
+			ctx.arc(c, c, radius * 1.5, 0, Math.PI * 2);
+			ctx.fill();
+
+			// Inner bright core
+			ctx.shadowColor = "#ffcc00";
+			ctx.shadowBlur = 10;
+			ctx.fillStyle = "#ffffff";
+			ctx.beginPath();
+			ctx.arc(c, c, radius * 0.7, 0, Math.PI * 2);
+			ctx.fill();
+		}
+		this.headSprites.set(key, canvas);
+		return canvas;
+	}
+
 	draw(ctx: CanvasRenderingContext2D) {
 		if (!this.active && this.meteors.length === 0 && this.impacts.length === 0)
 			return;
@@ -371,28 +412,10 @@ export class MeteorShowerManager {
 
 			// Draw meteor head (if not impacted or expired)
 			if (!m.impacted && m.life > 0) {
+				const sprite = this.getHeadSprite(m.size);
 				const savedComposite = ctx.globalCompositeOperation;
 				ctx.globalCompositeOperation = "lighter";
-
-				// Outer glow
-				ctx.shadowColor = "#ff6600";
-				ctx.shadowBlur = 20;
-				ctx.fillStyle = "#ff9933";
-				ctx.beginPath();
-				ctx.arc(m.x, m.y, m.size * 1.5, 0, Math.PI * 2);
-				ctx.fill();
-
-				// Inner bright core
-				ctx.shadowColor = "#ffcc00";
-				ctx.shadowBlur = 10;
-				ctx.fillStyle = "#ffffff";
-				ctx.beginPath();
-				ctx.arc(m.x, m.y, m.size * 0.7, 0, Math.PI * 2);
-				ctx.fill();
-
-				// Reset shadow
-				ctx.shadowColor = "transparent";
-				ctx.shadowBlur = 0;
+				ctx.drawImage(sprite, m.x - sprite.width / 2, m.y - sprite.height / 2);
 				ctx.globalCompositeOperation = savedComposite;
 			}
 		}

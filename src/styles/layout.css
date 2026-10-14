@@ -36,22 +36,21 @@
 	inset: 0;
 	pointer-events: none;
 	z-index: 2;
+	/* Pure white highlights: identical to a screen blend, without forcing the
+	   canvas underneath through an extra blending pass every frame. */
 	background:
 		linear-gradient(
 			90deg,
 			rgba(255, 255, 255, 0.08),
-			transparent 16%,
-			transparent 84%,
+			rgba(255, 255, 255, 0) 16%,
+			rgba(255, 255, 255, 0) 84%,
 			rgba(255, 255, 255, 0.08)
 		),
 		linear-gradient(
 			180deg,
 			rgba(255, 255, 255, 0.08),
-			transparent 18%,
-			transparent 82%,
-			rgba(0, 0, 0, 0.18)
+			rgba(255, 255, 255, 0) 18%
 		);
-	mix-blend-mode: screen;
 }
 
 #game-container.theme-1 {

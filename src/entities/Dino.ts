@@ -7,10 +7,15 @@ import {
 } from "../config/ElementalConfig";
 import type { DinoConfig, IDino, IGame, SuperDinoType } from "../types";
 import {
+	FILTER_PAD,
+	getFilteredSprite,
 	loadImage,
 	spritePath,
 	supportsCanvasColorFilters,
 } from "../utils/helpers";
+
+// Sprites are drawn at this fraction of their configured width.
+const SPRITE_SCALE = 0.8;
 
 interface HistoryPoint {
 	y: number;
@@ -315,10 +320,9 @@ export class Dino implements IDino {
 				followerData.y + this.height / 2,
 			);
 			ctx.rotate(followerData.rotation);
-			ctx.scale(0.8, 0.8);
+			ctx.scale(SPRITE_SCALE, SPRITE_SCALE);
 			ctx.globalAlpha = 0.8;
-			if (filter) ctx.filter = filter;
-			this.drawNormalDino(ctx, activeElemental); // Helper for choosing correct current level sprite
+			this.drawNormalDino(ctx, activeElemental, filter); // Helper for choosing correct current level sprite
 			ctx.restore();
 		}
 
@@ -330,9 +334,8 @@ export class Dino implements IDino {
 				this.flyingOffSprite.y + this.height / 2,
 			);
 			ctx.rotate(-0.2); // Slighting angle up
-			ctx.scale(0.8, 0.8);
-			if (filter) ctx.filter = filter;
-			this.drawSuper(ctx, this.flyingOffSprite.type, activeElemental);
+			ctx.scale(SPRITE_SCALE, SPRITE_SCALE);
+			this.drawSuper(ctx, this.flyingOffSprite.type, activeElemental, filter);
 			ctx.restore();
 		}
 
@@ -361,14 +364,12 @@ export class Dino implements IDino {
 
 		const stretch = 1 + this.squash * 0.18;
 		const squash = 1 - this.squash * 0.14;
-		ctx.scale(0.8 * squash, 0.8 * stretch);
-
-		if (filter) ctx.filter = filter;
+		ctx.scale(SPRITE_SCALE * squash, SPRITE_SCALE * stretch);
 
 		if (this.isSuper) {
-			this.drawSuper(ctx, this.superType, activeElemental);
+			this.drawSuper(ctx, this.superType, activeElemental, filter);
 		} else {
-			this.drawNormalDino(ctx, activeElemental);
+			this.drawNormalDino(ctx, activeElemental, filter);
 		}
 
 		ctx.restore();
@@ -468,33 +469,55 @@ export class Dino implements IDino {
 	drawNormalDino(
 		ctx: CanvasRenderingContext2D,
 		activeElemental: ElementalKey | null = null,
+		filter: string | null = null,
 	) {
 		const dinoConfig = DINOS[this.level];
 		if (!dinoConfig) return;
-		this.drawDino(ctx, dinoConfig, activeElemental);
+		this.drawDino(ctx, dinoConfig, activeElemental, filter);
 	}
 
 	drawSuper(
 		ctx: CanvasRenderingContext2D,
 		type: SuperDinoType | null = this.superType,
 		activeElemental: ElementalKey | null = null,
+		filter: string | null = null,
 	) {
 		if (!type) return;
 		const superConfig = SUPER_DINOS[type];
 		if (!superConfig) return;
-		this.drawDino(ctx, superConfig, activeElemental);
+		this.drawDino(ctx, superConfig, activeElemental, filter);
 	}
 
 	drawDino(
 		ctx: CanvasRenderingContext2D,
 		config: DinoConfig | { id: string; width: number; isSuper?: boolean },
 		activeElemental: ElementalKey | null = null,
+		filter: string | null = null,
 	) {
 		const sprite = this.sprites[config.id];
 		if (sprite?.complete && sprite.naturalWidth > 0) {
 			const w = config.width;
 			const h = w * (sprite.naturalHeight / sprite.naturalWidth);
-			ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
+			if (filter) {
+				// Baked at on-screen size, so undo the sprite scale when placing it.
+				const baked = getFilteredSprite(
+					sprite,
+					config.id,
+					w * SPRITE_SCALE,
+					h * SPRITE_SCALE,
+					filter,
+				);
+				const pad = FILTER_PAD / SPRITE_SCALE;
+				ctx.drawImage(
+					baked,
+					-w / 2 - pad,
+					-h / 2 - pad,
+					baked.width / SPRITE_SCALE,
+					baked.height / SPRITE_SCALE,
+				);
+			} else {
+				ctx.drawImage(sprite, -w / 2, -h / 2, w, h);
+			}
 			this.drawElementalTint(
 				ctx,
 				config.id,
