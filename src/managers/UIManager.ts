@@ -375,7 +375,8 @@ export class UIManager {
 			item,
 			fill,
 			seconds,
-			shownProgress: Number.NaN,
+			// Out of range so the first update always sets the bar (NaN never would).
+			shownProgress: -1,
 			shownSeconds: "",
 			shownColor: "",
 		};
