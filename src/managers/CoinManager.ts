@@ -12,7 +12,13 @@ interface Coin {
 	x: number;
 	y: number;
 	collected: boolean;
+	// Set on coins that bounce along the ground (piñata bursts)
+	vx?: number;
+	vy?: number;
 }
+
+// Bouncing coins rebound off this margin above the bottom of the screen.
+const BOUNCE_FLOOR_MARGIN = 24;
 
 type LetterPatterns = Record<string, number[][]>;
 
@@ -172,6 +178,38 @@ export class CoinManager implements ICoinManager {
 		});
 	}
 
+	/** Fountain of bouncing coins, e.g. from the asteroid piñata. */
+	spawnBurst(x: number, y: number, count: number) {
+		for (let i = 0; i < count; i++) {
+			this.coins.push({
+				x,
+				y,
+				collected: false,
+				vx: -60 + Math.random() * 330,
+				vy: -(250 + Math.random() * 330),
+			});
+		}
+	}
+
+	private updateBouncing(coin: Coin, deltaTime: number) {
+		if (coin.vy === undefined) return;
+		const floor = this.game.height - BOUNCE_FLOOR_MARGIN;
+		coin.vy += CONFIG.COIN_BOUNCE_GRAVITY * deltaTime;
+		coin.y += coin.vy * deltaTime;
+		if (coin.y > floor && coin.vy > 0) {
+			coin.y = floor;
+			// Keep hopping instead of settling out of reach on the ground
+			coin.vy = -Math.max(
+				coin.vy * 0.8,
+				CONFIG.COIN_BOUNCE_SPEED * (0.7 + Math.random() * 0.5),
+			);
+		}
+		if (coin.vx) {
+			coin.x += coin.vx * deltaTime;
+			coin.vx *= Math.max(0, 1 - 1.5 * deltaTime);
+		}
+	}
+
 	update(deltaTime: number, speed: number) {
 		const magnetActive = this.game.timers.magnet > 0;
 		const dinoX = this.game.dino.x + this.game.dino.width / 2;
@@ -190,6 +228,7 @@ export class CoinManager implements ICoinManager {
 				}
 			} else {
 				coin.x -= speed * deltaTime;
+				this.updateBouncing(coin, deltaTime);
 			}
 		});
 

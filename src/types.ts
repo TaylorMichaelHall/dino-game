@@ -308,6 +308,7 @@ export interface ICoinManager {
 	draw(ctx: CanvasRenderingContext2D): void;
 	checkCollision(dino: IDino): boolean;
 	spawnStartMessage(): void;
+	spawnBurst(x: number, y: number, count: number): void;
 	reset(): void;
 	removeOverlappingWithObstacle(obs: { x: number; topHeight: number }): void;
 }

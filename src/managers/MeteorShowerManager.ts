@@ -45,6 +45,30 @@ interface RingState {
 	spawnTimer: number;
 }
 
+/**
+ * The "big one": a giant asteroid that looms over the sky as if it's the end,
+ * then turns out to be a piñata that bounces along the ground spilling coins.
+ */
+interface BigOne {
+	phase: "waiting" | "looming" | "bouncing";
+	timer: number;
+	x: number;
+	y: number;
+	vy: number;
+	radius: number;
+	bouncesLeft: number;
+	squash: number;
+	flash: number;
+}
+
+const BIG_ONE_LOOM_SCALE = 1.6;
+const BIG_ONE_FLOOR_MARGIN = 20;
+const PINATA_COLORS = ["#ff4fa3", "#ffd23f", "#3ddc97", "#4cc9f0", "#b388ff"];
+// Fixed lumps so the rock keeps its shape from frame to frame.
+const ROCK_LUMPS = [
+	1, 0.9, 1.06, 0.94, 1.02, 0.88, 1.05, 0.97, 0.91, 1.04, 0.95, 1.01,
+];
+
 // Room around a meteor head for its glow to fade out.
 const HEAD_GLOW_PAD = 34;
 
@@ -61,6 +85,7 @@ export class MeteorShowerManager {
 	meteorsSpawned: number;
 	rumblePlayed: boolean;
 	rings: RingState[];
+	bigOne: BigOne | null = null;
 	private headSprites = new Map<number, HTMLCanvasElement>();
 
 	constructor(game: IGame) {
@@ -90,6 +115,7 @@ export class MeteorShowerManager {
 		this.meteorsSpawned = 0;
 		this.rumblePlayed = false;
 		this.rings = [];
+		this.bigOne = null;
 	}
 
 	spawnMeteorRing(centerX: number, centerY: number) {
@@ -125,8 +151,24 @@ export class MeteorShowerManager {
 		});
 	}
 
-	trigger() {
+	trigger(forceBigOne = false) {
 		if (this.active) return;
+		if (
+			!this.bigOne &&
+			(forceBigOne || Math.random() < CONFIG.BIG_ONE_CHANCE)
+		) {
+			this.bigOne = {
+				phase: "waiting",
+				timer: 0,
+				x: 0,
+				y: 0,
+				vy: 0,
+				radius: 0,
+				bouncesLeft: CONFIG.BIG_ONE_BOUNCES,
+				squash: 0,
+				flash: 0,
+			};
+		}
 		this.active = true;
 		this.eventTimer = 0;
 		this.eventPhase = "darkening";
@@ -153,6 +195,7 @@ export class MeteorShowerManager {
 
 	update(dt: number) {
 		this.updateRings(dt);
+		this.updateBigOne(dt);
 
 		if (!this.active && this.meteors.length === 0 && this.impacts.length === 0)
 			return;
@@ -212,6 +255,77 @@ export class MeteorShowerManager {
 		}
 
 		this.updateMeteors(dt);
+	}
+
+	updateBigOne(dt: number) {
+		const big = this.bigOne;
+		if (!big) return;
+		big.timer += dt;
+
+		if (big.phase === "waiting") {
+			if (big.timer < CONFIG.METEOR_DARKEN_TIME + CONFIG.BIG_ONE_DELAY) return;
+			big.phase = "looming";
+			big.timer = 0;
+			this.game.ui.showMessage("UH OH...");
+			this.game.audio.playMeteorRumble();
+		}
+
+		if (big.phase === "looming") {
+			const p = Math.min(1, big.timer / CONFIG.BIG_ONE_LOOM_TIME);
+			const eased = p * p;
+			big.x = this.game.width * (0.82 - 0.16 * eased);
+			big.y = 30 + 210 * eased;
+			big.radius = 6 + (CONFIG.BIG_ONE_RADIUS * BIG_ONE_LOOM_SCALE - 6) * eased;
+			this.game.triggerShake(CONFIG.METEOR_SHAKE_INTENSITY * (1 + 2 * p));
+			if (p < 1) return;
+
+			// The reveal: not an extinction event after all.
+			big.phase = "bouncing";
+			big.timer = 0;
+			big.vy = 0;
+			big.flash = 1;
+			this.game.ui.showMessage("JUST KIDDING!");
+			this.game.audio.playUpgrade();
+			this.game.effects.spawnShockwave(big.x, big.y, "255, 215, 0", 200);
+			for (const color of PINATA_COLORS) {
+				this.game.effects.spawnParticles(big.x, big.y, color, 10, 320, 1);
+			}
+			return;
+		}
+
+		// Bouncing piñata
+		big.flash = Math.max(0, big.flash - dt * 4);
+		big.squash = Math.max(0, big.squash - dt * 5);
+		big.radius += (CONFIG.BIG_ONE_RADIUS - big.radius) * Math.min(1, dt * 12);
+		big.vy += CONFIG.BIG_ONE_GRAVITY * dt;
+		big.y += big.vy * dt;
+		big.x -= CONFIG.BIG_ONE_DRIFT_SPEED * dt;
+
+		const floor = this.game.height - BIG_ONE_FLOOR_MARGIN - big.radius;
+		if (big.y < floor || big.vy <= 0) return;
+
+		big.y = floor;
+		big.vy = -CONFIG.BIG_ONE_BOUNCE_SPEED;
+		big.squash = 1;
+		big.bouncesLeft--;
+		const isLast = big.bouncesLeft <= 0;
+		this.game.coins.spawnBurst(
+			big.x,
+			big.y - big.radius * 0.5,
+			isLast ? CONFIG.BIG_ONE_COINS_FINAL : CONFIG.BIG_ONE_COINS_PER_BOUNCE,
+		);
+		this.game.audio.playPowerup();
+		this.game.triggerShake(CONFIG.METEOR_SHAKE_INTENSITY * 1.5);
+		const color = PINATA_COLORS[big.bouncesLeft % PINATA_COLORS.length];
+		this.game.effects.spawnParticles(big.x, big.y, color, 14, 260, 0.8);
+
+		if (isLast) {
+			this.game.effects.spawnShockwave(big.x, big.y, "255, 215, 0", 160);
+			for (const c of PINATA_COLORS) {
+				this.game.effects.spawnParticles(big.x, big.y, c, 8, 380, 1);
+			}
+			this.bigOne = null;
+		}
 	}
 
 	updateRings(dt: number) {
@@ -364,7 +478,152 @@ export class MeteorShowerManager {
 		return canvas;
 	}
 
+	private drawBigOne(ctx: CanvasRenderingContext2D, big: BigOne) {
+		if (big.phase === "waiting") return;
+
+		if (big.phase === "looming") {
+			const p = Math.min(1, big.timer / CONFIG.BIG_ONE_LOOM_TIME);
+			const r = big.radius;
+
+			// The sky turns an ominous red as it closes in
+			ctx.fillStyle = `rgba(90, 0, 0, ${p * 0.45})`;
+			ctx.fillRect(0, 0, this.game.width, CONFIG.HORIZON_Y);
+
+			ctx.save();
+			ctx.translate(big.x, big.y);
+
+			// Fiery halo and tail streaming back the way it came
+			const prevComposite = ctx.globalCompositeOperation;
+			ctx.globalCompositeOperation = "lighter";
+			const tail = ctx.createLinearGradient(0, 0, r * 2.4, -r * 3.2);
+			tail.addColorStop(0, "rgba(255, 150, 40, 0.75)");
+			tail.addColorStop(1, "rgba(255, 60, 0, 0)");
+			ctx.fillStyle = tail;
+			ctx.beginPath();
+			ctx.moveTo(-r * 0.9, -r * 0.45);
+			ctx.lineTo(r * 2.4, -r * 3.2);
+			ctx.lineTo(r * 0.5, r * 0.85);
+			ctx.closePath();
+			ctx.fill();
+
+			const halo = ctx.createRadialGradient(0, 0, r * 0.6, 0, 0, r * 1.9);
+			halo.addColorStop(0, "rgba(255, 190, 80, 0.85)");
+			halo.addColorStop(0.5, "rgba(255, 90, 0, 0.35)");
+			halo.addColorStop(1, "rgba(255, 40, 0, 0)");
+			ctx.fillStyle = halo;
+			ctx.fillRect(-r * 1.9, -r * 1.9, r * 3.8, r * 3.8);
+			ctx.globalCompositeOperation = prevComposite;
+
+			// Lumpy rock
+			ctx.rotate(big.timer * 0.6);
+			const rock = ctx.createRadialGradient(
+				-r * 0.3,
+				r * 0.3,
+				r * 0.1,
+				0,
+				0,
+				r,
+			);
+			rock.addColorStop(0, "#8a5a3c");
+			rock.addColorStop(0.7, "#4a2e22");
+			rock.addColorStop(1, "#22120e");
+			ctx.fillStyle = rock;
+			ctx.beginPath();
+			ROCK_LUMPS.forEach((lump, i) => {
+				const a = (i / ROCK_LUMPS.length) * Math.PI * 2;
+				const px = Math.cos(a) * r * lump;
+				const py = Math.sin(a) * r * lump;
+				if (i === 0) ctx.moveTo(px, py);
+				else ctx.lineTo(px, py);
+			});
+			ctx.closePath();
+			ctx.fill();
+
+			ctx.fillStyle = "rgba(20, 8, 6, 0.45)";
+			for (const [cx, cy, cr] of [
+				[-0.35, -0.25, 0.2],
+				[0.3, 0.1, 0.26],
+				[-0.1, 0.45, 0.14],
+				[0.35, -0.45, 0.12],
+			]) {
+				ctx.beginPath();
+				ctx.arc(cx * r, cy * r, cr * r, 0, Math.PI * 2);
+				ctx.fill();
+			}
+			ctx.restore();
+			return;
+		}
+
+		// Piñata
+		const r = big.radius;
+		const squash = big.squash * 0.22;
+		ctx.save();
+		ctx.translate(big.x, big.y + r * squash);
+		ctx.scale(1 + squash, 1 - squash);
+		ctx.rotate(Math.sin(big.timer * 7) * 0.18);
+
+		ctx.save();
+		ctx.beginPath();
+		ctx.arc(0, 0, r, 0, Math.PI * 2);
+		ctx.clip();
+		const bandHeight = (r * 2) / 6;
+		for (let i = 0; i < 6; i++) {
+			ctx.fillStyle = PINATA_COLORS[i % PINATA_COLORS.length];
+			ctx.fillRect(-r, -r + i * bandHeight, r * 2, bandHeight + 1);
+		}
+		// Soft shading so it reads as a ball
+		const shade = ctx.createRadialGradient(
+			-r * 0.35,
+			-r * 0.4,
+			r * 0.1,
+			0,
+			0,
+			r,
+		);
+		shade.addColorStop(0, "rgba(255, 255, 255, 0.35)");
+		shade.addColorStop(0.6, "rgba(255, 255, 255, 0)");
+		shade.addColorStop(1, "rgba(0, 0, 0, 0.28)");
+		ctx.fillStyle = shade;
+		ctx.fillRect(-r, -r, r * 2, r * 2);
+		ctx.restore();
+
+		ctx.strokeStyle = "#ffffff";
+		ctx.lineWidth = 3;
+		ctx.beginPath();
+		ctx.arc(0, 0, r, 0, Math.PI * 2);
+		ctx.stroke();
+
+		// Cheerful face
+		for (const side of [-1, 1]) {
+			ctx.fillStyle = "#ffffff";
+			ctx.beginPath();
+			ctx.arc(side * r * 0.32, -r * 0.18, r * 0.2, 0, Math.PI * 2);
+			ctx.fill();
+			ctx.fillStyle = "#1a1a2e";
+			ctx.beginPath();
+			ctx.arc(side * r * 0.32 - r * 0.05, -r * 0.14, r * 0.1, 0, Math.PI * 2);
+			ctx.fill();
+		}
+		ctx.strokeStyle = "#1a1a2e";
+		ctx.lineWidth = Math.max(3, r * 0.08);
+		ctx.lineCap = "round";
+		ctx.beginPath();
+		ctx.arc(0, r * 0.12, r * 0.42, Math.PI * 0.15, Math.PI * 0.85);
+		ctx.stroke();
+		ctx.restore();
+
+		if (big.flash > 0) {
+			ctx.fillStyle = `rgba(255, 255, 255, ${big.flash * 0.7})`;
+			ctx.fillRect(0, 0, this.game.width, this.game.height);
+		}
+	}
+
 	draw(ctx: CanvasRenderingContext2D) {
+		this.drawShower(ctx);
+		if (this.bigOne) this.drawBigOne(ctx, this.bigOne);
+	}
+
+	private drawShower(ctx: CanvasRenderingContext2D) {
 		if (!this.active && this.meteors.length === 0 && this.impacts.length === 0)
 			return;
 

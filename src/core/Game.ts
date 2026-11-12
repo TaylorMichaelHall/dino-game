@@ -14,6 +14,7 @@ import {
 import { Dino } from "../entities/Dino";
 import { AudioManager } from "../managers/AudioManager";
 import { CoinManager } from "../managers/CoinManager";
+import { ConstellationManager } from "../managers/ConstellationManager";
 import { DepthSceneManager } from "../managers/DepthSceneManager";
 import { EffectManager } from "../managers/EffectManager";
 import { GroundPlaneManager } from "../managers/GroundPlaneManager";
@@ -63,6 +64,7 @@ export class Game implements IGame {
 	meteorShower: MeteorShowerManager;
 	quetzRide: QuetzRideManager;
 	pteroFlock: PteroFlockManager;
+	constellation: ConstellationManager;
 	musicEnabled: boolean;
 	sfxEnabled: boolean;
 	hearts: number;
@@ -108,6 +110,7 @@ export class Game implements IGame {
 		this.quetzRide = new QuetzRideManager(this);
 		this.pteroFlock = new PteroFlockManager(this);
 		this.parallax.flockManager = this.pteroFlock;
+		this.constellation = new ConstellationManager(this);
 
 		this.musicEnabled = true;
 		this.sfxEnabled = true;
@@ -198,6 +201,7 @@ export class Game implements IGame {
 		this.meteorShower.reset();
 		this.quetzRide.reset();
 		this.pteroFlock.reset();
+		this.constellation.reset();
 		this.stats = this.initStats();
 		this.debugUsed = false;
 		this.lastRobotSuperType = null;
@@ -352,6 +356,7 @@ export class Game implements IGame {
 		this.meteorShower.checkSpawn(this.scoring.score);
 		this.meteorShower.update(deltaTime);
 		this.pteroFlock.update(deltaTime);
+		this.constellation.update(deltaTime, !this.meteorShower.active);
 	}
 
 	getActivePowerupTimers(): ActivePowerupTimer[] {
@@ -824,6 +829,7 @@ export class Game implements IGame {
 		this.parallax.draw(this.ctx);
 		this.groundPlane.draw(this.ctx);
 		this.depthScene.draw(this.ctx);
+		this.constellation.draw(this.ctx);
 		this.meteorShower.draw(this.ctx);
 		this.dino.drawGroundShadow(this.ctx);
 		this.effects.draw(this.ctx);
@@ -877,6 +883,12 @@ export class Game implements IGame {
 			case "METEOR":
 				this.meteorShower.trigger();
 				this.ui.showMessage("METEOR SHOWER!");
+				break;
+			case "BIG_ONE":
+				this.meteorShower.trigger(true);
+				break;
+			case "CONSTELLATION":
+				this.constellation.trigger();
 				break;
 			case "QUETZ":
 				this.activateQuetzRide();
